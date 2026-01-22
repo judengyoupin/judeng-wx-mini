@@ -20,9 +20,10 @@ const hasuraClient = new HasuraGraphqlClient({
 
 使用：
 一、基础方法：
-1.发送query=>hasuraClient.query
-2.发送mutation=>hasuraClient.mutate
-3.直接运行graphql语句=>hasuraClient.excute
+1.直接运行graphql语句=>hasuraClient.excute (推荐优先使用，除非指明了使用快捷方法)
+2.发送query=>hasuraClient.query
+3.发送mutation=>hasuraClient.mutate
+
 
 参数说明：
 1.query和mutate：
@@ -48,7 +49,6 @@ const hasuraClient = new HasuraGraphqlClient({
 1.aggregate：{aggregate_fields}
 2.find：{page,pageSize,aggregate_fields}
 
-快捷方法基本能满足数据表相关的所有查询，所以处理表相关的逻辑时优先用快捷方法，如果快捷方法不能实现的，可用query或mutate，如果能确定类型结构，也可以直接用excute执行
 
 特别注意：对于部分graphql语句需要传入枚举参数或变量时，生成器构建时是通过判断参数是否为函数来区分的。
 如：graphql语句`order_by:{id:desc}`在js中是不能写成这样的,会报desc未定义，如果写成`order_by:{id:"desc"}`,则gql不符合期待不会执行成功，此时应该写成`order_by:{id:()=>"desc"}`,graphql-ormify-client生成器在遇到函数时会判定为生成不带引号内容，会调用函数后取出结果作为生成的内容片段。

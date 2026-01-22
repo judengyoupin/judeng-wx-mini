@@ -1,37 +1,72 @@
 import client from "@/config-lib/hasura-graphql-client/hasura-graphql-client";
-import { Users } from "@/types/graphql";
-import cacheStore from "@/config-lib/cache-store/cache-store";
+import type { Users } from "@/types/graphql";
 
 /**
  * 获取用户
+ * 优先使用 execute 方法执行 GraphQL 查询
  * @param params 获取用户参数
  * @param params.userId 用户ID
  * @returns 用户
  */
-export const getUser = cacheStore.cache(async ({
-  userId = "3",
+export const getUser = async ({
+  userId = 3,
 }: {
-  userId?: string;
+  userId?: number;
 }): Promise<Users> => {
-  const user = await client.data<Users>({
-    table: "users",
-    args: {
-      where: {
-        id: {
-          _eq: userId,
-        },
-      },
-    },
-    data_fields: ["id", "nickname", "bio", "mobile"],
+  const query = `
+    query GetUser($userId: bigint!) {
+      users_by_pk(id: $userId) {
+        id
+        nickname
+        bio
+        mobile
+      }
+    }
+  `;
+
+  const result = await client.execute<{ users_by_pk: Users | null }>({
+    query,
+    variables: { userId },
   });
-  if (!user) {
+
+  if (!result.users_by_pk) {
     throw new Error("User not found");
   }
-    return user;
-  },
-  {
-    duration: 1000 * 60 * 5,
-    useCache: true,
-    forceRefresh: false,
-  }
-);
+
+  return result.users_by_pk;
+};
+
+/**
+ * 获取用户列表
+ * 优先使用 execute 方法执行 GraphQL 查询
+ * @param args 查询参数
+ * @param args.limit 限制数量
+ * @param args.offset 偏移量
+ * @returns 用户列表
+ */
+export const getUserList = async (args: {
+  limit?: number;
+  offset?: number;
+} = {}): Promise<Users[]> => {
+  const query = `
+    query GetUserList($limit: Int, $offset: Int) {
+      users(limit: $limit, offset: $offset, order_by: { created_at: desc }) {
+        id
+        nickname
+        bio
+        mobile
+        created_at
+      }
+    }
+  `;
+
+  const result = await client.execute<{ users: Users[] }>({
+    query,
+    variables: {
+      limit: args.limit || 10,
+      offset: args.offset || 0,
+    },
+  });
+
+  return result.users;
+};

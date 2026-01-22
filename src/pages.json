@@ -5,16 +5,22 @@
 			"style": {
 				"navigationBarTitleText": "uni-app"
 			}
+		},
+		{
+			"path": "pages/upload/index",
+			"style": {
+				"navigationBarTitleText": "文件上传"
+			}
 		}
 	],
 	"subPackages": [
 		{
-			"root": "subPackages/resource",
+			"root": "subPackages/other-package",
 			"pages": [
 				{
 					"path": "index",
 					"style": {
-						"navigationBarTitleText": "资源列表"
+						"navigationBarTitleText": "其他页面"
 					}
 				}
 			]
