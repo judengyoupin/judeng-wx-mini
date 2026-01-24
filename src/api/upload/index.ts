@@ -62,6 +62,23 @@ export const get_upload_token = async (
  * @param onProgress 进度回调
  * @returns 上传结果
  */
+/**
+ * 上传文件（便捷方法）
+ */
+export const uploadFile = async (
+  filePath: string, 
+  onProgress?: (progress: number) => void
+): Promise<string> => {
+  const tokenInfo = await get_upload_token();
+  const key = `${tokenInfo.dirPath || ''}${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  const result = await upload_to_qiniu(filePath, tokenInfo.token, key, tokenInfo.uploadUrl, onProgress);
+  // 拼接完整URL
+  if (tokenInfo.baseUrl) {
+    return `${tokenInfo.baseUrl}/${result.key}`;
+  }
+  return result.key;
+};
+
 export const upload_to_qiniu = async (
   filePath: string,
   token: string,

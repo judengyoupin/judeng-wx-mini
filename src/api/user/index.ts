@@ -1,5 +1,74 @@
 import client from "@/config-lib/hasura-graphql-client/hasura-graphql-client";
 import type { Users } from "@/types/graphql";
+import { projectConfig } from "@/project-config";
+
+/**
+ * 密码登录
+ * @param params 登录参数
+ * @param params.mobile 手机号
+ * @param params.password 密码
+ * @returns 用户信息和token
+ */
+export const passwordLogin = async (params: {
+  mobile: string;
+  password: string;
+}): Promise<{ userId: number; token: string; user: any }> => {
+  const response = await uni.request({
+    url: `${projectConfig.apiBaseUrl}/api/auth/password-login`,
+    method: 'POST',
+    data: {
+      mobile: params.mobile,
+      password: params.password,
+    },
+    header: {
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (response.statusCode !== 200 || !response.data) {
+    throw new Error(response.data?.error || '登录失败');
+  }
+
+  if (response.data.error) {
+    throw new Error(response.data.error);
+  }
+
+  return response.data;
+};
+
+/**
+ * 微信授权登录（手机号授权）
+ * @param params 登录参数
+ * @param params.code 微信授权code
+ * @param params.codeSource 授权来源（phone表示手机号授权）
+ * @returns 用户信息和token
+ */
+export const wechatLogin = async (params: {
+  code: string;
+  codeSource: string;
+}): Promise<{ userId: number; token: string; user: any }> => {
+  const response = await uni.request({
+    url: `${projectConfig.apiBaseUrl}/api/auth/phone-login`,
+    method: 'POST',
+    data: {
+      code: params.code,
+      codeSource: params.codeSource,
+    },
+    header: {
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (response.statusCode !== 200 || !response.data) {
+    throw new Error(response.data?.error || '登录失败');
+  }
+
+  if (response.data.error) {
+    throw new Error(response.data.error);
+  }
+
+  return response.data;
+};
 
 /**
  * 获取用户
