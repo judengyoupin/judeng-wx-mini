@@ -118,7 +118,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import { onPullDownRefresh, onReachBottom } from '@dcloudio/uni-app';
+import { onPullDownRefresh, onReachBottom, onShow } from '@dcloudio/uni-app';
 import { getCompanyList, deleteCompany, authorizeCompanyAdmin, searchUserByMobileForPlatform } from '@/api/admin/platform';
 
 const companies = ref<any[]>([]);
@@ -291,6 +291,11 @@ const goToEditCompany = (companyId: number) => {
 };
 
 onMounted(() => {
+  loadCompanies(true);
+});
+
+onShow(() => {
+  // 页面显示时刷新数据（从编辑页面返回时）
   loadCompanies(true);
 });
 

@@ -73,7 +73,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import { onPullDownRefresh } from '@dcloudio/uni-app';
+import { onPullDownRefresh, onShow } from '@dcloudio/uni-app';
 import { companyInfo } from '@/store/userStore';
 import { getCategoryTree, deleteCategory } from '@/api/admin/category';
 
@@ -155,6 +155,11 @@ const handleDelete = (category: any) => {
 };
 
 onMounted(() => {
+  loadCategories();
+});
+
+onShow(() => {
+  // 页面显示时刷新数据（从编辑页面返回时）
   loadCategories();
 });
 

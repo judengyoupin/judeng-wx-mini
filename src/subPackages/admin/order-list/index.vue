@@ -106,7 +106,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue';
-import { onPullDownRefresh, onReachBottom } from '@dcloudio/uni-app';
+import { onPullDownRefresh, onReachBottom, onShow } from '@dcloudio/uni-app';
 import { companyInfo } from '@/store/userStore';
 import { getOrderList, updateOrderStatus } from '@/api/admin/order';
 
@@ -217,6 +217,11 @@ watch(currentStatus, () => {
 });
 
 onMounted(() => {
+  loadOrders(true);
+});
+
+onShow(() => {
+  // 页面显示时刷新数据（从其他页面返回时）
   loadOrders(true);
 });
 

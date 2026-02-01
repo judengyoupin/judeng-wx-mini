@@ -9,5 +9,5 @@ export const graphqlOrmifyClientConfig = {
 // 注意：小程序环境不支持 process.env，直接使用常量配置
 // 如需修改，请直接修改此处的值，或通过 manifest.json 的 env 配置
 export const projectConfig = {
-  apiBaseUrl: 'http://localhost:3000', // 开发环境默认值，生产环境需要修改
+  apiBaseUrl: 'https://judengyoupin-1-api.weweknow.com', // 开发环境默认值，生产环境需要修改
 };

@@ -48,7 +48,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import { onPullDownRefresh, onReachBottom } from '@dcloudio/uni-app';
+import { onPullDownRefresh, onReachBottom, onShow } from '@dcloudio/uni-app';
 import { getPackageList, deletePackage } from '@/api/admin/package';
 
 const packages = ref<any[]>([]);
@@ -138,6 +138,11 @@ const goToEditPackage = (packageId: number) => {
 };
 
 onMounted(() => {
+  loadPackages(true);
+});
+
+onShow(() => {
+  // 页面显示时刷新数据（从编辑页面返回时）
   loadPackages(true);
 });
 

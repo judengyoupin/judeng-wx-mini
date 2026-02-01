@@ -179,7 +179,7 @@ import { ref, onMounted } from "vue";
 import { getCategoryTree } from "@/api/category/index";
 import { getTopBanners, getBottomBanners } from "@/api/banner/index";
 import { userInfo, user_token, companyInfo } from "@/store/userStore";
-import { onLoad, onShareAppMessage } from "@dcloudio/uni-app";
+import { onLoad, onShow, onShareAppMessage } from "@dcloudio/uni-app";
 
 export default defineComponent({
   setup() {
@@ -404,31 +404,94 @@ export default defineComponent({
     // 分类点击处理函数
     // 根据 ui_style 字段决定跳转行为
     const handleCategoryClick = (category: any, mainCategory: any) => {
-      // 如果 ui_style 是 "products"，直接跳转到商品列表页面
-      if (category.skip === true || category.ui_style === "products") {
+      console.log('分类点击事件触发:', category);
+      console.log('分类完整数据:', JSON.stringify(category, null, 2));
+      
+      if (!category) {
+        console.error('分类数据为空');
+        uni.showToast({
+          title: '分类数据错误',
+          icon: 'none',
+        });
+        return;
+      }
+
+      if (!category.id) {
+        console.error('分类ID为空:', category);
+        uni.showToast({
+          title: '分类ID错误',
+          icon: 'none',
+        });
+        return;
+      }
+
+      const categoryId = category.id;
+      const categoryName = category.name || '';
+
+      // 如果 ui_style 是 "products" 或 skip 为 true，直接跳转到商品列表页面
+      if (category.skip === true || category.ui_style === "products" || category.route_ui_style === "products") {
+        console.log('跳转到商品列表页，分类ID:', categoryId);
+        const url = `/pages/product/index?categoryId=${categoryId}&categoryName=${encodeURIComponent(categoryName)}`;
+        console.log('跳转URL:', url);
+        
         uni.navigateTo({
-          url: `/pages/product/index?categoryId=${
-            category.id
-          }&categoryName=${encodeURIComponent(category.name)}`,
+          url: url,
+          success: () => {
+            console.log('跳转成功');
+          },
+          fail: (err) => {
+            console.error('跳转失败:', err);
+            uni.showToast({
+              title: '页面跳转失败: ' + (err.errMsg || '未知错误'),
+              icon: 'none',
+              duration: 3000,
+            });
+          },
+        });
+        return;
+      }
+
+      // 否则检查是否有子分类
+      if (category.children && category.children.length > 0) {
+        // 有子分类，跳转到分类筛选页面
+        console.log('跳转到分类筛选页，分类ID:', categoryId);
+        const url = `/pages/category-filter/index?categoryId=${categoryId}&categoryName=${encodeURIComponent(categoryName)}`;
+        console.log('跳转URL:', url);
+        
+        uni.navigateTo({
+          url: url,
+          success: () => {
+            console.log('跳转成功');
+          },
+          fail: (err) => {
+            console.error('跳转失败:', err);
+            uni.showToast({
+              title: '页面跳转失败: ' + (err.errMsg || '未知错误'),
+              icon: 'none',
+              duration: 3000,
+            });
+          },
         });
       } else {
-        // 否则跳转到分类筛选页面（如果有子分类）或商品列表
-        // 这里可以根据实际业务需求调整
-        if (category.children && category.children.length > 0) {
-          // 有子分类，跳转到分类筛选页面
-          uni.navigateTo({
-            url: `/pages/category-filter/index?categoryId=${
-              category.id
-            }&categoryName=${encodeURIComponent(category.name)}`,
-          });
-        } else {
-          // 没有子分类，直接跳转到商品列表
-          uni.navigateTo({
-            url: `/pages/product/index?categoryId=${
-              category.id
-            }&categoryName=${encodeURIComponent(category.name)}`,
-          });
-        }
+        // 没有子分类，直接跳转到商品列表
+        console.log('跳转到商品列表页（无子分类），分类ID:', categoryId);
+        const url = `/pages/product/index?categoryId=${categoryId}&categoryName=${encodeURIComponent(categoryName)}`;
+        console.log('跳转URL:', url);
+        
+        uni.navigateTo({
+          url: url,
+          success: () => {
+            console.log('跳转成功');
+          },
+          fail: (err) => {
+            console.error('跳转失败:', err);
+            uni.showToast({
+              title: '页面跳转失败: ' + (err.errMsg || '未知错误'),
+              icon: 'none',
+              duration: 3000,
+            });
+          },
+        });
       }
     };
 
@@ -453,6 +516,18 @@ export default defineComponent({
 
     // 修改 onMounted 逻辑
     onMounted(async () => {
+      // 等待一下确保 companyInfo 已初始化
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      
+      await Promise.all([
+        fetchCategories(),
+        fetchTopBanners(),
+        fetchBottomBanners(),
+      ]);
+    });
+
+    // 页面显示时刷新数据
+    onShow(async () => {
       // 等待一下确保 companyInfo 已初始化
       await new Promise((resolve) => setTimeout(resolve, 100));
       
@@ -600,6 +675,19 @@ export default defineComponent({
   flex-direction: column;
   align-items: center;
   margin-bottom: 20rpx;
+  cursor: pointer;
+  position: relative;
+  z-index: 1;
+  -webkit-tap-highlight-color: transparent;
+  padding: 10rpx;
+  box-sizing: border-box;
+  width: 100%;
+  touch-action: manipulation;
+}
+
+.category-item:active {
+  opacity: 0.7;
+  transform: scale(0.95);
 }
 
 .category-icon-wrapper {
