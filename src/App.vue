@@ -18,11 +18,11 @@ onLaunch(async (options) => {
     uni.setStorageSync("companyId", companyId);
   }
 
-  // 3. 从存储中获取公司ID
+  // 3. 从存储中获取公司ID（优先使用本地存储，记住上次进入的公司）
   let storageCompanyId = uni.getStorageSync("companyId");
   
-  // 4. 如果用户已登录且是公司管理员，优先使用管理的公司ID
-  if (isLoggedIn && user_token.value) {
+  // 4. 如果用户已登录且是公司管理员，优先使用管理的公司ID（但不会覆盖已存储的公司ID）
+  if (isLoggedIn && user_token.value && !storageCompanyId) {
     try {
       const managedCompanyId = await getUserManagedCompanyId();
       if (managedCompanyId) {
@@ -35,27 +35,34 @@ onLaunch(async (options) => {
     }
   }
   
-  // 5. 如果没有存储的公司ID，则从配置表获取默认值
-  let defaultCompanyId: number;
+  // 5. 确定最终使用的公司ID：优先使用存储的公司ID，如果没有则使用默认值
+  let finalCompanyId: number | null = null;
   if (storageCompanyId) {
-    defaultCompanyId = storageCompanyId;
+    // 优先使用本地存储的公司ID（记住上次进入的公司）
+    finalCompanyId = Number(storageCompanyId);
+    console.log("使用本地存储的公司ID:", finalCompanyId);
   } else {
-    // 从 configs 表获取默认公司ID
+    // 如果没有存储的公司ID，则从配置表获取默认值
     const configCompanyId = await getDefaultCompanyId();
     if (configCompanyId) {
-      defaultCompanyId = configCompanyId;
-      // 将配置的默认值保存到存储中
+      finalCompanyId = configCompanyId;
+      // 将配置的默认值保存到存储中（首次使用时）
       uni.setStorageSync("companyId", configCompanyId);
+      console.log("使用配置的默认公司ID:", finalCompanyId);
     } else {
-      // 如果配置表中也没有，使用硬编码的默认值 545（作为兜底）
-      defaultCompanyId = 545;
-      console.warn("未找到默认公司ID配置，使用硬编码默认值: 545");
+      console.warn("未找到默认公司ID配置，无法初始化公司信息");
     }
+  }
+
+  // 如果没有有效的公司ID，不进行同步
+  if (!finalCompanyId) {
+    console.warn("无法确定公司ID，跳过公司信息同步");
+    return;
   }
 
   // 6. 同步公司信息
   try {
-    await syncCompanyInfo(defaultCompanyId);
+    await syncCompanyInfo(finalCompanyId);
     console.log("公司信息同步成功:", companyInfo.value);
   } catch (error) {
     console.error("同步公司信息失败:", error);

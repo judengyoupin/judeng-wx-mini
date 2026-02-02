@@ -13,7 +13,7 @@ export type Scalars = {
   Int: { input: number; output: number; }
   Float: { input: number; output: number; }
   bigint: { input: any; output: any; }
-  jsonb: { input: any; output: any; }
+  json: { input: any; output: any; }
   numeric: { input: any; output: any; }
   timestamptz: { input: any; output: any; }
 };
@@ -627,20 +627,26 @@ export type Categories = {
   id: Scalars['bigint']['output'];
   /** 是否删除 */
   is_deleted: Scalars['Boolean']['output'];
-  /** 分类层级（0为顶级） */
+  /** 分类层级（0为顶级），最多三级，0 1 2 */
   level: Scalars['bigint']['output'];
   /** 分类名称 */
   name: Scalars['String']['output'];
+  /** An array relationship */
+  packages: Array<Packages>;
+  /** An aggregate relationship */
+  packages_aggregate: Packages_Aggregate;
   /** 父级分类id，为空时对应的level=0 */
   parent_categories?: Maybe<Scalars['bigint']['output']>;
   /** An array relationship */
   products: Array<Products>;
   /** An aggregate relationship */
   products_aggregate: Products_Aggregate;
-  /** 点击该分类后展示的UI样式，1.categories（继续展示分类）2.products（展示产品） */
+  /** 点击该分类后展示的UI样式，1.categories（继续展示分类）2.products（展示该分类下的产品） */
   route_ui_style: Scalars['String']['output'];
   /** 排序，越小的在前 */
   sort_order: Scalars['bigint']['output'];
+  /** 分类类型，1、product（产品分类） 2.package（套餐分类） */
+  type: Scalars['String']['output'];
   updated_at: Scalars['timestamptz']['output'];
 };
 
@@ -662,6 +668,26 @@ export type CategoriesCategories_AggregateArgs = {
   offset?: InputMaybe<Scalars['Int']['input']>;
   order_by?: InputMaybe<Array<Categories_Order_By>>;
   where?: InputMaybe<Categories_Bool_Exp>;
+};
+
+
+/** 分类表 */
+export type CategoriesPackagesArgs = {
+  distinct_on?: InputMaybe<Array<Packages_Select_Column>>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  order_by?: InputMaybe<Array<Packages_Order_By>>;
+  where?: InputMaybe<Packages_Bool_Exp>;
+};
+
+
+/** 分类表 */
+export type CategoriesPackages_AggregateArgs = {
+  distinct_on?: InputMaybe<Array<Packages_Select_Column>>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  order_by?: InputMaybe<Array<Packages_Order_By>>;
+  where?: InputMaybe<Packages_Bool_Exp>;
 };
 
 
@@ -769,7 +795,7 @@ export type Categories_Avg_Fields = {
   /** 归属公司id */
   company_companies?: Maybe<Scalars['Float']['output']>;
   id?: Maybe<Scalars['Float']['output']>;
-  /** 分类层级（0为顶级） */
+  /** 分类层级（0为顶级），最多三级，0 1 2 */
   level?: Maybe<Scalars['Float']['output']>;
   /** 父级分类id，为空时对应的level=0 */
   parent_categories?: Maybe<Scalars['Float']['output']>;
@@ -782,7 +808,7 @@ export type Categories_Avg_Order_By = {
   /** 归属公司id */
   company_companies?: InputMaybe<Order_By>;
   id?: InputMaybe<Order_By>;
-  /** 分类层级（0为顶级） */
+  /** 分类层级（0为顶级），最多三级，0 1 2 */
   level?: InputMaybe<Order_By>;
   /** 父级分类id，为空时对应的level=0 */
   parent_categories?: InputMaybe<Order_By>;
@@ -806,11 +832,14 @@ export type Categories_Bool_Exp = {
   is_deleted?: InputMaybe<Boolean_Comparison_Exp>;
   level?: InputMaybe<Bigint_Comparison_Exp>;
   name?: InputMaybe<String_Comparison_Exp>;
+  packages?: InputMaybe<Packages_Bool_Exp>;
+  packages_aggregate?: InputMaybe<Packages_Aggregate_Bool_Exp>;
   parent_categories?: InputMaybe<Bigint_Comparison_Exp>;
   products?: InputMaybe<Products_Bool_Exp>;
   products_aggregate?: InputMaybe<Products_Aggregate_Bool_Exp>;
   route_ui_style?: InputMaybe<String_Comparison_Exp>;
   sort_order?: InputMaybe<Bigint_Comparison_Exp>;
+  type?: InputMaybe<String_Comparison_Exp>;
   updated_at?: InputMaybe<Timestamptz_Comparison_Exp>;
 };
 
@@ -825,7 +854,7 @@ export type Categories_Inc_Input = {
   /** 归属公司id */
   company_companies?: InputMaybe<Scalars['bigint']['input']>;
   id?: InputMaybe<Scalars['bigint']['input']>;
-  /** 分类层级（0为顶级） */
+  /** 分类层级（0为顶级），最多三级，0 1 2 */
   level?: InputMaybe<Scalars['bigint']['input']>;
   /** 父级分类id，为空时对应的level=0 */
   parent_categories?: InputMaybe<Scalars['bigint']['input']>;
@@ -846,17 +875,20 @@ export type Categories_Insert_Input = {
   id?: InputMaybe<Scalars['bigint']['input']>;
   /** 是否删除 */
   is_deleted?: InputMaybe<Scalars['Boolean']['input']>;
-  /** 分类层级（0为顶级） */
+  /** 分类层级（0为顶级），最多三级，0 1 2 */
   level?: InputMaybe<Scalars['bigint']['input']>;
   /** 分类名称 */
   name?: InputMaybe<Scalars['String']['input']>;
+  packages?: InputMaybe<Packages_Arr_Rel_Insert_Input>;
   /** 父级分类id，为空时对应的level=0 */
   parent_categories?: InputMaybe<Scalars['bigint']['input']>;
   products?: InputMaybe<Products_Arr_Rel_Insert_Input>;
-  /** 点击该分类后展示的UI样式，1.categories（继续展示分类）2.products（展示产品） */
+  /** 点击该分类后展示的UI样式，1.categories（继续展示分类）2.products（展示该分类下的产品） */
   route_ui_style?: InputMaybe<Scalars['String']['input']>;
   /** 排序，越小的在前 */
   sort_order?: InputMaybe<Scalars['bigint']['input']>;
+  /** 分类类型，1、product（产品分类） 2.package（套餐分类） */
+  type?: InputMaybe<Scalars['String']['input']>;
   updated_at?: InputMaybe<Scalars['timestamptz']['input']>;
 };
 
@@ -869,16 +901,18 @@ export type Categories_Max_Fields = {
   /** 分类的图标 */
   icon_url?: Maybe<Scalars['String']['output']>;
   id?: Maybe<Scalars['bigint']['output']>;
-  /** 分类层级（0为顶级） */
+  /** 分类层级（0为顶级），最多三级，0 1 2 */
   level?: Maybe<Scalars['bigint']['output']>;
   /** 分类名称 */
   name?: Maybe<Scalars['String']['output']>;
   /** 父级分类id，为空时对应的level=0 */
   parent_categories?: Maybe<Scalars['bigint']['output']>;
-  /** 点击该分类后展示的UI样式，1.categories（继续展示分类）2.products（展示产品） */
+  /** 点击该分类后展示的UI样式，1.categories（继续展示分类）2.products（展示该分类下的产品） */
   route_ui_style?: Maybe<Scalars['String']['output']>;
   /** 排序，越小的在前 */
   sort_order?: Maybe<Scalars['bigint']['output']>;
+  /** 分类类型，1、product（产品分类） 2.package（套餐分类） */
+  type?: Maybe<Scalars['String']['output']>;
   updated_at?: Maybe<Scalars['timestamptz']['output']>;
 };
 
@@ -890,16 +924,18 @@ export type Categories_Max_Order_By = {
   /** 分类的图标 */
   icon_url?: InputMaybe<Order_By>;
   id?: InputMaybe<Order_By>;
-  /** 分类层级（0为顶级） */
+  /** 分类层级（0为顶级），最多三级，0 1 2 */
   level?: InputMaybe<Order_By>;
   /** 分类名称 */
   name?: InputMaybe<Order_By>;
   /** 父级分类id，为空时对应的level=0 */
   parent_categories?: InputMaybe<Order_By>;
-  /** 点击该分类后展示的UI样式，1.categories（继续展示分类）2.products（展示产品） */
+  /** 点击该分类后展示的UI样式，1.categories（继续展示分类）2.products（展示该分类下的产品） */
   route_ui_style?: InputMaybe<Order_By>;
   /** 排序，越小的在前 */
   sort_order?: InputMaybe<Order_By>;
+  /** 分类类型，1、product（产品分类） 2.package（套餐分类） */
+  type?: InputMaybe<Order_By>;
   updated_at?: InputMaybe<Order_By>;
 };
 
@@ -912,16 +948,18 @@ export type Categories_Min_Fields = {
   /** 分类的图标 */
   icon_url?: Maybe<Scalars['String']['output']>;
   id?: Maybe<Scalars['bigint']['output']>;
-  /** 分类层级（0为顶级） */
+  /** 分类层级（0为顶级），最多三级，0 1 2 */
   level?: Maybe<Scalars['bigint']['output']>;
   /** 分类名称 */
   name?: Maybe<Scalars['String']['output']>;
   /** 父级分类id，为空时对应的level=0 */
   parent_categories?: Maybe<Scalars['bigint']['output']>;
-  /** 点击该分类后展示的UI样式，1.categories（继续展示分类）2.products（展示产品） */
+  /** 点击该分类后展示的UI样式，1.categories（继续展示分类）2.products（展示该分类下的产品） */
   route_ui_style?: Maybe<Scalars['String']['output']>;
   /** 排序，越小的在前 */
   sort_order?: Maybe<Scalars['bigint']['output']>;
+  /** 分类类型，1、product（产品分类） 2.package（套餐分类） */
+  type?: Maybe<Scalars['String']['output']>;
   updated_at?: Maybe<Scalars['timestamptz']['output']>;
 };
 
@@ -933,16 +971,18 @@ export type Categories_Min_Order_By = {
   /** 分类的图标 */
   icon_url?: InputMaybe<Order_By>;
   id?: InputMaybe<Order_By>;
-  /** 分类层级（0为顶级） */
+  /** 分类层级（0为顶级），最多三级，0 1 2 */
   level?: InputMaybe<Order_By>;
   /** 分类名称 */
   name?: InputMaybe<Order_By>;
   /** 父级分类id，为空时对应的level=0 */
   parent_categories?: InputMaybe<Order_By>;
-  /** 点击该分类后展示的UI样式，1.categories（继续展示分类）2.products（展示产品） */
+  /** 点击该分类后展示的UI样式，1.categories（继续展示分类）2.products（展示该分类下的产品） */
   route_ui_style?: InputMaybe<Order_By>;
   /** 排序，越小的在前 */
   sort_order?: InputMaybe<Order_By>;
+  /** 分类类型，1、product（产品分类） 2.package（套餐分类） */
+  type?: InputMaybe<Order_By>;
   updated_at?: InputMaybe<Order_By>;
 };
 
@@ -981,10 +1021,12 @@ export type Categories_Order_By = {
   is_deleted?: InputMaybe<Order_By>;
   level?: InputMaybe<Order_By>;
   name?: InputMaybe<Order_By>;
+  packages_aggregate?: InputMaybe<Packages_Aggregate_Order_By>;
   parent_categories?: InputMaybe<Order_By>;
   products_aggregate?: InputMaybe<Products_Aggregate_Order_By>;
   route_ui_style?: InputMaybe<Order_By>;
   sort_order?: InputMaybe<Order_By>;
+  type?: InputMaybe<Order_By>;
   updated_at?: InputMaybe<Order_By>;
 };
 
@@ -1016,6 +1058,8 @@ export enum Categories_Select_Column {
   /** column name */
   SortOrder = 'sort_order',
   /** column name */
+  Type = 'type',
+  /** column name */
   UpdatedAt = 'updated_at'
 }
 
@@ -1041,16 +1085,18 @@ export type Categories_Set_Input = {
   id?: InputMaybe<Scalars['bigint']['input']>;
   /** 是否删除 */
   is_deleted?: InputMaybe<Scalars['Boolean']['input']>;
-  /** 分类层级（0为顶级） */
+  /** 分类层级（0为顶级），最多三级，0 1 2 */
   level?: InputMaybe<Scalars['bigint']['input']>;
   /** 分类名称 */
   name?: InputMaybe<Scalars['String']['input']>;
   /** 父级分类id，为空时对应的level=0 */
   parent_categories?: InputMaybe<Scalars['bigint']['input']>;
-  /** 点击该分类后展示的UI样式，1.categories（继续展示分类）2.products（展示产品） */
+  /** 点击该分类后展示的UI样式，1.categories（继续展示分类）2.products（展示该分类下的产品） */
   route_ui_style?: InputMaybe<Scalars['String']['input']>;
   /** 排序，越小的在前 */
   sort_order?: InputMaybe<Scalars['bigint']['input']>;
+  /** 分类类型，1、product（产品分类） 2.package（套餐分类） */
+  type?: InputMaybe<Scalars['String']['input']>;
   updated_at?: InputMaybe<Scalars['timestamptz']['input']>;
 };
 
@@ -1060,7 +1106,7 @@ export type Categories_Stddev_Fields = {
   /** 归属公司id */
   company_companies?: Maybe<Scalars['Float']['output']>;
   id?: Maybe<Scalars['Float']['output']>;
-  /** 分类层级（0为顶级） */
+  /** 分类层级（0为顶级），最多三级，0 1 2 */
   level?: Maybe<Scalars['Float']['output']>;
   /** 父级分类id，为空时对应的level=0 */
   parent_categories?: Maybe<Scalars['Float']['output']>;
@@ -1073,7 +1119,7 @@ export type Categories_Stddev_Order_By = {
   /** 归属公司id */
   company_companies?: InputMaybe<Order_By>;
   id?: InputMaybe<Order_By>;
-  /** 分类层级（0为顶级） */
+  /** 分类层级（0为顶级），最多三级，0 1 2 */
   level?: InputMaybe<Order_By>;
   /** 父级分类id，为空时对应的level=0 */
   parent_categories?: InputMaybe<Order_By>;
@@ -1087,7 +1133,7 @@ export type Categories_Stddev_Pop_Fields = {
   /** 归属公司id */
   company_companies?: Maybe<Scalars['Float']['output']>;
   id?: Maybe<Scalars['Float']['output']>;
-  /** 分类层级（0为顶级） */
+  /** 分类层级（0为顶级），最多三级，0 1 2 */
   level?: Maybe<Scalars['Float']['output']>;
   /** 父级分类id，为空时对应的level=0 */
   parent_categories?: Maybe<Scalars['Float']['output']>;
@@ -1100,7 +1146,7 @@ export type Categories_Stddev_Pop_Order_By = {
   /** 归属公司id */
   company_companies?: InputMaybe<Order_By>;
   id?: InputMaybe<Order_By>;
-  /** 分类层级（0为顶级） */
+  /** 分类层级（0为顶级），最多三级，0 1 2 */
   level?: InputMaybe<Order_By>;
   /** 父级分类id，为空时对应的level=0 */
   parent_categories?: InputMaybe<Order_By>;
@@ -1114,7 +1160,7 @@ export type Categories_Stddev_Samp_Fields = {
   /** 归属公司id */
   company_companies?: Maybe<Scalars['Float']['output']>;
   id?: Maybe<Scalars['Float']['output']>;
-  /** 分类层级（0为顶级） */
+  /** 分类层级（0为顶级），最多三级，0 1 2 */
   level?: Maybe<Scalars['Float']['output']>;
   /** 父级分类id，为空时对应的level=0 */
   parent_categories?: Maybe<Scalars['Float']['output']>;
@@ -1127,7 +1173,7 @@ export type Categories_Stddev_Samp_Order_By = {
   /** 归属公司id */
   company_companies?: InputMaybe<Order_By>;
   id?: InputMaybe<Order_By>;
-  /** 分类层级（0为顶级） */
+  /** 分类层级（0为顶级），最多三级，0 1 2 */
   level?: InputMaybe<Order_By>;
   /** 父级分类id，为空时对应的level=0 */
   parent_categories?: InputMaybe<Order_By>;
@@ -1153,16 +1199,18 @@ export type Categories_Stream_Cursor_Value_Input = {
   id?: InputMaybe<Scalars['bigint']['input']>;
   /** 是否删除 */
   is_deleted?: InputMaybe<Scalars['Boolean']['input']>;
-  /** 分类层级（0为顶级） */
+  /** 分类层级（0为顶级），最多三级，0 1 2 */
   level?: InputMaybe<Scalars['bigint']['input']>;
   /** 分类名称 */
   name?: InputMaybe<Scalars['String']['input']>;
   /** 父级分类id，为空时对应的level=0 */
   parent_categories?: InputMaybe<Scalars['bigint']['input']>;
-  /** 点击该分类后展示的UI样式，1.categories（继续展示分类）2.products（展示产品） */
+  /** 点击该分类后展示的UI样式，1.categories（继续展示分类）2.products（展示该分类下的产品） */
   route_ui_style?: InputMaybe<Scalars['String']['input']>;
   /** 排序，越小的在前 */
   sort_order?: InputMaybe<Scalars['bigint']['input']>;
+  /** 分类类型，1、product（产品分类） 2.package（套餐分类） */
+  type?: InputMaybe<Scalars['String']['input']>;
   updated_at?: InputMaybe<Scalars['timestamptz']['input']>;
 };
 
@@ -1172,7 +1220,7 @@ export type Categories_Sum_Fields = {
   /** 归属公司id */
   company_companies?: Maybe<Scalars['bigint']['output']>;
   id?: Maybe<Scalars['bigint']['output']>;
-  /** 分类层级（0为顶级） */
+  /** 分类层级（0为顶级），最多三级，0 1 2 */
   level?: Maybe<Scalars['bigint']['output']>;
   /** 父级分类id，为空时对应的level=0 */
   parent_categories?: Maybe<Scalars['bigint']['output']>;
@@ -1185,7 +1233,7 @@ export type Categories_Sum_Order_By = {
   /** 归属公司id */
   company_companies?: InputMaybe<Order_By>;
   id?: InputMaybe<Order_By>;
-  /** 分类层级（0为顶级） */
+  /** 分类层级（0为顶级），最多三级，0 1 2 */
   level?: InputMaybe<Order_By>;
   /** 父级分类id，为空时对应的level=0 */
   parent_categories?: InputMaybe<Order_By>;
@@ -1216,6 +1264,8 @@ export enum Categories_Update_Column {
   /** column name */
   SortOrder = 'sort_order',
   /** column name */
+  Type = 'type',
+  /** column name */
   UpdatedAt = 'updated_at'
 }
 
@@ -1234,7 +1284,7 @@ export type Categories_Var_Pop_Fields = {
   /** 归属公司id */
   company_companies?: Maybe<Scalars['Float']['output']>;
   id?: Maybe<Scalars['Float']['output']>;
-  /** 分类层级（0为顶级） */
+  /** 分类层级（0为顶级），最多三级，0 1 2 */
   level?: Maybe<Scalars['Float']['output']>;
   /** 父级分类id，为空时对应的level=0 */
   parent_categories?: Maybe<Scalars['Float']['output']>;
@@ -1247,7 +1297,7 @@ export type Categories_Var_Pop_Order_By = {
   /** 归属公司id */
   company_companies?: InputMaybe<Order_By>;
   id?: InputMaybe<Order_By>;
-  /** 分类层级（0为顶级） */
+  /** 分类层级（0为顶级），最多三级，0 1 2 */
   level?: InputMaybe<Order_By>;
   /** 父级分类id，为空时对应的level=0 */
   parent_categories?: InputMaybe<Order_By>;
@@ -1261,7 +1311,7 @@ export type Categories_Var_Samp_Fields = {
   /** 归属公司id */
   company_companies?: Maybe<Scalars['Float']['output']>;
   id?: Maybe<Scalars['Float']['output']>;
-  /** 分类层级（0为顶级） */
+  /** 分类层级（0为顶级），最多三级，0 1 2 */
   level?: Maybe<Scalars['Float']['output']>;
   /** 父级分类id，为空时对应的level=0 */
   parent_categories?: Maybe<Scalars['Float']['output']>;
@@ -1274,7 +1324,7 @@ export type Categories_Var_Samp_Order_By = {
   /** 归属公司id */
   company_companies?: InputMaybe<Order_By>;
   id?: InputMaybe<Order_By>;
-  /** 分类层级（0为顶级） */
+  /** 分类层级（0为顶级），最多三级，0 1 2 */
   level?: InputMaybe<Order_By>;
   /** 父级分类id，为空时对应的level=0 */
   parent_categories?: InputMaybe<Order_By>;
@@ -1288,7 +1338,7 @@ export type Categories_Variance_Fields = {
   /** 归属公司id */
   company_companies?: Maybe<Scalars['Float']['output']>;
   id?: Maybe<Scalars['Float']['output']>;
-  /** 分类层级（0为顶级） */
+  /** 分类层级（0为顶级），最多三级，0 1 2 */
   level?: Maybe<Scalars['Float']['output']>;
   /** 父级分类id，为空时对应的level=0 */
   parent_categories?: Maybe<Scalars['Float']['output']>;
@@ -1301,7 +1351,7 @@ export type Categories_Variance_Order_By = {
   /** 归属公司id */
   company_companies?: InputMaybe<Order_By>;
   id?: InputMaybe<Order_By>;
-  /** 分类层级（0为顶级） */
+  /** 分类层级（0为顶级），最多三级，0 1 2 */
   level?: InputMaybe<Order_By>;
   /** 父级分类id，为空时对应的level=0 */
   parent_categories?: InputMaybe<Order_By>;
@@ -1313,9 +1363,9 @@ export type Categories_Variance_Order_By = {
 export type Companies = {
   __typename?: 'companies';
   /** 底部轮播图（json数组）export interface BannerItem { /** 文件类型（如：image、video） *\/ file_type?: string; /** 文件 URL *\/ file_url: string; /** 跳转链接（小程序路径或外部链接） *\/ link?: string; /** 排序索引 *\/ sort?: number; /** 标题 *\/ title?: string; } */
-  banner_bottom: Array<Scalars['jsonb']['output']>;
+  banner_bottom: Array<Scalars['json']['output']>;
   /** 顶部轮播图（json数组）export interface BannerItem { /** 文件类型（如：image、video） *\/ file_type?: string; /** 文件 URL *\/ file_url: string; /** 跳转链接（小程序路径或外部链接） *\/ link?: string; /** 排序索引 *\/ sort?: number; /** 标题 *\/ title?: string; } */
-  banner_top: Array<Scalars['jsonb']['output']>;
+  banner_top: Array<Scalars['json']['output']>;
   /** An array relationship */
   categories: Array<Categories>;
   /** An aggregate relationship */
@@ -1488,8 +1538,8 @@ export type Companies_Bool_Exp = {
   _and?: InputMaybe<Array<Companies_Bool_Exp>>;
   _not?: InputMaybe<Companies_Bool_Exp>;
   _or?: InputMaybe<Array<Companies_Bool_Exp>>;
-  banner_bottom?: InputMaybe<Jsonb_Array_Comparison_Exp>;
-  banner_top?: InputMaybe<Jsonb_Array_Comparison_Exp>;
+  banner_bottom?: InputMaybe<Json_Array_Comparison_Exp>;
+  banner_top?: InputMaybe<Json_Array_Comparison_Exp>;
   categories?: InputMaybe<Categories_Bool_Exp>;
   categories_aggregate?: InputMaybe<Categories_Aggregate_Bool_Exp>;
   company_users?: InputMaybe<Company_Users_Bool_Exp>;
@@ -1524,9 +1574,9 @@ export type Companies_Inc_Input = {
 /** input type for inserting data into table "companies" */
 export type Companies_Insert_Input = {
   /** 底部轮播图（json数组）export interface BannerItem { /** 文件类型（如：image、video） *\/ file_type?: string; /** 文件 URL *\/ file_url: string; /** 跳转链接（小程序路径或外部链接） *\/ link?: string; /** 排序索引 *\/ sort?: number; /** 标题 *\/ title?: string; } */
-  banner_bottom?: InputMaybe<Array<Scalars['jsonb']['input']>>;
+  banner_bottom?: InputMaybe<Array<Scalars['json']['input']>>;
   /** 顶部轮播图（json数组）export interface BannerItem { /** 文件类型（如：image、video） *\/ file_type?: string; /** 文件 URL *\/ file_url: string; /** 跳转链接（小程序路径或外部链接） *\/ link?: string; /** 排序索引 *\/ sort?: number; /** 标题 *\/ title?: string; } */
-  banner_top?: InputMaybe<Array<Scalars['jsonb']['input']>>;
+  banner_top?: InputMaybe<Array<Scalars['json']['input']>>;
   categories?: InputMaybe<Categories_Arr_Rel_Insert_Input>;
   company_users?: InputMaybe<Company_Users_Arr_Rel_Insert_Input>;
   created_at?: InputMaybe<Scalars['timestamptz']['input']>;
@@ -1547,9 +1597,9 @@ export type Companies_Insert_Input = {
 export type Companies_Max_Fields = {
   __typename?: 'companies_max_fields';
   /** 底部轮播图（json数组）export interface BannerItem { /** 文件类型（如：image、video） *\/ file_type?: string; /** 文件 URL *\/ file_url: string; /** 跳转链接（小程序路径或外部链接） *\/ link?: string; /** 排序索引 *\/ sort?: number; /** 标题 *\/ title?: string; } */
-  banner_bottom?: Maybe<Array<Scalars['jsonb']['output']>>;
+  banner_bottom?: Maybe<Array<Scalars['json']['output']>>;
   /** 顶部轮播图（json数组）export interface BannerItem { /** 文件类型（如：image、video） *\/ file_type?: string; /** 文件 URL *\/ file_url: string; /** 跳转链接（小程序路径或外部链接） *\/ link?: string; /** 排序索引 *\/ sort?: number; /** 标题 *\/ title?: string; } */
-  banner_top?: Maybe<Array<Scalars['jsonb']['output']>>;
+  banner_top?: Maybe<Array<Scalars['json']['output']>>;
   created_at?: Maybe<Scalars['timestamptz']['output']>;
   id?: Maybe<Scalars['bigint']['output']>;
   /** 公司logo */
@@ -1565,9 +1615,9 @@ export type Companies_Max_Fields = {
 export type Companies_Min_Fields = {
   __typename?: 'companies_min_fields';
   /** 底部轮播图（json数组）export interface BannerItem { /** 文件类型（如：image、video） *\/ file_type?: string; /** 文件 URL *\/ file_url: string; /** 跳转链接（小程序路径或外部链接） *\/ link?: string; /** 排序索引 *\/ sort?: number; /** 标题 *\/ title?: string; } */
-  banner_bottom?: Maybe<Array<Scalars['jsonb']['output']>>;
+  banner_bottom?: Maybe<Array<Scalars['json']['output']>>;
   /** 顶部轮播图（json数组）export interface BannerItem { /** 文件类型（如：image、video） *\/ file_type?: string; /** 文件 URL *\/ file_url: string; /** 跳转链接（小程序路径或外部链接） *\/ link?: string; /** 排序索引 *\/ sort?: number; /** 标题 *\/ title?: string; } */
-  banner_top?: Maybe<Array<Scalars['jsonb']['output']>>;
+  banner_top?: Maybe<Array<Scalars['json']['output']>>;
   created_at?: Maybe<Scalars['timestamptz']['output']>;
   id?: Maybe<Scalars['bigint']['output']>;
   /** 公司logo */
@@ -1647,9 +1697,9 @@ export enum Companies_Select_Column {
 /** input type for updating data in table "companies" */
 export type Companies_Set_Input = {
   /** 底部轮播图（json数组）export interface BannerItem { /** 文件类型（如：image、video） *\/ file_type?: string; /** 文件 URL *\/ file_url: string; /** 跳转链接（小程序路径或外部链接） *\/ link?: string; /** 排序索引 *\/ sort?: number; /** 标题 *\/ title?: string; } */
-  banner_bottom?: InputMaybe<Array<Scalars['jsonb']['input']>>;
+  banner_bottom?: InputMaybe<Array<Scalars['json']['input']>>;
   /** 顶部轮播图（json数组）export interface BannerItem { /** 文件类型（如：image、video） *\/ file_type?: string; /** 文件 URL *\/ file_url: string; /** 跳转链接（小程序路径或外部链接） *\/ link?: string; /** 排序索引 *\/ sort?: number; /** 标题 *\/ title?: string; } */
-  banner_top?: InputMaybe<Array<Scalars['jsonb']['input']>>;
+  banner_top?: InputMaybe<Array<Scalars['json']['input']>>;
   created_at?: InputMaybe<Scalars['timestamptz']['input']>;
   id?: InputMaybe<Scalars['bigint']['input']>;
   /** 公司logo */
@@ -1690,9 +1740,9 @@ export type Companies_Stream_Cursor_Input = {
 /** Initial value of the column from where the streaming should start */
 export type Companies_Stream_Cursor_Value_Input = {
   /** 底部轮播图（json数组）export interface BannerItem { /** 文件类型（如：image、video） *\/ file_type?: string; /** 文件 URL *\/ file_url: string; /** 跳转链接（小程序路径或外部链接） *\/ link?: string; /** 排序索引 *\/ sort?: number; /** 标题 *\/ title?: string; } */
-  banner_bottom?: InputMaybe<Array<Scalars['jsonb']['input']>>;
+  banner_bottom?: InputMaybe<Array<Scalars['json']['input']>>;
   /** 顶部轮播图（json数组）export interface BannerItem { /** 文件类型（如：image、video） *\/ file_type?: string; /** 文件 URL *\/ file_url: string; /** 跳转链接（小程序路径或外部链接） *\/ link?: string; /** 排序索引 *\/ sort?: number; /** 标题 *\/ title?: string; } */
-  banner_top?: InputMaybe<Array<Scalars['jsonb']['input']>>;
+  banner_top?: InputMaybe<Array<Scalars['json']['input']>>;
   created_at?: InputMaybe<Scalars['timestamptz']['input']>;
   id?: InputMaybe<Scalars['bigint']['input']>;
   /** 公司logo */
@@ -2309,8 +2359,8 @@ export type Configs = {
   /** 配置名 */
   name: Scalars['String']['output'];
   updated_at: Scalars['timestamptz']['output'];
-  /** 配置值（json数据，type=string｜number｜array｜json、content存放对应类型的值） */
-  value?: Maybe<Scalars['jsonb']['output']>;
+  /** 配置值（json数据，type=string｜number｜array｜json、type为json或者array的时候content键存放对应的值） */
+  value?: Maybe<Scalars['json']['output']>;
 };
 
 
@@ -2349,12 +2399,6 @@ export type Configs_Aggregate_FieldsCountArgs = {
   distinct?: InputMaybe<Scalars['Boolean']['input']>;
 };
 
-/** append existing jsonb value of filtered columns with new jsonb value */
-export type Configs_Append_Input = {
-  /** 配置值（json数据，type=string｜number｜array｜json、content存放对应类型的值） */
-  value?: InputMaybe<Scalars['jsonb']['input']>;
-};
-
 /** aggregate avg on columns */
 export type Configs_Avg_Fields = {
   __typename?: 'configs_avg_fields';
@@ -2372,7 +2416,7 @@ export type Configs_Bool_Exp = {
   is_deletable?: InputMaybe<Boolean_Comparison_Exp>;
   name?: InputMaybe<String_Comparison_Exp>;
   updated_at?: InputMaybe<Timestamptz_Comparison_Exp>;
-  value?: InputMaybe<Jsonb_Comparison_Exp>;
+  value?: InputMaybe<Json_Comparison_Exp>;
 };
 
 /** unique or primary key constraints on table "configs" */
@@ -2382,24 +2426,6 @@ export enum Configs_Constraint {
   /** unique or primary key constraint on columns "id" */
   ConfigsPkey = 'configs_pkey'
 }
-
-/** delete the field or element with specified path (for JSON arrays, negative integers count from the end) */
-export type Configs_Delete_At_Path_Input = {
-  /** 配置值（json数据，type=string｜number｜array｜json、content存放对应类型的值） */
-  value?: InputMaybe<Array<Scalars['String']['input']>>;
-};
-
-/** delete the array element with specified index (negative integers count from the end). throws an error if top level container is not an array */
-export type Configs_Delete_Elem_Input = {
-  /** 配置值（json数据，type=string｜number｜array｜json、content存放对应类型的值） */
-  value?: InputMaybe<Scalars['Int']['input']>;
-};
-
-/** delete key/value pair or string element. key/value pairs are matched based on their key value */
-export type Configs_Delete_Key_Input = {
-  /** 配置值（json数据，type=string｜number｜array｜json、content存放对应类型的值） */
-  value?: InputMaybe<Scalars['String']['input']>;
-};
 
 /** input type for incrementing numeric columns in table "configs" */
 export type Configs_Inc_Input = {
@@ -2417,8 +2443,8 @@ export type Configs_Insert_Input = {
   /** 配置名 */
   name?: InputMaybe<Scalars['String']['input']>;
   updated_at?: InputMaybe<Scalars['timestamptz']['input']>;
-  /** 配置值（json数据，type=string｜number｜array｜json、content存放对应类型的值） */
-  value?: InputMaybe<Scalars['jsonb']['input']>;
+  /** 配置值（json数据，type=string｜number｜array｜json、type为json或者array的时候content键存放对应的值） */
+  value?: InputMaybe<Scalars['json']['input']>;
 };
 
 /** aggregate max on columns */
@@ -2477,12 +2503,6 @@ export type Configs_Pk_Columns_Input = {
   id: Scalars['bigint']['input'];
 };
 
-/** prepend existing jsonb value of filtered columns with new jsonb value */
-export type Configs_Prepend_Input = {
-  /** 配置值（json数据，type=string｜number｜array｜json、content存放对应类型的值） */
-  value?: InputMaybe<Scalars['jsonb']['input']>;
-};
-
 /** select columns of table "configs" */
 export enum Configs_Select_Column {
   /** column name */
@@ -2512,8 +2532,8 @@ export type Configs_Set_Input = {
   /** 配置名 */
   name?: InputMaybe<Scalars['String']['input']>;
   updated_at?: InputMaybe<Scalars['timestamptz']['input']>;
-  /** 配置值（json数据，type=string｜number｜array｜json、content存放对应类型的值） */
-  value?: InputMaybe<Scalars['jsonb']['input']>;
+  /** 配置值（json数据，type=string｜number｜array｜json、type为json或者array的时候content键存放对应的值） */
+  value?: InputMaybe<Scalars['json']['input']>;
 };
 
 /** aggregate stddev on columns */
@@ -2553,8 +2573,8 @@ export type Configs_Stream_Cursor_Value_Input = {
   /** 配置名 */
   name?: InputMaybe<Scalars['String']['input']>;
   updated_at?: InputMaybe<Scalars['timestamptz']['input']>;
-  /** 配置值（json数据，type=string｜number｜array｜json、content存放对应类型的值） */
-  value?: InputMaybe<Scalars['jsonb']['input']>;
+  /** 配置值（json数据，type=string｜number｜array｜json、type为json或者array的时候content键存放对应的值） */
+  value?: InputMaybe<Scalars['json']['input']>;
 };
 
 /** aggregate sum on columns */
@@ -2582,18 +2602,8 @@ export enum Configs_Update_Column {
 }
 
 export type Configs_Updates = {
-  /** append existing jsonb value of filtered columns with new jsonb value */
-  _append?: InputMaybe<Configs_Append_Input>;
-  /** delete the field or element with specified path (for JSON arrays, negative integers count from the end) */
-  _delete_at_path?: InputMaybe<Configs_Delete_At_Path_Input>;
-  /** delete the array element with specified index (negative integers count from the end). throws an error if top level container is not an array */
-  _delete_elem?: InputMaybe<Configs_Delete_Elem_Input>;
-  /** delete key/value pair or string element. key/value pairs are matched based on their key value */
-  _delete_key?: InputMaybe<Configs_Delete_Key_Input>;
   /** increments the numeric columns with given value of the filtered values */
   _inc?: InputMaybe<Configs_Inc_Input>;
-  /** prepend existing jsonb value of filtered columns with new jsonb value */
-  _prepend?: InputMaybe<Configs_Prepend_Input>;
   /** sets the columns of the filtered rows to the given values */
   _set?: InputMaybe<Configs_Set_Input>;
   /** filter the rows which have to be updated */
@@ -2626,49 +2636,34 @@ export enum Cursor_Ordering {
   Desc = 'DESC'
 }
 
-/** Boolean expression to compare columns of type "jsonb". All fields are combined with logical 'AND'. */
-export type Jsonb_Array_Comparison_Exp = {
+/** Boolean expression to compare columns of type "json". All fields are combined with logical 'AND'. */
+export type Json_Array_Comparison_Exp = {
   /** is the array contained in the given array value */
-  _contained_in?: InputMaybe<Array<Scalars['jsonb']['input']>>;
+  _contained_in?: InputMaybe<Array<Scalars['json']['input']>>;
   /** does the array contain the given value */
-  _contains?: InputMaybe<Array<Scalars['jsonb']['input']>>;
-  _eq?: InputMaybe<Array<Scalars['jsonb']['input']>>;
-  _gt?: InputMaybe<Array<Scalars['jsonb']['input']>>;
-  _gte?: InputMaybe<Array<Scalars['jsonb']['input']>>;
-  _in?: InputMaybe<Array<Array<Scalars['jsonb']['input']>>>;
+  _contains?: InputMaybe<Array<Scalars['json']['input']>>;
+  _eq?: InputMaybe<Array<Scalars['json']['input']>>;
+  _gt?: InputMaybe<Array<Scalars['json']['input']>>;
+  _gte?: InputMaybe<Array<Scalars['json']['input']>>;
+  _in?: InputMaybe<Array<Array<Scalars['json']['input']>>>;
   _is_null?: InputMaybe<Scalars['Boolean']['input']>;
-  _lt?: InputMaybe<Array<Scalars['jsonb']['input']>>;
-  _lte?: InputMaybe<Array<Scalars['jsonb']['input']>>;
-  _neq?: InputMaybe<Array<Scalars['jsonb']['input']>>;
-  _nin?: InputMaybe<Array<Array<Scalars['jsonb']['input']>>>;
+  _lt?: InputMaybe<Array<Scalars['json']['input']>>;
+  _lte?: InputMaybe<Array<Scalars['json']['input']>>;
+  _neq?: InputMaybe<Array<Scalars['json']['input']>>;
+  _nin?: InputMaybe<Array<Array<Scalars['json']['input']>>>;
 };
 
-export type Jsonb_Cast_Exp = {
-  String?: InputMaybe<String_Comparison_Exp>;
-};
-
-/** Boolean expression to compare columns of type "jsonb". All fields are combined with logical 'AND'. */
-export type Jsonb_Comparison_Exp = {
-  _cast?: InputMaybe<Jsonb_Cast_Exp>;
-  /** is the column contained in the given json value */
-  _contained_in?: InputMaybe<Scalars['jsonb']['input']>;
-  /** does the column contain the given json value at the top level */
-  _contains?: InputMaybe<Scalars['jsonb']['input']>;
-  _eq?: InputMaybe<Scalars['jsonb']['input']>;
-  _gt?: InputMaybe<Scalars['jsonb']['input']>;
-  _gte?: InputMaybe<Scalars['jsonb']['input']>;
-  /** does the string exist as a top-level key in the column */
-  _has_key?: InputMaybe<Scalars['String']['input']>;
-  /** do all of these strings exist as top-level keys in the column */
-  _has_keys_all?: InputMaybe<Array<Scalars['String']['input']>>;
-  /** do any of these strings exist as top-level keys in the column */
-  _has_keys_any?: InputMaybe<Array<Scalars['String']['input']>>;
-  _in?: InputMaybe<Array<Scalars['jsonb']['input']>>;
+/** Boolean expression to compare columns of type "json". All fields are combined with logical 'AND'. */
+export type Json_Comparison_Exp = {
+  _eq?: InputMaybe<Scalars['json']['input']>;
+  _gt?: InputMaybe<Scalars['json']['input']>;
+  _gte?: InputMaybe<Scalars['json']['input']>;
+  _in?: InputMaybe<Array<Scalars['json']['input']>>;
   _is_null?: InputMaybe<Scalars['Boolean']['input']>;
-  _lt?: InputMaybe<Scalars['jsonb']['input']>;
-  _lte?: InputMaybe<Scalars['jsonb']['input']>;
-  _neq?: InputMaybe<Scalars['jsonb']['input']>;
-  _nin?: InputMaybe<Array<Scalars['jsonb']['input']>>;
+  _lt?: InputMaybe<Scalars['json']['input']>;
+  _lte?: InputMaybe<Scalars['json']['input']>;
+  _neq?: InputMaybe<Scalars['json']['input']>;
+  _nin?: InputMaybe<Array<Scalars['json']['input']>>;
 };
 
 /** mutation root */
@@ -3247,12 +3242,7 @@ export type Mutation_RootUpdate_Company_Users_ManyArgs = {
 
 /** mutation root */
 export type Mutation_RootUpdate_ConfigsArgs = {
-  _append?: InputMaybe<Configs_Append_Input>;
-  _delete_at_path?: InputMaybe<Configs_Delete_At_Path_Input>;
-  _delete_elem?: InputMaybe<Configs_Delete_Elem_Input>;
-  _delete_key?: InputMaybe<Configs_Delete_Key_Input>;
   _inc?: InputMaybe<Configs_Inc_Input>;
-  _prepend?: InputMaybe<Configs_Prepend_Input>;
   _set?: InputMaybe<Configs_Set_Input>;
   where: Configs_Bool_Exp;
 };
@@ -3260,12 +3250,7 @@ export type Mutation_RootUpdate_ConfigsArgs = {
 
 /** mutation root */
 export type Mutation_RootUpdate_Configs_By_PkArgs = {
-  _append?: InputMaybe<Configs_Append_Input>;
-  _delete_at_path?: InputMaybe<Configs_Delete_At_Path_Input>;
-  _delete_elem?: InputMaybe<Configs_Delete_Elem_Input>;
-  _delete_key?: InputMaybe<Configs_Delete_Key_Input>;
   _inc?: InputMaybe<Configs_Inc_Input>;
-  _prepend?: InputMaybe<Configs_Prepend_Input>;
   _set?: InputMaybe<Configs_Set_Input>;
   pk_columns: Configs_Pk_Columns_Input;
 };
@@ -4633,7 +4618,7 @@ export type Package_Product_Skus = {
   package_packages: Scalars['bigint']['output'];
   /** An object relationship */
   product_sku: Product_Skus;
-  /** SKU id */
+  /** SKU id（上架时只能选系统默认公司和自己公司的sku） */
   product_sku_product_skus: Scalars['bigint']['output'];
   /** SKU数量 */
   quantity: Scalars['bigint']['output'];
@@ -4709,7 +4694,7 @@ export type Package_Product_Skus_Avg_Fields = {
   id?: Maybe<Scalars['Float']['output']>;
   /** 套餐id */
   package_packages?: Maybe<Scalars['Float']['output']>;
-  /** SKU id */
+  /** SKU id（上架时只能选系统默认公司和自己公司的sku） */
   product_sku_product_skus?: Maybe<Scalars['Float']['output']>;
   /** SKU数量 */
   quantity?: Maybe<Scalars['Float']['output']>;
@@ -4720,7 +4705,7 @@ export type Package_Product_Skus_Avg_Order_By = {
   id?: InputMaybe<Order_By>;
   /** 套餐id */
   package_packages?: InputMaybe<Order_By>;
-  /** SKU id */
+  /** SKU id（上架时只能选系统默认公司和自己公司的sku） */
   product_sku_product_skus?: InputMaybe<Order_By>;
   /** SKU数量 */
   quantity?: InputMaybe<Order_By>;
@@ -4752,7 +4737,7 @@ export type Package_Product_Skus_Inc_Input = {
   id?: InputMaybe<Scalars['bigint']['input']>;
   /** 套餐id */
   package_packages?: InputMaybe<Scalars['bigint']['input']>;
-  /** SKU id */
+  /** SKU id（上架时只能选系统默认公司和自己公司的sku） */
   product_sku_product_skus?: InputMaybe<Scalars['bigint']['input']>;
   /** SKU数量 */
   quantity?: InputMaybe<Scalars['bigint']['input']>;
@@ -4766,7 +4751,7 @@ export type Package_Product_Skus_Insert_Input = {
   /** 套餐id */
   package_packages?: InputMaybe<Scalars['bigint']['input']>;
   product_sku?: InputMaybe<Product_Skus_Obj_Rel_Insert_Input>;
-  /** SKU id */
+  /** SKU id（上架时只能选系统默认公司和自己公司的sku） */
   product_sku_product_skus?: InputMaybe<Scalars['bigint']['input']>;
   /** SKU数量 */
   quantity?: InputMaybe<Scalars['bigint']['input']>;
@@ -4780,7 +4765,7 @@ export type Package_Product_Skus_Max_Fields = {
   id?: Maybe<Scalars['bigint']['output']>;
   /** 套餐id */
   package_packages?: Maybe<Scalars['bigint']['output']>;
-  /** SKU id */
+  /** SKU id（上架时只能选系统默认公司和自己公司的sku） */
   product_sku_product_skus?: Maybe<Scalars['bigint']['output']>;
   /** SKU数量 */
   quantity?: Maybe<Scalars['bigint']['output']>;
@@ -4793,7 +4778,7 @@ export type Package_Product_Skus_Max_Order_By = {
   id?: InputMaybe<Order_By>;
   /** 套餐id */
   package_packages?: InputMaybe<Order_By>;
-  /** SKU id */
+  /** SKU id（上架时只能选系统默认公司和自己公司的sku） */
   product_sku_product_skus?: InputMaybe<Order_By>;
   /** SKU数量 */
   quantity?: InputMaybe<Order_By>;
@@ -4807,7 +4792,7 @@ export type Package_Product_Skus_Min_Fields = {
   id?: Maybe<Scalars['bigint']['output']>;
   /** 套餐id */
   package_packages?: Maybe<Scalars['bigint']['output']>;
-  /** SKU id */
+  /** SKU id（上架时只能选系统默认公司和自己公司的sku） */
   product_sku_product_skus?: Maybe<Scalars['bigint']['output']>;
   /** SKU数量 */
   quantity?: Maybe<Scalars['bigint']['output']>;
@@ -4820,7 +4805,7 @@ export type Package_Product_Skus_Min_Order_By = {
   id?: InputMaybe<Order_By>;
   /** 套餐id */
   package_packages?: InputMaybe<Order_By>;
-  /** SKU id */
+  /** SKU id（上架时只能选系统默认公司和自己公司的sku） */
   product_sku_product_skus?: InputMaybe<Order_By>;
   /** SKU数量 */
   quantity?: InputMaybe<Order_By>;
@@ -4882,7 +4867,7 @@ export type Package_Product_Skus_Set_Input = {
   id?: InputMaybe<Scalars['bigint']['input']>;
   /** 套餐id */
   package_packages?: InputMaybe<Scalars['bigint']['input']>;
-  /** SKU id */
+  /** SKU id（上架时只能选系统默认公司和自己公司的sku） */
   product_sku_product_skus?: InputMaybe<Scalars['bigint']['input']>;
   /** SKU数量 */
   quantity?: InputMaybe<Scalars['bigint']['input']>;
@@ -4895,7 +4880,7 @@ export type Package_Product_Skus_Stddev_Fields = {
   id?: Maybe<Scalars['Float']['output']>;
   /** 套餐id */
   package_packages?: Maybe<Scalars['Float']['output']>;
-  /** SKU id */
+  /** SKU id（上架时只能选系统默认公司和自己公司的sku） */
   product_sku_product_skus?: Maybe<Scalars['Float']['output']>;
   /** SKU数量 */
   quantity?: Maybe<Scalars['Float']['output']>;
@@ -4906,7 +4891,7 @@ export type Package_Product_Skus_Stddev_Order_By = {
   id?: InputMaybe<Order_By>;
   /** 套餐id */
   package_packages?: InputMaybe<Order_By>;
-  /** SKU id */
+  /** SKU id（上架时只能选系统默认公司和自己公司的sku） */
   product_sku_product_skus?: InputMaybe<Order_By>;
   /** SKU数量 */
   quantity?: InputMaybe<Order_By>;
@@ -4918,7 +4903,7 @@ export type Package_Product_Skus_Stddev_Pop_Fields = {
   id?: Maybe<Scalars['Float']['output']>;
   /** 套餐id */
   package_packages?: Maybe<Scalars['Float']['output']>;
-  /** SKU id */
+  /** SKU id（上架时只能选系统默认公司和自己公司的sku） */
   product_sku_product_skus?: Maybe<Scalars['Float']['output']>;
   /** SKU数量 */
   quantity?: Maybe<Scalars['Float']['output']>;
@@ -4929,7 +4914,7 @@ export type Package_Product_Skus_Stddev_Pop_Order_By = {
   id?: InputMaybe<Order_By>;
   /** 套餐id */
   package_packages?: InputMaybe<Order_By>;
-  /** SKU id */
+  /** SKU id（上架时只能选系统默认公司和自己公司的sku） */
   product_sku_product_skus?: InputMaybe<Order_By>;
   /** SKU数量 */
   quantity?: InputMaybe<Order_By>;
@@ -4941,7 +4926,7 @@ export type Package_Product_Skus_Stddev_Samp_Fields = {
   id?: Maybe<Scalars['Float']['output']>;
   /** 套餐id */
   package_packages?: Maybe<Scalars['Float']['output']>;
-  /** SKU id */
+  /** SKU id（上架时只能选系统默认公司和自己公司的sku） */
   product_sku_product_skus?: Maybe<Scalars['Float']['output']>;
   /** SKU数量 */
   quantity?: Maybe<Scalars['Float']['output']>;
@@ -4952,7 +4937,7 @@ export type Package_Product_Skus_Stddev_Samp_Order_By = {
   id?: InputMaybe<Order_By>;
   /** 套餐id */
   package_packages?: InputMaybe<Order_By>;
-  /** SKU id */
+  /** SKU id（上架时只能选系统默认公司和自己公司的sku） */
   product_sku_product_skus?: InputMaybe<Order_By>;
   /** SKU数量 */
   quantity?: InputMaybe<Order_By>;
@@ -4972,7 +4957,7 @@ export type Package_Product_Skus_Stream_Cursor_Value_Input = {
   id?: InputMaybe<Scalars['bigint']['input']>;
   /** 套餐id */
   package_packages?: InputMaybe<Scalars['bigint']['input']>;
-  /** SKU id */
+  /** SKU id（上架时只能选系统默认公司和自己公司的sku） */
   product_sku_product_skus?: InputMaybe<Scalars['bigint']['input']>;
   /** SKU数量 */
   quantity?: InputMaybe<Scalars['bigint']['input']>;
@@ -4985,7 +4970,7 @@ export type Package_Product_Skus_Sum_Fields = {
   id?: Maybe<Scalars['bigint']['output']>;
   /** 套餐id */
   package_packages?: Maybe<Scalars['bigint']['output']>;
-  /** SKU id */
+  /** SKU id（上架时只能选系统默认公司和自己公司的sku） */
   product_sku_product_skus?: Maybe<Scalars['bigint']['output']>;
   /** SKU数量 */
   quantity?: Maybe<Scalars['bigint']['output']>;
@@ -4996,7 +4981,7 @@ export type Package_Product_Skus_Sum_Order_By = {
   id?: InputMaybe<Order_By>;
   /** 套餐id */
   package_packages?: InputMaybe<Order_By>;
-  /** SKU id */
+  /** SKU id（上架时只能选系统默认公司和自己公司的sku） */
   product_sku_product_skus?: InputMaybe<Order_By>;
   /** SKU数量 */
   quantity?: InputMaybe<Order_By>;
@@ -5033,7 +5018,7 @@ export type Package_Product_Skus_Var_Pop_Fields = {
   id?: Maybe<Scalars['Float']['output']>;
   /** 套餐id */
   package_packages?: Maybe<Scalars['Float']['output']>;
-  /** SKU id */
+  /** SKU id（上架时只能选系统默认公司和自己公司的sku） */
   product_sku_product_skus?: Maybe<Scalars['Float']['output']>;
   /** SKU数量 */
   quantity?: Maybe<Scalars['Float']['output']>;
@@ -5044,7 +5029,7 @@ export type Package_Product_Skus_Var_Pop_Order_By = {
   id?: InputMaybe<Order_By>;
   /** 套餐id */
   package_packages?: InputMaybe<Order_By>;
-  /** SKU id */
+  /** SKU id（上架时只能选系统默认公司和自己公司的sku） */
   product_sku_product_skus?: InputMaybe<Order_By>;
   /** SKU数量 */
   quantity?: InputMaybe<Order_By>;
@@ -5056,7 +5041,7 @@ export type Package_Product_Skus_Var_Samp_Fields = {
   id?: Maybe<Scalars['Float']['output']>;
   /** 套餐id */
   package_packages?: Maybe<Scalars['Float']['output']>;
-  /** SKU id */
+  /** SKU id（上架时只能选系统默认公司和自己公司的sku） */
   product_sku_product_skus?: Maybe<Scalars['Float']['output']>;
   /** SKU数量 */
   quantity?: Maybe<Scalars['Float']['output']>;
@@ -5067,7 +5052,7 @@ export type Package_Product_Skus_Var_Samp_Order_By = {
   id?: InputMaybe<Order_By>;
   /** 套餐id */
   package_packages?: InputMaybe<Order_By>;
-  /** SKU id */
+  /** SKU id（上架时只能选系统默认公司和自己公司的sku） */
   product_sku_product_skus?: InputMaybe<Order_By>;
   /** SKU数量 */
   quantity?: InputMaybe<Order_By>;
@@ -5079,7 +5064,7 @@ export type Package_Product_Skus_Variance_Fields = {
   id?: Maybe<Scalars['Float']['output']>;
   /** 套餐id */
   package_packages?: Maybe<Scalars['Float']['output']>;
-  /** SKU id */
+  /** SKU id（上架时只能选系统默认公司和自己公司的sku） */
   product_sku_product_skus?: Maybe<Scalars['Float']['output']>;
   /** SKU数量 */
   quantity?: Maybe<Scalars['Float']['output']>;
@@ -5090,7 +5075,7 @@ export type Package_Product_Skus_Variance_Order_By = {
   id?: InputMaybe<Order_By>;
   /** 套餐id */
   package_packages?: InputMaybe<Order_By>;
-  /** SKU id */
+  /** SKU id（上架时只能选系统默认公司和自己公司的sku） */
   product_sku_product_skus?: InputMaybe<Order_By>;
   /** SKU数量 */
   quantity?: InputMaybe<Order_By>;
@@ -5099,18 +5084,32 @@ export type Package_Product_Skus_Variance_Order_By = {
 /** 套餐表 */
 export type Packages = {
   __typename?: 'packages';
+  /** An object relationship */
+  category?: Maybe<Categories>;
+  /** 分类id，上架时只能选择系统默认公司和自己公司的分类数据 */
+  category_categories?: Maybe<Scalars['bigint']['output']>;
+  /** 套餐属于哪个公司 */
+  company_companies?: Maybe<Scalars['bigint']['output']>;
   /** 套餐封面图 */
   cover_image_url: Scalars['String']['output'];
   created_at: Scalars['timestamptz']['output'];
   /** 套餐介绍 */
   description?: Maybe<Scalars['String']['output']>;
   id: Scalars['bigint']['output'];
+  /** 是否下架 */
+  is_shelved: Scalars['Boolean']['output'];
   /** 套餐名称 */
   name: Scalars['String']['output'];
+  /** An object relationship */
+  package?: Maybe<Packages>;
   /** An array relationship */
   package_product_skus: Array<Package_Product_Skus>;
   /** An aggregate relationship */
   package_product_skus_aggregate: Package_Product_Skus_Aggregate;
+  /** An array relationship */
+  packages: Array<Packages>;
+  /** An aggregate relationship */
+  packages_aggregate: Packages_Aggregate;
   updated_at: Scalars['timestamptz']['output'];
 };
 
@@ -5134,11 +5133,58 @@ export type PackagesPackage_Product_Skus_AggregateArgs = {
   where?: InputMaybe<Package_Product_Skus_Bool_Exp>;
 };
 
+
+/** 套餐表 */
+export type PackagesPackagesArgs = {
+  distinct_on?: InputMaybe<Array<Packages_Select_Column>>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  order_by?: InputMaybe<Array<Packages_Order_By>>;
+  where?: InputMaybe<Packages_Bool_Exp>;
+};
+
+
+/** 套餐表 */
+export type PackagesPackages_AggregateArgs = {
+  distinct_on?: InputMaybe<Array<Packages_Select_Column>>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  order_by?: InputMaybe<Array<Packages_Order_By>>;
+  where?: InputMaybe<Packages_Bool_Exp>;
+};
+
 /** aggregated selection of "packages" */
 export type Packages_Aggregate = {
   __typename?: 'packages_aggregate';
   aggregate?: Maybe<Packages_Aggregate_Fields>;
   nodes: Array<Packages>;
+};
+
+export type Packages_Aggregate_Bool_Exp = {
+  bool_and?: InputMaybe<Packages_Aggregate_Bool_Exp_Bool_And>;
+  bool_or?: InputMaybe<Packages_Aggregate_Bool_Exp_Bool_Or>;
+  count?: InputMaybe<Packages_Aggregate_Bool_Exp_Count>;
+};
+
+export type Packages_Aggregate_Bool_Exp_Bool_And = {
+  arguments: Packages_Select_Column_Packages_Aggregate_Bool_Exp_Bool_And_Arguments_Columns;
+  distinct?: InputMaybe<Scalars['Boolean']['input']>;
+  filter?: InputMaybe<Packages_Bool_Exp>;
+  predicate: Boolean_Comparison_Exp;
+};
+
+export type Packages_Aggregate_Bool_Exp_Bool_Or = {
+  arguments: Packages_Select_Column_Packages_Aggregate_Bool_Exp_Bool_Or_Arguments_Columns;
+  distinct?: InputMaybe<Scalars['Boolean']['input']>;
+  filter?: InputMaybe<Packages_Bool_Exp>;
+  predicate: Boolean_Comparison_Exp;
+};
+
+export type Packages_Aggregate_Bool_Exp_Count = {
+  arguments?: InputMaybe<Array<Packages_Select_Column>>;
+  distinct?: InputMaybe<Scalars['Boolean']['input']>;
+  filter?: InputMaybe<Packages_Bool_Exp>;
+  predicate: Int_Comparison_Exp;
 };
 
 /** aggregate fields of "packages" */
@@ -5164,10 +5210,45 @@ export type Packages_Aggregate_FieldsCountArgs = {
   distinct?: InputMaybe<Scalars['Boolean']['input']>;
 };
 
+/** order by aggregate values of table "packages" */
+export type Packages_Aggregate_Order_By = {
+  avg?: InputMaybe<Packages_Avg_Order_By>;
+  count?: InputMaybe<Order_By>;
+  max?: InputMaybe<Packages_Max_Order_By>;
+  min?: InputMaybe<Packages_Min_Order_By>;
+  stddev?: InputMaybe<Packages_Stddev_Order_By>;
+  stddev_pop?: InputMaybe<Packages_Stddev_Pop_Order_By>;
+  stddev_samp?: InputMaybe<Packages_Stddev_Samp_Order_By>;
+  sum?: InputMaybe<Packages_Sum_Order_By>;
+  var_pop?: InputMaybe<Packages_Var_Pop_Order_By>;
+  var_samp?: InputMaybe<Packages_Var_Samp_Order_By>;
+  variance?: InputMaybe<Packages_Variance_Order_By>;
+};
+
+/** input type for inserting array relation for remote table "packages" */
+export type Packages_Arr_Rel_Insert_Input = {
+  data: Array<Packages_Insert_Input>;
+  /** upsert condition */
+  on_conflict?: InputMaybe<Packages_On_Conflict>;
+};
+
 /** aggregate avg on columns */
 export type Packages_Avg_Fields = {
   __typename?: 'packages_avg_fields';
+  /** 分类id，上架时只能选择系统默认公司和自己公司的分类数据 */
+  category_categories?: Maybe<Scalars['Float']['output']>;
+  /** 套餐属于哪个公司 */
+  company_companies?: Maybe<Scalars['Float']['output']>;
   id?: Maybe<Scalars['Float']['output']>;
+};
+
+/** order by avg() on columns of table "packages" */
+export type Packages_Avg_Order_By = {
+  /** 分类id，上架时只能选择系统默认公司和自己公司的分类数据 */
+  category_categories?: InputMaybe<Order_By>;
+  /** 套餐属于哪个公司 */
+  company_companies?: InputMaybe<Order_By>;
+  id?: InputMaybe<Order_By>;
 };
 
 /** Boolean expression to filter rows from the table "packages". All fields are combined with a logical 'AND'. */
@@ -5175,13 +5256,20 @@ export type Packages_Bool_Exp = {
   _and?: InputMaybe<Array<Packages_Bool_Exp>>;
   _not?: InputMaybe<Packages_Bool_Exp>;
   _or?: InputMaybe<Array<Packages_Bool_Exp>>;
+  category?: InputMaybe<Categories_Bool_Exp>;
+  category_categories?: InputMaybe<Bigint_Comparison_Exp>;
+  company_companies?: InputMaybe<Bigint_Comparison_Exp>;
   cover_image_url?: InputMaybe<String_Comparison_Exp>;
   created_at?: InputMaybe<Timestamptz_Comparison_Exp>;
   description?: InputMaybe<String_Comparison_Exp>;
   id?: InputMaybe<Bigint_Comparison_Exp>;
+  is_shelved?: InputMaybe<Boolean_Comparison_Exp>;
   name?: InputMaybe<String_Comparison_Exp>;
+  package?: InputMaybe<Packages_Bool_Exp>;
   package_product_skus?: InputMaybe<Package_Product_Skus_Bool_Exp>;
   package_product_skus_aggregate?: InputMaybe<Package_Product_Skus_Aggregate_Bool_Exp>;
+  packages?: InputMaybe<Packages_Bool_Exp>;
+  packages_aggregate?: InputMaybe<Packages_Aggregate_Bool_Exp>;
   updated_at?: InputMaybe<Timestamptz_Comparison_Exp>;
 };
 
@@ -5193,26 +5281,43 @@ export enum Packages_Constraint {
 
 /** input type for incrementing numeric columns in table "packages" */
 export type Packages_Inc_Input = {
+  /** 分类id，上架时只能选择系统默认公司和自己公司的分类数据 */
+  category_categories?: InputMaybe<Scalars['bigint']['input']>;
+  /** 套餐属于哪个公司 */
+  company_companies?: InputMaybe<Scalars['bigint']['input']>;
   id?: InputMaybe<Scalars['bigint']['input']>;
 };
 
 /** input type for inserting data into table "packages" */
 export type Packages_Insert_Input = {
+  category?: InputMaybe<Categories_Obj_Rel_Insert_Input>;
+  /** 分类id，上架时只能选择系统默认公司和自己公司的分类数据 */
+  category_categories?: InputMaybe<Scalars['bigint']['input']>;
+  /** 套餐属于哪个公司 */
+  company_companies?: InputMaybe<Scalars['bigint']['input']>;
   /** 套餐封面图 */
   cover_image_url?: InputMaybe<Scalars['String']['input']>;
   created_at?: InputMaybe<Scalars['timestamptz']['input']>;
   /** 套餐介绍 */
   description?: InputMaybe<Scalars['String']['input']>;
   id?: InputMaybe<Scalars['bigint']['input']>;
+  /** 是否下架 */
+  is_shelved?: InputMaybe<Scalars['Boolean']['input']>;
   /** 套餐名称 */
   name?: InputMaybe<Scalars['String']['input']>;
+  package?: InputMaybe<Packages_Obj_Rel_Insert_Input>;
   package_product_skus?: InputMaybe<Package_Product_Skus_Arr_Rel_Insert_Input>;
+  packages?: InputMaybe<Packages_Arr_Rel_Insert_Input>;
   updated_at?: InputMaybe<Scalars['timestamptz']['input']>;
 };
 
 /** aggregate max on columns */
 export type Packages_Max_Fields = {
   __typename?: 'packages_max_fields';
+  /** 分类id，上架时只能选择系统默认公司和自己公司的分类数据 */
+  category_categories?: Maybe<Scalars['bigint']['output']>;
+  /** 套餐属于哪个公司 */
+  company_companies?: Maybe<Scalars['bigint']['output']>;
   /** 套餐封面图 */
   cover_image_url?: Maybe<Scalars['String']['output']>;
   created_at?: Maybe<Scalars['timestamptz']['output']>;
@@ -5224,9 +5329,30 @@ export type Packages_Max_Fields = {
   updated_at?: Maybe<Scalars['timestamptz']['output']>;
 };
 
+/** order by max() on columns of table "packages" */
+export type Packages_Max_Order_By = {
+  /** 分类id，上架时只能选择系统默认公司和自己公司的分类数据 */
+  category_categories?: InputMaybe<Order_By>;
+  /** 套餐属于哪个公司 */
+  company_companies?: InputMaybe<Order_By>;
+  /** 套餐封面图 */
+  cover_image_url?: InputMaybe<Order_By>;
+  created_at?: InputMaybe<Order_By>;
+  /** 套餐介绍 */
+  description?: InputMaybe<Order_By>;
+  id?: InputMaybe<Order_By>;
+  /** 套餐名称 */
+  name?: InputMaybe<Order_By>;
+  updated_at?: InputMaybe<Order_By>;
+};
+
 /** aggregate min on columns */
 export type Packages_Min_Fields = {
   __typename?: 'packages_min_fields';
+  /** 分类id，上架时只能选择系统默认公司和自己公司的分类数据 */
+  category_categories?: Maybe<Scalars['bigint']['output']>;
+  /** 套餐属于哪个公司 */
+  company_companies?: Maybe<Scalars['bigint']['output']>;
   /** 套餐封面图 */
   cover_image_url?: Maybe<Scalars['String']['output']>;
   created_at?: Maybe<Scalars['timestamptz']['output']>;
@@ -5236,6 +5362,23 @@ export type Packages_Min_Fields = {
   /** 套餐名称 */
   name?: Maybe<Scalars['String']['output']>;
   updated_at?: Maybe<Scalars['timestamptz']['output']>;
+};
+
+/** order by min() on columns of table "packages" */
+export type Packages_Min_Order_By = {
+  /** 分类id，上架时只能选择系统默认公司和自己公司的分类数据 */
+  category_categories?: InputMaybe<Order_By>;
+  /** 套餐属于哪个公司 */
+  company_companies?: InputMaybe<Order_By>;
+  /** 套餐封面图 */
+  cover_image_url?: InputMaybe<Order_By>;
+  created_at?: InputMaybe<Order_By>;
+  /** 套餐介绍 */
+  description?: InputMaybe<Order_By>;
+  id?: InputMaybe<Order_By>;
+  /** 套餐名称 */
+  name?: InputMaybe<Order_By>;
+  updated_at?: InputMaybe<Order_By>;
 };
 
 /** response of any mutation on the table "packages" */
@@ -5263,12 +5406,18 @@ export type Packages_On_Conflict = {
 
 /** Ordering options when selecting data from "packages". */
 export type Packages_Order_By = {
+  category?: InputMaybe<Categories_Order_By>;
+  category_categories?: InputMaybe<Order_By>;
+  company_companies?: InputMaybe<Order_By>;
   cover_image_url?: InputMaybe<Order_By>;
   created_at?: InputMaybe<Order_By>;
   description?: InputMaybe<Order_By>;
   id?: InputMaybe<Order_By>;
+  is_shelved?: InputMaybe<Order_By>;
   name?: InputMaybe<Order_By>;
+  package?: InputMaybe<Packages_Order_By>;
   package_product_skus_aggregate?: InputMaybe<Package_Product_Skus_Aggregate_Order_By>;
+  packages_aggregate?: InputMaybe<Packages_Aggregate_Order_By>;
   updated_at?: InputMaybe<Order_By>;
 };
 
@@ -5280,6 +5429,10 @@ export type Packages_Pk_Columns_Input = {
 /** select columns of table "packages" */
 export enum Packages_Select_Column {
   /** column name */
+  CategoryCategories = 'category_categories',
+  /** column name */
+  CompanyCompanies = 'company_companies',
+  /** column name */
   CoverImageUrl = 'cover_image_url',
   /** column name */
   CreatedAt = 'created_at',
@@ -5288,19 +5441,39 @@ export enum Packages_Select_Column {
   /** column name */
   Id = 'id',
   /** column name */
+  IsShelved = 'is_shelved',
+  /** column name */
   Name = 'name',
   /** column name */
   UpdatedAt = 'updated_at'
 }
 
+/** select "packages_aggregate_bool_exp_bool_and_arguments_columns" columns of table "packages" */
+export enum Packages_Select_Column_Packages_Aggregate_Bool_Exp_Bool_And_Arguments_Columns {
+  /** column name */
+  IsShelved = 'is_shelved'
+}
+
+/** select "packages_aggregate_bool_exp_bool_or_arguments_columns" columns of table "packages" */
+export enum Packages_Select_Column_Packages_Aggregate_Bool_Exp_Bool_Or_Arguments_Columns {
+  /** column name */
+  IsShelved = 'is_shelved'
+}
+
 /** input type for updating data in table "packages" */
 export type Packages_Set_Input = {
+  /** 分类id，上架时只能选择系统默认公司和自己公司的分类数据 */
+  category_categories?: InputMaybe<Scalars['bigint']['input']>;
+  /** 套餐属于哪个公司 */
+  company_companies?: InputMaybe<Scalars['bigint']['input']>;
   /** 套餐封面图 */
   cover_image_url?: InputMaybe<Scalars['String']['input']>;
   created_at?: InputMaybe<Scalars['timestamptz']['input']>;
   /** 套餐介绍 */
   description?: InputMaybe<Scalars['String']['input']>;
   id?: InputMaybe<Scalars['bigint']['input']>;
+  /** 是否下架 */
+  is_shelved?: InputMaybe<Scalars['Boolean']['input']>;
   /** 套餐名称 */
   name?: InputMaybe<Scalars['String']['input']>;
   updated_at?: InputMaybe<Scalars['timestamptz']['input']>;
@@ -5309,19 +5482,58 @@ export type Packages_Set_Input = {
 /** aggregate stddev on columns */
 export type Packages_Stddev_Fields = {
   __typename?: 'packages_stddev_fields';
+  /** 分类id，上架时只能选择系统默认公司和自己公司的分类数据 */
+  category_categories?: Maybe<Scalars['Float']['output']>;
+  /** 套餐属于哪个公司 */
+  company_companies?: Maybe<Scalars['Float']['output']>;
   id?: Maybe<Scalars['Float']['output']>;
+};
+
+/** order by stddev() on columns of table "packages" */
+export type Packages_Stddev_Order_By = {
+  /** 分类id，上架时只能选择系统默认公司和自己公司的分类数据 */
+  category_categories?: InputMaybe<Order_By>;
+  /** 套餐属于哪个公司 */
+  company_companies?: InputMaybe<Order_By>;
+  id?: InputMaybe<Order_By>;
 };
 
 /** aggregate stddev_pop on columns */
 export type Packages_Stddev_Pop_Fields = {
   __typename?: 'packages_stddev_pop_fields';
+  /** 分类id，上架时只能选择系统默认公司和自己公司的分类数据 */
+  category_categories?: Maybe<Scalars['Float']['output']>;
+  /** 套餐属于哪个公司 */
+  company_companies?: Maybe<Scalars['Float']['output']>;
   id?: Maybe<Scalars['Float']['output']>;
+};
+
+/** order by stddev_pop() on columns of table "packages" */
+export type Packages_Stddev_Pop_Order_By = {
+  /** 分类id，上架时只能选择系统默认公司和自己公司的分类数据 */
+  category_categories?: InputMaybe<Order_By>;
+  /** 套餐属于哪个公司 */
+  company_companies?: InputMaybe<Order_By>;
+  id?: InputMaybe<Order_By>;
 };
 
 /** aggregate stddev_samp on columns */
 export type Packages_Stddev_Samp_Fields = {
   __typename?: 'packages_stddev_samp_fields';
+  /** 分类id，上架时只能选择系统默认公司和自己公司的分类数据 */
+  category_categories?: Maybe<Scalars['Float']['output']>;
+  /** 套餐属于哪个公司 */
+  company_companies?: Maybe<Scalars['Float']['output']>;
   id?: Maybe<Scalars['Float']['output']>;
+};
+
+/** order by stddev_samp() on columns of table "packages" */
+export type Packages_Stddev_Samp_Order_By = {
+  /** 分类id，上架时只能选择系统默认公司和自己公司的分类数据 */
+  category_categories?: InputMaybe<Order_By>;
+  /** 套餐属于哪个公司 */
+  company_companies?: InputMaybe<Order_By>;
+  id?: InputMaybe<Order_By>;
 };
 
 /** Streaming cursor of the table "packages" */
@@ -5334,12 +5546,18 @@ export type Packages_Stream_Cursor_Input = {
 
 /** Initial value of the column from where the streaming should start */
 export type Packages_Stream_Cursor_Value_Input = {
+  /** 分类id，上架时只能选择系统默认公司和自己公司的分类数据 */
+  category_categories?: InputMaybe<Scalars['bigint']['input']>;
+  /** 套餐属于哪个公司 */
+  company_companies?: InputMaybe<Scalars['bigint']['input']>;
   /** 套餐封面图 */
   cover_image_url?: InputMaybe<Scalars['String']['input']>;
   created_at?: InputMaybe<Scalars['timestamptz']['input']>;
   /** 套餐介绍 */
   description?: InputMaybe<Scalars['String']['input']>;
   id?: InputMaybe<Scalars['bigint']['input']>;
+  /** 是否下架 */
+  is_shelved?: InputMaybe<Scalars['Boolean']['input']>;
   /** 套餐名称 */
   name?: InputMaybe<Scalars['String']['input']>;
   updated_at?: InputMaybe<Scalars['timestamptz']['input']>;
@@ -5348,11 +5566,28 @@ export type Packages_Stream_Cursor_Value_Input = {
 /** aggregate sum on columns */
 export type Packages_Sum_Fields = {
   __typename?: 'packages_sum_fields';
+  /** 分类id，上架时只能选择系统默认公司和自己公司的分类数据 */
+  category_categories?: Maybe<Scalars['bigint']['output']>;
+  /** 套餐属于哪个公司 */
+  company_companies?: Maybe<Scalars['bigint']['output']>;
   id?: Maybe<Scalars['bigint']['output']>;
+};
+
+/** order by sum() on columns of table "packages" */
+export type Packages_Sum_Order_By = {
+  /** 分类id，上架时只能选择系统默认公司和自己公司的分类数据 */
+  category_categories?: InputMaybe<Order_By>;
+  /** 套餐属于哪个公司 */
+  company_companies?: InputMaybe<Order_By>;
+  id?: InputMaybe<Order_By>;
 };
 
 /** update columns of table "packages" */
 export enum Packages_Update_Column {
+  /** column name */
+  CategoryCategories = 'category_categories',
+  /** column name */
+  CompanyCompanies = 'company_companies',
   /** column name */
   CoverImageUrl = 'cover_image_url',
   /** column name */
@@ -5361,6 +5596,8 @@ export enum Packages_Update_Column {
   Description = 'description',
   /** column name */
   Id = 'id',
+  /** column name */
+  IsShelved = 'is_shelved',
   /** column name */
   Name = 'name',
   /** column name */
@@ -5379,19 +5616,58 @@ export type Packages_Updates = {
 /** aggregate var_pop on columns */
 export type Packages_Var_Pop_Fields = {
   __typename?: 'packages_var_pop_fields';
+  /** 分类id，上架时只能选择系统默认公司和自己公司的分类数据 */
+  category_categories?: Maybe<Scalars['Float']['output']>;
+  /** 套餐属于哪个公司 */
+  company_companies?: Maybe<Scalars['Float']['output']>;
   id?: Maybe<Scalars['Float']['output']>;
+};
+
+/** order by var_pop() on columns of table "packages" */
+export type Packages_Var_Pop_Order_By = {
+  /** 分类id，上架时只能选择系统默认公司和自己公司的分类数据 */
+  category_categories?: InputMaybe<Order_By>;
+  /** 套餐属于哪个公司 */
+  company_companies?: InputMaybe<Order_By>;
+  id?: InputMaybe<Order_By>;
 };
 
 /** aggregate var_samp on columns */
 export type Packages_Var_Samp_Fields = {
   __typename?: 'packages_var_samp_fields';
+  /** 分类id，上架时只能选择系统默认公司和自己公司的分类数据 */
+  category_categories?: Maybe<Scalars['Float']['output']>;
+  /** 套餐属于哪个公司 */
+  company_companies?: Maybe<Scalars['Float']['output']>;
   id?: Maybe<Scalars['Float']['output']>;
+};
+
+/** order by var_samp() on columns of table "packages" */
+export type Packages_Var_Samp_Order_By = {
+  /** 分类id，上架时只能选择系统默认公司和自己公司的分类数据 */
+  category_categories?: InputMaybe<Order_By>;
+  /** 套餐属于哪个公司 */
+  company_companies?: InputMaybe<Order_By>;
+  id?: InputMaybe<Order_By>;
 };
 
 /** aggregate variance on columns */
 export type Packages_Variance_Fields = {
   __typename?: 'packages_variance_fields';
+  /** 分类id，上架时只能选择系统默认公司和自己公司的分类数据 */
+  category_categories?: Maybe<Scalars['Float']['output']>;
+  /** 套餐属于哪个公司 */
+  company_companies?: Maybe<Scalars['Float']['output']>;
   id?: Maybe<Scalars['Float']['output']>;
+};
+
+/** order by variance() on columns of table "packages" */
+export type Packages_Variance_Order_By = {
+  /** 分类id，上架时只能选择系统默认公司和自己公司的分类数据 */
+  category_categories?: InputMaybe<Order_By>;
+  /** 套餐属于哪个公司 */
+  company_companies?: InputMaybe<Order_By>;
+  id?: InputMaybe<Order_By>;
 };
 
 /** 产品下的规格 */
@@ -6124,7 +6400,7 @@ export type Products = {
   __typename?: 'products';
   /** An object relationship */
   category?: Maybe<Categories>;
-  /** 所属分类id */
+  /** 所属分类id（上架时只能选系统默认公司和自己公司的分类） */
   category_categories?: Maybe<Scalars['bigint']['output']>;
   /** An object relationship */
   company: Companies;
@@ -6136,7 +6412,7 @@ export type Products = {
   /** 产品介绍，富文本 */
   description?: Maybe<Scalars['String']['output']>;
   /** 详细信息媒体内容，jsonb的item项（file_type=video|image、file_url） */
-  detail_medias: Array<Scalars['jsonb']['output']>;
+  detail_medias: Array<Scalars['json']['output']>;
   id: Scalars['bigint']['output'];
   /** 是否删除 */
   is_deleted: Scalars['Boolean']['output'];
@@ -6149,7 +6425,7 @@ export type Products = {
   /** An aggregate relationship */
   product_skus_aggregate: Product_Skus_Aggregate;
   /** 实拍场景信息媒体内容，jsonb的item项（file_type=video|image、file_url） */
-  scene_medias: Array<Scalars['jsonb']['output']>;
+  scene_medias: Array<Scalars['json']['output']>;
   updated_at: Scalars['timestamptz']['output'];
   /** 产品视频url */
   video_url?: Maybe<Scalars['String']['output']>;
@@ -6257,7 +6533,7 @@ export type Products_Arr_Rel_Insert_Input = {
 /** aggregate avg on columns */
 export type Products_Avg_Fields = {
   __typename?: 'products_avg_fields';
-  /** 所属分类id */
+  /** 所属分类id（上架时只能选系统默认公司和自己公司的分类） */
   category_categories?: Maybe<Scalars['Float']['output']>;
   /** 归属公司id */
   company_companies?: Maybe<Scalars['Float']['output']>;
@@ -6266,7 +6542,7 @@ export type Products_Avg_Fields = {
 
 /** order by avg() on columns of table "products" */
 export type Products_Avg_Order_By = {
-  /** 所属分类id */
+  /** 所属分类id（上架时只能选系统默认公司和自己公司的分类） */
   category_categories?: InputMaybe<Order_By>;
   /** 归属公司id */
   company_companies?: InputMaybe<Order_By>;
@@ -6285,14 +6561,14 @@ export type Products_Bool_Exp = {
   cover_image_url?: InputMaybe<String_Comparison_Exp>;
   created_at?: InputMaybe<Timestamptz_Comparison_Exp>;
   description?: InputMaybe<String_Comparison_Exp>;
-  detail_medias?: InputMaybe<Jsonb_Array_Comparison_Exp>;
+  detail_medias?: InputMaybe<Json_Array_Comparison_Exp>;
   id?: InputMaybe<Bigint_Comparison_Exp>;
   is_deleted?: InputMaybe<Boolean_Comparison_Exp>;
   is_shelved?: InputMaybe<Boolean_Comparison_Exp>;
   name?: InputMaybe<String_Comparison_Exp>;
   product_skus?: InputMaybe<Product_Skus_Bool_Exp>;
   product_skus_aggregate?: InputMaybe<Product_Skus_Aggregate_Bool_Exp>;
-  scene_medias?: InputMaybe<Jsonb_Array_Comparison_Exp>;
+  scene_medias?: InputMaybe<Json_Array_Comparison_Exp>;
   updated_at?: InputMaybe<Timestamptz_Comparison_Exp>;
   video_url?: InputMaybe<String_Comparison_Exp>;
 };
@@ -6305,7 +6581,7 @@ export enum Products_Constraint {
 
 /** input type for incrementing numeric columns in table "products" */
 export type Products_Inc_Input = {
-  /** 所属分类id */
+  /** 所属分类id（上架时只能选系统默认公司和自己公司的分类） */
   category_categories?: InputMaybe<Scalars['bigint']['input']>;
   /** 归属公司id */
   company_companies?: InputMaybe<Scalars['bigint']['input']>;
@@ -6315,7 +6591,7 @@ export type Products_Inc_Input = {
 /** input type for inserting data into table "products" */
 export type Products_Insert_Input = {
   category?: InputMaybe<Categories_Obj_Rel_Insert_Input>;
-  /** 所属分类id */
+  /** 所属分类id（上架时只能选系统默认公司和自己公司的分类） */
   category_categories?: InputMaybe<Scalars['bigint']['input']>;
   company?: InputMaybe<Companies_Obj_Rel_Insert_Input>;
   /** 归属公司id */
@@ -6326,7 +6602,7 @@ export type Products_Insert_Input = {
   /** 产品介绍，富文本 */
   description?: InputMaybe<Scalars['String']['input']>;
   /** 详细信息媒体内容，jsonb的item项（file_type=video|image、file_url） */
-  detail_medias?: InputMaybe<Array<Scalars['jsonb']['input']>>;
+  detail_medias?: InputMaybe<Array<Scalars['json']['input']>>;
   id?: InputMaybe<Scalars['bigint']['input']>;
   /** 是否删除 */
   is_deleted?: InputMaybe<Scalars['Boolean']['input']>;
@@ -6336,7 +6612,7 @@ export type Products_Insert_Input = {
   name?: InputMaybe<Scalars['String']['input']>;
   product_skus?: InputMaybe<Product_Skus_Arr_Rel_Insert_Input>;
   /** 实拍场景信息媒体内容，jsonb的item项（file_type=video|image、file_url） */
-  scene_medias?: InputMaybe<Array<Scalars['jsonb']['input']>>;
+  scene_medias?: InputMaybe<Array<Scalars['json']['input']>>;
   updated_at?: InputMaybe<Scalars['timestamptz']['input']>;
   /** 产品视频url */
   video_url?: InputMaybe<Scalars['String']['input']>;
@@ -6345,7 +6621,7 @@ export type Products_Insert_Input = {
 /** aggregate max on columns */
 export type Products_Max_Fields = {
   __typename?: 'products_max_fields';
-  /** 所属分类id */
+  /** 所属分类id（上架时只能选系统默认公司和自己公司的分类） */
   category_categories?: Maybe<Scalars['bigint']['output']>;
   /** 归属公司id */
   company_companies?: Maybe<Scalars['bigint']['output']>;
@@ -6355,12 +6631,12 @@ export type Products_Max_Fields = {
   /** 产品介绍，富文本 */
   description?: Maybe<Scalars['String']['output']>;
   /** 详细信息媒体内容，jsonb的item项（file_type=video|image、file_url） */
-  detail_medias?: Maybe<Array<Scalars['jsonb']['output']>>;
+  detail_medias?: Maybe<Array<Scalars['json']['output']>>;
   id?: Maybe<Scalars['bigint']['output']>;
   /** 产品名称 */
   name?: Maybe<Scalars['String']['output']>;
   /** 实拍场景信息媒体内容，jsonb的item项（file_type=video|image、file_url） */
-  scene_medias?: Maybe<Array<Scalars['jsonb']['output']>>;
+  scene_medias?: Maybe<Array<Scalars['json']['output']>>;
   updated_at?: Maybe<Scalars['timestamptz']['output']>;
   /** 产品视频url */
   video_url?: Maybe<Scalars['String']['output']>;
@@ -6368,7 +6644,7 @@ export type Products_Max_Fields = {
 
 /** order by max() on columns of table "products" */
 export type Products_Max_Order_By = {
-  /** 所属分类id */
+  /** 所属分类id（上架时只能选系统默认公司和自己公司的分类） */
   category_categories?: InputMaybe<Order_By>;
   /** 归属公司id */
   company_companies?: InputMaybe<Order_By>;
@@ -6392,7 +6668,7 @@ export type Products_Max_Order_By = {
 /** aggregate min on columns */
 export type Products_Min_Fields = {
   __typename?: 'products_min_fields';
-  /** 所属分类id */
+  /** 所属分类id（上架时只能选系统默认公司和自己公司的分类） */
   category_categories?: Maybe<Scalars['bigint']['output']>;
   /** 归属公司id */
   company_companies?: Maybe<Scalars['bigint']['output']>;
@@ -6402,12 +6678,12 @@ export type Products_Min_Fields = {
   /** 产品介绍，富文本 */
   description?: Maybe<Scalars['String']['output']>;
   /** 详细信息媒体内容，jsonb的item项（file_type=video|image、file_url） */
-  detail_medias?: Maybe<Array<Scalars['jsonb']['output']>>;
+  detail_medias?: Maybe<Array<Scalars['json']['output']>>;
   id?: Maybe<Scalars['bigint']['output']>;
   /** 产品名称 */
   name?: Maybe<Scalars['String']['output']>;
   /** 实拍场景信息媒体内容，jsonb的item项（file_type=video|image、file_url） */
-  scene_medias?: Maybe<Array<Scalars['jsonb']['output']>>;
+  scene_medias?: Maybe<Array<Scalars['json']['output']>>;
   updated_at?: Maybe<Scalars['timestamptz']['output']>;
   /** 产品视频url */
   video_url?: Maybe<Scalars['String']['output']>;
@@ -6415,7 +6691,7 @@ export type Products_Min_Fields = {
 
 /** order by min() on columns of table "products" */
 export type Products_Min_Order_By = {
-  /** 所属分类id */
+  /** 所属分类id（上架时只能选系统默认公司和自己公司的分类） */
   category_categories?: InputMaybe<Order_By>;
   /** 归属公司id */
   company_companies?: InputMaybe<Order_By>;
@@ -6532,7 +6808,7 @@ export enum Products_Select_Column_Products_Aggregate_Bool_Exp_Bool_Or_Arguments
 
 /** input type for updating data in table "products" */
 export type Products_Set_Input = {
-  /** 所属分类id */
+  /** 所属分类id（上架时只能选系统默认公司和自己公司的分类） */
   category_categories?: InputMaybe<Scalars['bigint']['input']>;
   /** 归属公司id */
   company_companies?: InputMaybe<Scalars['bigint']['input']>;
@@ -6542,7 +6818,7 @@ export type Products_Set_Input = {
   /** 产品介绍，富文本 */
   description?: InputMaybe<Scalars['String']['input']>;
   /** 详细信息媒体内容，jsonb的item项（file_type=video|image、file_url） */
-  detail_medias?: InputMaybe<Array<Scalars['jsonb']['input']>>;
+  detail_medias?: InputMaybe<Array<Scalars['json']['input']>>;
   id?: InputMaybe<Scalars['bigint']['input']>;
   /** 是否删除 */
   is_deleted?: InputMaybe<Scalars['Boolean']['input']>;
@@ -6551,7 +6827,7 @@ export type Products_Set_Input = {
   /** 产品名称 */
   name?: InputMaybe<Scalars['String']['input']>;
   /** 实拍场景信息媒体内容，jsonb的item项（file_type=video|image、file_url） */
-  scene_medias?: InputMaybe<Array<Scalars['jsonb']['input']>>;
+  scene_medias?: InputMaybe<Array<Scalars['json']['input']>>;
   updated_at?: InputMaybe<Scalars['timestamptz']['input']>;
   /** 产品视频url */
   video_url?: InputMaybe<Scalars['String']['input']>;
@@ -6560,7 +6836,7 @@ export type Products_Set_Input = {
 /** aggregate stddev on columns */
 export type Products_Stddev_Fields = {
   __typename?: 'products_stddev_fields';
-  /** 所属分类id */
+  /** 所属分类id（上架时只能选系统默认公司和自己公司的分类） */
   category_categories?: Maybe<Scalars['Float']['output']>;
   /** 归属公司id */
   company_companies?: Maybe<Scalars['Float']['output']>;
@@ -6569,7 +6845,7 @@ export type Products_Stddev_Fields = {
 
 /** order by stddev() on columns of table "products" */
 export type Products_Stddev_Order_By = {
-  /** 所属分类id */
+  /** 所属分类id（上架时只能选系统默认公司和自己公司的分类） */
   category_categories?: InputMaybe<Order_By>;
   /** 归属公司id */
   company_companies?: InputMaybe<Order_By>;
@@ -6579,7 +6855,7 @@ export type Products_Stddev_Order_By = {
 /** aggregate stddev_pop on columns */
 export type Products_Stddev_Pop_Fields = {
   __typename?: 'products_stddev_pop_fields';
-  /** 所属分类id */
+  /** 所属分类id（上架时只能选系统默认公司和自己公司的分类） */
   category_categories?: Maybe<Scalars['Float']['output']>;
   /** 归属公司id */
   company_companies?: Maybe<Scalars['Float']['output']>;
@@ -6588,7 +6864,7 @@ export type Products_Stddev_Pop_Fields = {
 
 /** order by stddev_pop() on columns of table "products" */
 export type Products_Stddev_Pop_Order_By = {
-  /** 所属分类id */
+  /** 所属分类id（上架时只能选系统默认公司和自己公司的分类） */
   category_categories?: InputMaybe<Order_By>;
   /** 归属公司id */
   company_companies?: InputMaybe<Order_By>;
@@ -6598,7 +6874,7 @@ export type Products_Stddev_Pop_Order_By = {
 /** aggregate stddev_samp on columns */
 export type Products_Stddev_Samp_Fields = {
   __typename?: 'products_stddev_samp_fields';
-  /** 所属分类id */
+  /** 所属分类id（上架时只能选系统默认公司和自己公司的分类） */
   category_categories?: Maybe<Scalars['Float']['output']>;
   /** 归属公司id */
   company_companies?: Maybe<Scalars['Float']['output']>;
@@ -6607,7 +6883,7 @@ export type Products_Stddev_Samp_Fields = {
 
 /** order by stddev_samp() on columns of table "products" */
 export type Products_Stddev_Samp_Order_By = {
-  /** 所属分类id */
+  /** 所属分类id（上架时只能选系统默认公司和自己公司的分类） */
   category_categories?: InputMaybe<Order_By>;
   /** 归属公司id */
   company_companies?: InputMaybe<Order_By>;
@@ -6624,7 +6900,7 @@ export type Products_Stream_Cursor_Input = {
 
 /** Initial value of the column from where the streaming should start */
 export type Products_Stream_Cursor_Value_Input = {
-  /** 所属分类id */
+  /** 所属分类id（上架时只能选系统默认公司和自己公司的分类） */
   category_categories?: InputMaybe<Scalars['bigint']['input']>;
   /** 归属公司id */
   company_companies?: InputMaybe<Scalars['bigint']['input']>;
@@ -6634,7 +6910,7 @@ export type Products_Stream_Cursor_Value_Input = {
   /** 产品介绍，富文本 */
   description?: InputMaybe<Scalars['String']['input']>;
   /** 详细信息媒体内容，jsonb的item项（file_type=video|image、file_url） */
-  detail_medias?: InputMaybe<Array<Scalars['jsonb']['input']>>;
+  detail_medias?: InputMaybe<Array<Scalars['json']['input']>>;
   id?: InputMaybe<Scalars['bigint']['input']>;
   /** 是否删除 */
   is_deleted?: InputMaybe<Scalars['Boolean']['input']>;
@@ -6643,7 +6919,7 @@ export type Products_Stream_Cursor_Value_Input = {
   /** 产品名称 */
   name?: InputMaybe<Scalars['String']['input']>;
   /** 实拍场景信息媒体内容，jsonb的item项（file_type=video|image、file_url） */
-  scene_medias?: InputMaybe<Array<Scalars['jsonb']['input']>>;
+  scene_medias?: InputMaybe<Array<Scalars['json']['input']>>;
   updated_at?: InputMaybe<Scalars['timestamptz']['input']>;
   /** 产品视频url */
   video_url?: InputMaybe<Scalars['String']['input']>;
@@ -6652,7 +6928,7 @@ export type Products_Stream_Cursor_Value_Input = {
 /** aggregate sum on columns */
 export type Products_Sum_Fields = {
   __typename?: 'products_sum_fields';
-  /** 所属分类id */
+  /** 所属分类id（上架时只能选系统默认公司和自己公司的分类） */
   category_categories?: Maybe<Scalars['bigint']['output']>;
   /** 归属公司id */
   company_companies?: Maybe<Scalars['bigint']['output']>;
@@ -6661,7 +6937,7 @@ export type Products_Sum_Fields = {
 
 /** order by sum() on columns of table "products" */
 export type Products_Sum_Order_By = {
-  /** 所属分类id */
+  /** 所属分类id（上架时只能选系统默认公司和自己公司的分类） */
   category_categories?: InputMaybe<Order_By>;
   /** 归属公司id */
   company_companies?: InputMaybe<Order_By>;
@@ -6710,7 +6986,7 @@ export type Products_Updates = {
 /** aggregate var_pop on columns */
 export type Products_Var_Pop_Fields = {
   __typename?: 'products_var_pop_fields';
-  /** 所属分类id */
+  /** 所属分类id（上架时只能选系统默认公司和自己公司的分类） */
   category_categories?: Maybe<Scalars['Float']['output']>;
   /** 归属公司id */
   company_companies?: Maybe<Scalars['Float']['output']>;
@@ -6719,7 +6995,7 @@ export type Products_Var_Pop_Fields = {
 
 /** order by var_pop() on columns of table "products" */
 export type Products_Var_Pop_Order_By = {
-  /** 所属分类id */
+  /** 所属分类id（上架时只能选系统默认公司和自己公司的分类） */
   category_categories?: InputMaybe<Order_By>;
   /** 归属公司id */
   company_companies?: InputMaybe<Order_By>;
@@ -6729,7 +7005,7 @@ export type Products_Var_Pop_Order_By = {
 /** aggregate var_samp on columns */
 export type Products_Var_Samp_Fields = {
   __typename?: 'products_var_samp_fields';
-  /** 所属分类id */
+  /** 所属分类id（上架时只能选系统默认公司和自己公司的分类） */
   category_categories?: Maybe<Scalars['Float']['output']>;
   /** 归属公司id */
   company_companies?: Maybe<Scalars['Float']['output']>;
@@ -6738,7 +7014,7 @@ export type Products_Var_Samp_Fields = {
 
 /** order by var_samp() on columns of table "products" */
 export type Products_Var_Samp_Order_By = {
-  /** 所属分类id */
+  /** 所属分类id（上架时只能选系统默认公司和自己公司的分类） */
   category_categories?: InputMaybe<Order_By>;
   /** 归属公司id */
   company_companies?: InputMaybe<Order_By>;
@@ -6748,7 +7024,7 @@ export type Products_Var_Samp_Order_By = {
 /** aggregate variance on columns */
 export type Products_Variance_Fields = {
   __typename?: 'products_variance_fields';
-  /** 所属分类id */
+  /** 所属分类id（上架时只能选系统默认公司和自己公司的分类） */
   category_categories?: Maybe<Scalars['Float']['output']>;
   /** 归属公司id */
   company_companies?: Maybe<Scalars['Float']['output']>;
@@ -6757,7 +7033,7 @@ export type Products_Variance_Fields = {
 
 /** order by variance() on columns of table "products" */
 export type Products_Variance_Order_By = {
-  /** 所属分类id */
+  /** 所属分类id（上架时只能选系统默认公司和自己公司的分类） */
   category_categories?: InputMaybe<Order_By>;
   /** 归属公司id */
   company_companies?: InputMaybe<Order_By>;
@@ -6814,9 +7090,9 @@ export type Query_Root = {
   package_product_skus_aggregate: Package_Product_Skus_Aggregate;
   /** fetch data from the table: "package_product_skus" using primary key columns */
   package_product_skus_by_pk?: Maybe<Package_Product_Skus>;
-  /** fetch data from the table: "packages" */
+  /** An array relationship */
   packages: Array<Packages>;
-  /** fetch aggregated fields from the table: "packages" */
+  /** An aggregate relationship */
   packages_aggregate: Packages_Aggregate;
   /** fetch data from the table: "packages" using primary key columns */
   packages_by_pk?: Maybe<Packages>;
@@ -7182,9 +7458,9 @@ export type Subscription_Root = {
   package_product_skus_by_pk?: Maybe<Package_Product_Skus>;
   /** fetch data from the table in a streaming manner: "package_product_skus" */
   package_product_skus_stream: Array<Package_Product_Skus>;
-  /** fetch data from the table: "packages" */
+  /** An array relationship */
   packages: Array<Packages>;
-  /** fetch aggregated fields from the table: "packages" */
+  /** An aggregate relationship */
   packages_aggregate: Packages_Aggregate;
   /** fetch data from the table: "packages" using primary key columns */
   packages_by_pk?: Maybe<Packages>;

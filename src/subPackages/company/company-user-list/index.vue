@@ -145,13 +145,17 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
-import { onPullDownRefresh, onReachBottom, onShow } from '@dcloudio/uni-app';
+import { ref } from 'vue';
+import { onLoad, onPullDownRefresh, onReachBottom, onShow } from '@dcloudio/uni-app';
 import { companyInfo } from '@/store/userStore';
 import { getCompanyUserList, searchUserByMobile, addCompanyUser, updateCompanyUser, removeCompanyUser } from '@/api/admin/company-user';
 
 const users = ref<any[]>([]);
 const loading = ref(false);
+
+// 超级管理员从公司管理点进来时传入的 companyId
+const viewCompanyId = ref<number | null>(null);
+const effectiveCompanyId = () => viewCompanyId.value ?? companyInfo.value?.id ?? null;
 const page = ref(1);
 const pageSize = 20;
 const hasMore = ref(true);
@@ -181,7 +185,8 @@ const loadUsers = async (reset = false) => {
     hasMore.value = true;
   }
 
-  if (!companyInfo.value?.id) {
+  const companyId = effectiveCompanyId();
+  if (!companyId) {
     uni.showToast({
       title: '公司信息不存在',
       icon: 'none',
@@ -193,7 +198,7 @@ const loadUsers = async (reset = false) => {
 
   try {
     const result = await getCompanyUserList({
-      companyId: companyInfo.value.id,
+      companyId,
       limit: pageSize,
       offset: (page.value - 1) * pageSize,
     });
@@ -323,7 +328,8 @@ const handleSaveUser = async () => {
     return;
   }
 
-  if (!companyInfo.value?.id) {
+  const companyId = effectiveCompanyId();
+  if (!companyId) {
     uni.showToast({
       title: '公司信息不存在',
       icon: 'none',
@@ -334,7 +340,7 @@ const handleSaveUser = async () => {
   try {
     const userData = {
       user_users: searchedUser.value.id,
-      company_companies: companyInfo.value.id,
+      company_companies: companyId,
       role: userForm.value.role,
       can_view_price: userForm.value.can_view_price,
       price_factor: priceFactor,
@@ -376,12 +382,13 @@ const closeModal = () => {
   userRoleIndex.value = 0;
 };
 
-onMounted(() => {
-  loadUsers(true);
+onLoad((options?: { companyId?: string }) => {
+  if (options?.companyId) {
+    viewCompanyId.value = Number(options.companyId);
+  }
 });
 
 onShow(() => {
-  // 页面显示时刷新数据（从编辑页面返回时）
   loadUsers(true);
 });
 

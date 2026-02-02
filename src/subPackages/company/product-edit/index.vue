@@ -33,17 +33,9 @@
 
         <view class="form-item">
           <view class="form-label">所属分类</view>
-          <picker 
-            mode="selector" 
-            :range="categoryOptions" 
-            range-key="name"
-            :value="selectedCategoryIndex"
-            @change="onCategoryChange"
-          >
-            <view class="form-picker" :class="{ placeholder: !selectedCategory }">
-              {{ selectedCategory ? selectedCategory.name : '请选择分类' }}
-            </view>
-          </picker>
+          <view class="form-picker" :class="{ placeholder: !selectedCategory }" @click="showCategoryPicker = true">
+            {{ selectedCategory ? selectedCategory.name : '请选择分类' }}
+          </view>
         </view>
 
         <view class="form-item">
@@ -61,15 +53,18 @@
 
         <view class="form-item">
           <view class="form-label">商品视频</view>
-          <input 
-            class="form-input" 
-            v-model="form.video_url" 
-            placeholder="请输入视频URL"
-          />
+          <view class="video-url-row">
+            <input 
+              class="form-input video-input" 
+              v-model="form.video_url" 
+              placeholder="请输入视频URL或点击上传"
+            />
+            <button class="upload-video-btn" type="button" @click="uploadProductVideo">上传视频</button>
+          </view>
         </view>
       </view>
 
-      <!-- 详细信息媒体 -->
+      <!-- 详细信息媒体（可上传图片或视频） -->
       <view class="section">
         <view class="section-title">详细信息媒体</view>
         <view class="media-list">
@@ -78,7 +73,11 @@
             :key="index"
             class="media-item"
           >
-            <image :src="media.file_url" class="media-image" mode="aspectFill" />
+            <image v-if="media.file_type !== 'video'" :src="media.file_url" class="media-image" mode="aspectFill" />
+            <view v-else class="media-video-wrap">
+              <video :src="media.file_url" class="media-video" controls :show-center-play-btn="true" object-fit="contain" />
+              <view class="media-video-tag">视频</view>
+            </view>
             <view class="media-actions">
               <view class="media-btn" @click="editMedia('detail', index)">编辑</view>
               <view class="media-btn delete" @click="removeMedia('detail', index)">删除</view>
@@ -86,12 +85,12 @@
           </view>
           <view class="add-media" @click="addMedia('detail')">
             <text class="add-icon">+</text>
-            <text>添加媒体</text>
+            <text>添加图片/视频</text>
           </view>
         </view>
       </view>
 
-      <!-- 实拍场景媒体 -->
+      <!-- 实拍场景媒体（可上传图片或视频） -->
       <view class="section">
         <view class="section-title">实拍场景媒体</view>
         <view class="media-list">
@@ -100,7 +99,11 @@
             :key="index"
             class="media-item"
           >
-            <image :src="media.file_url" class="media-image" mode="aspectFill" />
+            <image v-if="media.file_type !== 'video'" :src="media.file_url" class="media-image" mode="aspectFill" />
+            <view v-else class="media-video-wrap">
+              <video :src="media.file_url" class="media-video" controls :show-center-play-btn="true" object-fit="contain" />
+              <view class="media-video-tag">视频</view>
+            </view>
             <view class="media-actions">
               <view class="media-btn" @click="editMedia('scene', index)">编辑</view>
               <view class="media-btn delete" @click="removeMedia('scene', index)">删除</view>
@@ -108,7 +111,7 @@
           </view>
           <view class="add-media" @click="addMedia('scene')">
             <text class="add-icon">+</text>
-            <text>添加媒体</text>
+            <text>添加图片/视频</text>
           </view>
         </view>
       </view>
@@ -204,6 +207,51 @@
       </view>
     </view>
 
+    <!-- 分类选择弹窗 -->
+    <CategoryPicker 
+      :show="showCategoryPicker"
+      :selectedCategoryId="form.category_categories"
+      @update:show="showCategoryPicker = $event"
+      @select="onCategorySelect"
+    />
+
+    <!-- 媒体编辑弹窗（详细信息/实拍场景：上传图片或视频） -->
+    <view v-if="showMediaModal" class="modal-overlay" @click="showMediaModal = false">
+      <view class="modal-content media-modal" @click.stop>
+        <view class="modal-header">
+          <text class="modal-title">{{ editingMediaIndex >= 0 ? '编辑媒体' : '添加媒体' }}</text>
+          <text class="modal-close" @click="showMediaModal = false">×</text>
+        </view>
+        <view class="modal-body">
+          <view class="form-item">
+            <view class="form-label">类型</view>
+            <picker mode="selector" :range="mediaTypes" :value="mediaForm.typeIndex" @change="onMediaTypeChange">
+              <view class="form-picker">{{ mediaTypes[mediaForm.typeIndex] === 'image' ? '图片' : '视频' }}</view>
+            </picker>
+          </view>
+          <view class="form-item">
+            <view class="form-label">上传{{ mediaForm.file_type === 'video' ? '视频' : '图片' }}</view>
+            <view class="media-upload-area" @click="uploadMediaFile">
+              <image v-if="mediaForm.file_url && mediaForm.file_type === 'image'" :src="mediaForm.file_url" class="media-upload-preview" mode="aspectFill" />
+              <video v-else-if="mediaForm.file_url && mediaForm.file_type === 'video'" :src="mediaForm.file_url" class="media-upload-video" controls :show-center-play-btn="true" object-fit="contain" />
+              <view v-else class="media-upload-placeholder">
+                <text class="media-upload-icon">📁</text>
+                <text class="media-upload-text">点击上传{{ mediaForm.file_type === 'video' ? '视频' : '图片' }}</text>
+              </view>
+            </view>
+          </view>
+          <view class="form-item">
+            <view class="form-label">或填写URL（可选）</view>
+            <input class="form-input" v-model="mediaForm.file_url" placeholder="上传后自动填充，也可手动填写" />
+          </view>
+        </view>
+        <view class="modal-footer">
+          <button class="modal-btn" @click="saveMedia">保存</button>
+          <button class="modal-btn cancel" @click="showMediaModal = false">取消</button>
+        </view>
+      </view>
+    </view>
+
     <!-- 进度条遮罩 -->
     <view v-if="isUploading" class="upload-overlay">
       <view class="upload-progress-box">
@@ -223,6 +271,7 @@ import { companyInfo } from '@/store/userStore';
 import { getProductDetail, createProduct, updateProduct, createProductSku, updateProductSku, deleteProductSku } from '@/api/admin/product';
 import { getCategoryTree } from '@/api/admin/category';
 import { uploadFile } from '@/api/upload';
+import CategoryPicker from '@/components/CategoryPicker.vue';
 
 const productId = ref<number | null>(null);
 const isUploading = ref(false);
@@ -240,6 +289,7 @@ const form = ref({
 const skus = ref<any[]>([]);
 const categories = ref<any[]>([]);
 const loading = ref(false);
+const showCategoryPicker = ref(false);
 
 // SKU编辑相关
 const showSkuModal = ref(false);
@@ -262,28 +312,22 @@ const mediaForm = ref({
   typeIndex: 0,
 });
 
-const selectedCategoryIndex = computed(() => {
-  if (!form.value.category_categories) return -1;
-  return categories.value.findIndex(c => c.id === form.value.category_categories);
-});
-
 const selectedCategory = computed(() => {
   if (!form.value.category_categories) return null;
-  return categories.value.find(c => c.id === form.value.category_categories);
-});
-
-const categoryOptions = computed(() => {
-  const flatten = (cats: any[]): any[] => {
-    let result: any[] = [];
-    cats.forEach(cat => {
-      result.push(cat);
-      if (cat.categories && cat.categories.length > 0) {
-        result = result.concat(flatten(cat.categories));
+  // 从分类树中查找选中的分类（包括子分类）
+  const findCategory = (cats: any[]): any => {
+    for (const cat of cats) {
+      if (cat.id === form.value.category_categories) {
+        return cat;
       }
-    });
-    return result;
+      if (cat.categories && cat.categories.length > 0) {
+        const found = findCategory(cat.categories);
+        if (found) return found;
+      }
+    }
+    return null;
   };
-  return flatten(categories.value);
+  return findCategory(categories.value);
 });
 
 // 加载分类树
@@ -337,7 +381,7 @@ const uploadCoverImage = async () => {
           uploadProgress.value = 0;
           const url = await uploadFile(tempFilePath, (progress) => {
             uploadProgress.value = progress;
-          });
+          }, '.jpg');
           form.value.cover_image_url = url;
         } catch (error: any) {
           uni.showToast({
@@ -366,7 +410,7 @@ const uploadSkuImage = async () => {
           uploadProgress.value = 0;
           const url = await uploadFile(tempFilePath, (progress) => {
             uploadProgress.value = progress;
-          });
+          }, '.jpg');
           skuForm.value.image_url = url;
         } catch (error: any) {
           uni.showToast({
@@ -383,12 +427,40 @@ const uploadSkuImage = async () => {
   }
 };
 
-// 分类选择
-const onCategoryChange = (e: any) => {
-  const index = e.detail.value;
-  if (index >= 0 && categoryOptions.value[index]) {
-    form.value.category_categories = categoryOptions.value[index].id;
+// 上传商品视频（上传成功后自动同步到 form.video_url）
+const uploadProductVideo = async () => {
+  try {
+    uni.chooseMedia({
+      count: 1,
+      mediaType: ['video'],
+      success: async (res) => {
+        const tempFilePath = res.tempFiles[0].tempFilePath;
+        try {
+          isUploading.value = true;
+          uploadProgress.value = 0;
+          const url = await uploadFile(tempFilePath, (progress) => {
+            uploadProgress.value = progress;
+          }, '.mp4');
+          form.value.video_url = url;
+          uni.showToast({ title: '视频已上传', icon: 'success' });
+        } catch (error: any) {
+          uni.showToast({
+            title: error.message || '上传失败',
+            icon: 'none',
+          });
+        } finally {
+          isUploading.value = false;
+        }
+      },
+    });
+  } catch (error) {
+    console.error('选择视频失败:', error);
   }
+};
+
+// 分类选择
+const onCategorySelect = (category: any) => {
+  form.value.category_categories = category.id;
 };
 
 // 添加媒体
@@ -425,9 +497,9 @@ const removeMedia = (type: 'detail' | 'scene', index: number) => {
   }
 };
 
-// 媒体类型选择
+// 媒体类型选择（picker 的 e.detail.value 可能是字符串，需转为数字）
 const onMediaTypeChange = (e: any) => {
-  const index = e.detail.value;
+  const index = Number(e.detail.value);
   mediaForm.value.typeIndex = index;
   mediaForm.value.file_type = mediaTypes[index];
 };
@@ -441,12 +513,13 @@ const uploadMediaFile = async () => {
       success: async (res) => {
         const tempFilePath = res.tempFiles[0].tempFilePath;
         const fileType = res.tempFiles[0].fileType;
+        const ext = fileType === 'video' ? '.mp4' : '.jpg';
         try {
           isUploading.value = true;
           uploadProgress.value = 0;
           const url = await uploadFile(tempFilePath, (progress) => {
             uploadProgress.value = progress;
-          });
+          }, ext);
           mediaForm.value.file_url = url;
           if (fileType === 'video') {
             mediaForm.value.file_type = 'video';

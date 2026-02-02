@@ -44,6 +44,20 @@
         </view>
 
         <view class="form-item">
+          <view class="form-label">分类类型 <text class="required">*</text></view>
+          <picker 
+            mode="selector" 
+            :range="categoryTypes" 
+            :value="categoryTypeIndex"
+            @change="onCategoryTypeChange"
+          >
+            <view class="form-picker">
+              {{ categoryTypes[categoryTypeIndex] }}
+            </view>
+          </picker>
+        </view>
+
+        <view class="form-item">
           <view class="form-label">展示方式</view>
           <picker 
             mode="selector" 
@@ -80,7 +94,7 @@
 import { ref, onMounted, computed } from 'vue';
 import { onLoad } from '@dcloudio/uni-app';
 import { companyInfo } from '@/store/userStore';
-import { getCategoryTree, createCategory, updateCategory } from '@/api/admin/category';
+import { getCategoryTree, getCategoryDetail, createCategory, updateCategory } from '@/api/admin/category';
 import { uploadFile } from '@/api/upload';
 
 const categoryId = ref<number | null>(null);
@@ -91,10 +105,13 @@ const form = ref({
   level: 0,
   route_ui_style: 'categories' as 'categories' | 'products',
   sort_order: 0,
+  type: 'product' as 'product' | 'package',
 });
 const categories = ref<any[]>([]);
 const routeUiStyles = ['继续展示分类', '展示产品'];
 const routeUiStyleIndex = ref(0);
+const categoryTypes = ['产品分类', '套餐分类'];
+const categoryTypeIndex = ref(0);
 
 const parentCategoryOptions = computed(() => {
   const flatten = (cats: any[], excludeId?: number): any[] => {
@@ -135,12 +152,27 @@ const loadCategories = async () => {
 // 加载分类详情
 const loadCategoryDetail = async () => {
   if (!categoryId.value) return;
-  // TODO: 实现获取分类详情的API
-  // const category = await getCategoryDetail(categoryId.value);
-  // if (category) {
-  //   form.value = { ...category };
-  //   routeUiStyleIndex.value = category.route_ui_style === 'products' ? 1 : 0;
-  // }
+  try {
+    const category = await getCategoryDetail(categoryId.value);
+    if (category) {
+      form.value = {
+        name: category.name,
+        icon_url: category.icon_url,
+        parent_categories: category.parent_categories || undefined,
+        level: category.level,
+        route_ui_style: category.route_ui_style,
+        sort_order: category.sort_order,
+        type: category.type || 'product',
+      };
+      routeUiStyleIndex.value = category.route_ui_style === 'products' ? 1 : 0;
+      categoryTypeIndex.value = category.type === 'package' ? 1 : 0;
+    }
+  } catch (error: any) {
+    uni.showToast({
+      title: error.message || '加载失败',
+      icon: 'none',
+    });
+  }
 };
 
 // 上传图标
@@ -151,7 +183,7 @@ const uploadIcon = async () => {
       success: async (res) => {
         const tempFilePath = res.tempFilePaths[0];
         try {
-          const url = await uploadFile(tempFilePath);
+          const url = await uploadFile(tempFilePath, undefined, '.jpg');
           form.value.icon_url = url;
         } catch (error: any) {
           uni.showToast({
@@ -166,9 +198,9 @@ const uploadIcon = async () => {
   }
 };
 
-// 父级分类选择
+// 父级分类选择（小程序 picker 的 detail.value 是字符串，需转成数字再取选项）
 const onParentChange = (e: any) => {
-  const index = e.detail.value;
+  const index = Number(e.detail.value);
   const parent = parentCategoryOptions.value[index];
   if (parent.id === null) {
     form.value.parent_categories = undefined;
@@ -179,9 +211,16 @@ const onParentChange = (e: any) => {
   }
 };
 
-// 展示方式选择
+// 分类类型选择（小程序 picker 的 detail.value 是字符串，需转成数字再比较）
+const onCategoryTypeChange = (e: any) => {
+  const index = Number(e.detail.value);
+  categoryTypeIndex.value = index;
+  form.value.type = index === 1 ? 'package' : 'product';
+};
+
+// 展示方式选择（小程序 picker 的 detail.value 是字符串，需转成数字再比较）
 const onRouteUiStyleChange = (e: any) => {
-  const index = e.detail.value;
+  const index = Number(e.detail.value);
   routeUiStyleIndex.value = index;
   form.value.route_ui_style = index === 1 ? 'products' : 'categories';
 };
@@ -237,8 +276,8 @@ const handleCancel = () => {
   uni.navigateBack();
 };
 
-onLoad((options) => {
-  if (options.id) {
+onLoad((options?: { id?: string }) => {
+  if (options?.id) {
     categoryId.value = Number(options.id);
   }
   loadCategories();

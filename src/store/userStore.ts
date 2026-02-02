@@ -58,6 +58,17 @@ export function restoreUserFromStorage() {
   }
 }
 
+// 局部更新用户信息（如修改头像、昵称、简介后同步到内存和本地存储）
+export function updateUserInfo(partial: Partial<Record<string, unknown>>) {
+  if (!partial || typeof partial !== 'object') return
+  userInfo.value = { ...userInfo.value, ...partial }
+  try {
+    uni.setStorageSync('userInfo', userInfo.value)
+  } catch (e) {
+    console.error('同步 userInfo 到存储失败', e)
+  }
+}
+
 // 清除用户状态（退出登录）
 export function clearUserContext() {
   userInfo.value = {}

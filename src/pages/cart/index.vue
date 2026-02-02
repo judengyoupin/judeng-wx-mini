@@ -1,12 +1,13 @@
 <template>
   <view class="cart-page">
-    <!-- 导航栏 -->
-    <view class="navbar">
-      <text class="navbar-title">购物车</text>
-      <text v-if="cartItems.length > 0" class="manage-btn" @click="toggleManageMode">
-        {{ isManageMode ? '完成' : '管理' }}
-      </text>
-    </view>
+    <!-- 统一导航栏（含状态栏高度） -->
+    <PageNavBar title="购物车">
+      <template #right>
+        <text v-if="cartItems.length > 0" class="manage-btn" @click="toggleManageMode">
+          {{ isManageMode ? '完成' : '管理' }}
+        </text>
+      </template>
+    </PageNavBar>
 
     <!-- 加载状态 -->
     <view v-if="loading" class="loading-container">
@@ -49,7 +50,7 @@
             </view>
             <view class="item-spec">{{ item.product_sku?.name || '规格' }}</view>
             <view class="item-price-row">
-              <text class="item-price">¥{{ formatPrice(item.product_sku?.price || 0) }}</text>
+              <text class="item-price">¥{{ formatPrice((item.product_sku?.price || 0) * priceFactor) }}</text>
               <view class="quantity-control">
                 <view
                   class="quantity-btn"
@@ -113,7 +114,9 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { onShow, onPullDownRefresh } from '@dcloudio/uni-app';
-import { user_token, userInfo } from '@/store/userStore';
+import { user_token, userInfo, companyInfo } from '@/store/userStore';
+import { getCompanyUserRole } from '@/utils/auth';
+import PageNavBar from '@/components/PageNavBar.vue';
 import {
   getCartList,
   updateCartQuantity,
@@ -124,6 +127,7 @@ import {
 const cartItems = ref<any[]>([]);
 const loading = ref(false);
 const isManageMode = ref(false);
+const priceFactor = ref(1); // 价格系数，默认为1
 
 // 计算属性
 const selectedCount = computed(() => {
@@ -134,13 +138,35 @@ const isAllSelected = computed(() => {
   return cartItems.value.length > 0 && cartItems.value.every(item => item.selected);
 });
 
+// 计算总价（应用价格系数）
 const totalPrice = computed(() => {
   return cartItems.value
     .filter(item => item.selected)
     .reduce((sum, item) => {
-      return sum + (item.product_sku?.price || 0) * item.quantity;
+      const basePrice = item.product_sku?.price || 0;
+      return sum + basePrice * priceFactor.value * item.quantity;
     }, 0);
 });
+
+// 加载价格系数
+const loadPriceFactor = async () => {
+  if (!user_token.value || !userInfo.value?.id) {
+    priceFactor.value = 1;
+    return;
+  }
+
+  try {
+    const roleInfo = await getCompanyUserRole();
+    if (roleInfo) {
+      priceFactor.value = roleInfo.priceFactor || 1;
+    } else {
+      priceFactor.value = 1;
+    }
+  } catch (error) {
+    console.error('加载价格系数失败:', error);
+    priceFactor.value = 1;
+  }
+};
 
 // 加载购物车
 const loadCart = async () => {
@@ -152,6 +178,9 @@ const loadCart = async () => {
   loading.value = true;
 
   try {
+    // 先加载价格系数
+    await loadPriceFactor();
+    
     const items = await getCartList();
     cartItems.value = items.map((item: any) => ({
       ...item,
@@ -351,28 +380,6 @@ onPullDownRefresh(() => {
   padding-bottom: 120rpx;
 }
 
-.navbar {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 88rpx;
-  background: #ffffff;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 30rpx;
-  padding-top: var(--status-bar-height, 0);
-  border-bottom: 1rpx solid #e0e0e0;
-  z-index: 1000;
-}
-
-.navbar-title {
-  font-size: 36rpx;
-  font-weight: bold;
-  color: #333333;
-}
-
 .manage-btn {
   font-size: 28rpx;
   color: #667eea;
@@ -400,8 +407,7 @@ onPullDownRefresh(() => {
 }
 
 .cart-content {
-  margin-top: 88rpx;
-  height: calc(100vh - 88rpx - 120rpx);
+  height: calc(100vh - 120rpx);
   display: flex;
   flex-direction: column;
 }
@@ -590,7 +596,6 @@ onPullDownRefresh(() => {
 }
 
 .empty-state {
-  margin-top: 88rpx;
   padding: 200rpx 0;
   display: flex;
   flex-direction: column;

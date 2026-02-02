@@ -8,6 +8,7 @@ export interface CategoryInput {
   level: number;
   route_ui_style: 'categories' | 'products';
   sort_order: number;
+  type: 'product' | 'package';
 }
 
 /**
@@ -30,6 +31,7 @@ export async function getCategoryTree(companyId: number) {
         level
         route_ui_style
         sort_order
+        type
         categories(
           where: { is_deleted: { _eq: false } }
           order_by: { sort_order: asc }
@@ -41,6 +43,7 @@ export async function getCategoryTree(companyId: number) {
           level
           route_ui_style
           sort_order
+          type
         }
       }
     }
@@ -56,6 +59,7 @@ export async function getCategoryTree(companyId: number) {
 
 /**
  * 创建分类
+ * 显式传入 type，避免被 schema 或序列化漏掉
  */
 export async function createCategory(category: CategoryInput) {
   const mutation = `
@@ -66,13 +70,25 @@ export async function createCategory(category: CategoryInput) {
         icon_url
         level
         sort_order
+        type
       }
     }
   `;
 
+  const payload = {
+    name: category.name,
+    icon_url: category.icon_url,
+    company_companies: category.company_companies,
+    parent_categories: category.parent_categories ?? null,
+    level: category.level,
+    route_ui_style: category.route_ui_style,
+    sort_order: category.sort_order,
+    type: category.type,
+  };
+
   const result = await client.execute({
     query: mutation,
-    variables: { category },
+    variables: { category: payload },
   });
 
   return result?.insert_categories_one;
@@ -80,6 +96,7 @@ export async function createCategory(category: CategoryInput) {
 
 /**
  * 更新分类
+ * 显式传入 type，避免被漏掉
  */
 export async function updateCategory(categoryId: number, category: Partial<CategoryInput>) {
   const mutation = `
@@ -89,19 +106,57 @@ export async function updateCategory(categoryId: number, category: Partial<Categ
         name
         icon_url
         updated_at
+        type
       }
     }
   `;
+
+  const payload: Record<string, unknown> = {};
+  if (category.name !== undefined) payload.name = category.name;
+  if (category.icon_url !== undefined) payload.icon_url = category.icon_url;
+  if (category.company_companies !== undefined) payload.company_companies = category.company_companies;
+  if (category.parent_categories !== undefined) payload.parent_categories = category.parent_categories;
+  if (category.level !== undefined) payload.level = category.level;
+  if (category.route_ui_style !== undefined) payload.route_ui_style = category.route_ui_style;
+  if (category.sort_order !== undefined) payload.sort_order = category.sort_order;
+  if (category.type !== undefined) payload.type = category.type;
 
   const result = await client.execute({
     query: mutation,
     variables: {
       categoryId,
-      category,
+      category: payload,
     },
   });
 
   return result?.update_categories_by_pk;
+}
+
+/**
+ * 获取分类详情
+ */
+export async function getCategoryDetail(categoryId: number) {
+  const query = `
+    query GetCategoryDetail($categoryId: bigint!) {
+      categories_by_pk(id: $categoryId) {
+        id
+        name
+        icon_url
+        parent_categories
+        level
+        route_ui_style
+        sort_order
+        type
+      }
+    }
+  `;
+
+  const result = await client.execute({
+    query,
+    variables: { categoryId },
+  });
+
+  return result?.categories_by_pk;
 }
 
 /**

@@ -38,10 +38,6 @@
           <text class="management-icon">📦</text>
           <text class="management-text">套餐管理</text>
         </view>
-        <view class="management-item" @click="goToUserManagement">
-          <text class="management-icon">👥</text>
-          <text class="management-text">用户管理</text>
-        </view>
       </view>
     </view>
 
@@ -62,14 +58,14 @@
           <view class="product-name">{{ product.name }}</view>
           <view class="product-meta">
             <text class="sku-count">{{ product.product_skus?.length || 0 }}个规格</text>
-            <text class="status" :class="{ 'status-shelved': product.is_shelved }">
-              {{ product.is_shelved ? '已上架' : '已下架' }}
+            <text class="status" :class="{ 'status-shelved': !product.is_shelved }">
+              {{ product.is_shelved ? '已下架' : '已上架' }}
             </text>
           </view>
         </view>
         <view class="product-actions">
           <view class="action-btn" @click.stop="toggleShelve(product)">
-            {{ product.is_shelved ? '下架' : '上架' }}
+            {{ product.is_shelved ? '上架' : '下架' }}
           </view>
           <view class="action-btn delete" @click.stop="handleDelete(product)">
             删除
@@ -92,8 +88,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue';
-import { onPullDownRefresh, onReachBottom, onShow } from '@dcloudio/uni-app';
+import { ref, watch } from 'vue';
+import { onLoad, onPullDownRefresh, onReachBottom, onShow } from '@dcloudio/uni-app';
 import { companyInfo } from '@/store/userStore';
 import { getProductList, deleteProduct, updateProduct } from '@/api/admin/product';
 
@@ -103,6 +99,10 @@ const currentTab = ref<'all' | 'shelved' | 'unshelved'>('all');
 const page = ref(1);
 const pageSize = 20;
 const hasMore = ref(true);
+
+// 超级管理员从公司管理点进来时传入的 companyId（仅查看，不编辑时用）
+const viewCompanyId = ref<number | null>(null);
+const effectiveCompanyId = () => viewCompanyId.value ?? companyInfo.value?.id ?? null;
 
 // 加载商品列表
 const loadProducts = async (reset = false) => {
@@ -115,7 +115,8 @@ const loadProducts = async (reset = false) => {
     hasMore.value = true;
   }
 
-  if (!companyInfo.value?.id) {
+  const companyId = effectiveCompanyId();
+  if (!companyId) {
     uni.showToast({
       title: '公司信息不存在',
       icon: 'none',
@@ -127,7 +128,7 @@ const loadProducts = async (reset = false) => {
 
   try {
     const where: any = {
-      companyId: companyInfo.value.id,
+      companyId,
       limit: pageSize,
       offset: (page.value - 1) * pageSize,
     };
@@ -145,11 +146,12 @@ const loadProducts = async (reset = false) => {
     }
 
     // 根据tab过滤
+    // is_shelved = false 表示已上架，is_shelved = true 表示已下架
     let filteredProducts = result.products || [];
     if (currentTab.value === 'shelved') {
-      filteredProducts = filteredProducts.filter((p: any) => p.is_shelved);
-    } else if (currentTab.value === 'unshelved') {
       filteredProducts = filteredProducts.filter((p: any) => !p.is_shelved);
+    } else if (currentTab.value === 'unshelved') {
+      filteredProducts = filteredProducts.filter((p: any) => p.is_shelved);
     }
 
     products.value = [...products.value, ...filteredProducts];
@@ -178,7 +180,7 @@ const toggleShelve = async (product: any) => {
     });
 
     uni.showToast({
-      title: product.is_shelved ? '已下架' : '已上架',
+      title: product.is_shelved ? '已上架' : '已下架',
       icon: 'success',
     });
 
@@ -220,35 +222,28 @@ const handleDelete = (product: any) => {
 // 跳转到添加商品
 const goToAddProduct = () => {
   uni.navigateTo({
-    url: '/subPackages/admin/product-edit/index',
+    url: '/subPackages/company/product-edit/index',
   });
 };
 
 // 跳转到编辑商品
 const goToEditProduct = (productId: number) => {
   uni.navigateTo({
-    url: `/subPackages/admin/product-edit/index?id=${productId}`,
+    url: `/subPackages/company/product-edit/index?id=${productId}`,
   });
 };
 
 // 跳转到分类管理
 const goToCategoryManagement = () => {
   uni.navigateTo({
-    url: '/subPackages/admin/category-list/index',
+    url: '/subPackages/company/category-list/index',
   });
 };
 
 // 跳转到套餐管理
 const goToPackageManagement = () => {
   uni.navigateTo({
-    url: '/subPackages/admin/package-list/index',
-  });
-};
-
-// 跳转到用户管理
-const goToUserManagement = () => {
-  uni.navigateTo({
-    url: '/subPackages/admin/company-user-list/index',
+    url: '/subPackages/company/package-list/index',
   });
 };
 
@@ -257,12 +252,13 @@ watch(currentTab, () => {
   loadProducts(true);
 });
 
-onMounted(() => {
-  loadProducts(true);
+onLoad((options?: { companyId?: string }) => {
+  if (options?.companyId) {
+    viewCompanyId.value = Number(options.companyId);
+  }
 });
 
 onShow(() => {
-  // 页面显示时刷新数据（从编辑页面返回时）
   loadProducts(true);
 });
 

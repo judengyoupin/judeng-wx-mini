@@ -1,14 +1,7 @@
 <template>
   <view class="container">
-    <!-- 自定义顶部导航栏 -->
-    <view class="custom-navbar">
-      <view class="navbar-content">
-        <view class="navbar-title">{{ companyInfo?.name || "聚灯优品" }}</view>
-      </view>
-    </view>
-
-    <!-- 内容区域 -->
-    <view class="page-title"></view>
+    <!-- 统一导航栏（含状态栏高度） -->
+    <PageNavBar :title="companyInfo?.name || '聚灯优品'" />
 
     <!-- 搜索框 -->
     <view class="search-box">
@@ -180,14 +173,34 @@ import { getCategoryTree } from "@/api/category/index";
 import { getTopBanners, getBottomBanners } from "@/api/banner/index";
 import { userInfo, user_token, companyInfo } from "@/store/userStore";
 import { onLoad, onShow, onShareAppMessage } from "@dcloudio/uni-app";
+import type { BannerArray } from "@/types/companies";
+
+import PageNavBar from '@/components/PageNavBar.vue';
+
+/** 首页分类项（含子分类） */
+interface CategoryItem {
+  id: any;
+  name: any;
+  sort_order?: any;
+  route_ui_style?: any;
+  ui_style?: any;
+  icon_url?: any;
+  type?: any;
+  skip?: boolean;
+  img?: { url: any } | null;
+  icon?: any;
+  image?: any;
+  children?: CategoryItem[];
+}
 
 export default defineComponent({
+  components: { PageNavBar },
   setup() {
     // 定义数据
-    const categoryList = ref([]);
+    const categoryList = ref<CategoryItem[]>([]);
     const loading = ref(true);
-    const topBanners = ref([]);
-    const bottomBanners = ref([]);
+    const topBanners = ref<BannerArray>([]);
+    const bottomBanners = ref<BannerArray>([]);
     const searchKeyword = ref("");
 
     // 搜索确认处理
@@ -503,7 +516,6 @@ export default defineComponent({
         // 重新同步公司信息
         import("@/api/company/index").then(({ syncCompanyInfo }) => {
           syncCompanyInfo(options.companyId).then(() => {
-            // 重新加载数据
             fetchCategories();
             fetchTopBanners();
             fetchBottomBanners();
@@ -530,7 +542,6 @@ export default defineComponent({
     onShow(async () => {
       // 等待一下确保 companyInfo 已初始化
       await new Promise((resolve) => setTimeout(resolve, 100));
-      
       await Promise.all([
         fetchCategories(),
         fetchTopBanners(),
@@ -557,7 +568,7 @@ export default defineComponent({
       onSearchConfirm,
     };
   },
-  onShareAppMessage(res) {
+  onShareAppMessage(res: { from?: string; target?: unknown }) {
     console.log(res);
 
     const storageCompanyId = uni.getStorageSync("companyId");
@@ -578,34 +589,6 @@ export default defineComponent({
   position: relative;
   min-height: 100vh;
   background-color: #ffffff;
-}
-
-.custom-navbar {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  background-color: #ffffff;
-  z-index: 100;
-  box-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.05);
-}
-
-.navbar-content {
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  height: 140rpx;
-  padding: 23rpx 0 30rpx;
-}
-
-.navbar-title {
-  font-size: 32rpx;
-  font-weight: bold;
-  color: #333;
-}
-
-.page-title {
-  height: 188rpx;
 }
 
 /* 搜索框样式 */

@@ -40,6 +40,17 @@
             maxlength="500"
           />
         </view>
+
+        <view class="form-item">
+          <view class="form-label">套餐分类</view>
+          <view class="category-selector" @click="showCategoryPicker = true">
+            <text v-if="selectedCategory" class="selected-category">
+              {{ selectedCategory.name }}
+            </text>
+            <text v-else class="category-placeholder">请选择套餐分类（可选）</text>
+            <text class="category-arrow">›</text>
+          </view>
+        </view>
       </view>
 
       <!-- 套餐商品 -->
@@ -76,6 +87,39 @@
         <button class="cancel-btn" @click="handleCancel">取消</button>
       </view>
     </scroll-view>
+
+    <!-- 套餐分类选择弹窗 -->
+    <view v-if="showCategoryPicker" class="modal-overlay" @click="showCategoryPicker = false">
+      <view class="modal-content category-picker-modal" @click.stop>
+        <view class="modal-header">
+          <text class="modal-title">选择套餐分类</text>
+          <text class="modal-close" @click="showCategoryPicker = false">×</text>
+        </view>
+        <view class="modal-body">
+          <scroll-view scroll-y class="category-picker-list">
+            <view
+              class="category-picker-item"
+              :class="{ active: form.category_categories == null }"
+              @click="selectCategory(null)"
+            >
+              <text>不选择分类</text>
+            </view>
+            <view
+              v-for="cat in packageCategories"
+              :key="cat.id"
+              class="category-picker-item"
+              :class="{ active: form.category_categories === cat.id }"
+              @click="selectCategory(cat.id)"
+            >
+              <text>{{ cat.name }}</text>
+            </view>
+            <view v-if="packageCategories.length === 0" class="empty-categories">
+              <text>暂无套餐分类，请先在分类管理中创建</text>
+            </view>
+          </scroll-view>
+        </view>
+      </view>
+    </view>
 
     <!-- SKU选择弹窗 -->
     <view v-if="showSkuModal" class="modal-overlay" @click="showSkuModal = false">
@@ -143,11 +187,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { onLoad } from '@dcloudio/uni-app';
 import { companyInfo } from '@/store/userStore';
 import { getPackageDetail, createPackage, updatePackage, addPackageSku, updatePackageSku, deletePackageSku } from '@/api/admin/package';
 import { getProductList } from '@/api/admin/product';
+import { getCategoryTree } from '@/api/category/index';
 import { uploadFile } from '@/api/upload';
 
 const packageId = ref<number | null>(null);
@@ -155,9 +200,12 @@ const form = ref({
   name: '',
   cover_image_url: '',
   description: '',
+  category_categories: undefined as number | undefined,
 });
 const packageSkus = ref<any[]>([]);
 const loading = ref(false);
+const packageCategories = ref<any[]>([]);
+const showCategoryPicker = ref(false);
 
 // SKU选择相关
 const showSkuModal = ref(false);
@@ -195,6 +243,36 @@ const loadAllSkus = async () => {
   } catch (error) {
     console.error('加载商品SKU失败:', error);
   }
+};
+
+// 加载套餐分类（只加载type='package'的分类）
+const loadPackageCategories = async () => {
+  if (!companyInfo.value?.id) return;
+  try {
+    const result = await getCategoryTree(companyInfo.value.id, 'package');
+    // getCategoryTree返回 { code, data, message } 格式
+    if (result && result.code === 0 && Array.isArray(result.data)) {
+      packageCategories.value = result.data;
+    } else if (Array.isArray(result)) {
+      // 兼容直接返回数组的情况
+      packageCategories.value = result;
+    }
+  } catch (error) {
+    console.error('加载套餐分类失败:', error);
+  }
+};
+
+// 计算选中的分类（兼容 id 为 number 或 string）
+const selectedCategory = computed(() => {
+  if (form.value.category_categories == null) return null;
+  const id = form.value.category_categories;
+  return packageCategories.value.find(cat => Number(cat.id) === Number(id));
+});
+
+// 选择分类
+const selectCategory = (categoryId: number | string | null) => {
+  form.value.category_categories = categoryId != null ? Number(categoryId) : undefined;
+  showCategoryPicker.value = false;
 };
 
 // 搜索SKU
@@ -289,7 +367,7 @@ const uploadCoverImage = async () => {
       success: async (res) => {
         const tempFilePath = res.tempFilePaths[0];
         try {
-          const url = await uploadFile(tempFilePath);
+          const url = await uploadFile(tempFilePath, undefined, '.jpg');
           form.value.cover_image_url = url;
         } catch (error: any) {
           uni.showToast({
@@ -315,6 +393,7 @@ const loadPackageDetail = async () => {
         name: pkg.name,
         cover_image_url: pkg.cover_image_url,
         description: pkg.description || '',
+        category_categories: pkg.category_categories || undefined,
       };
       packageSkus.value = pkg.package_product_skus || [];
     }
@@ -400,10 +479,11 @@ const handleCancel = () => {
   uni.navigateBack();
 };
 
-onLoad((options) => {
-  if (options.id) {
+onLoad((options: any) => {
+  if (options?.id) {
     packageId.value = Number(options.id);
   }
+  loadPackageCategories();
   loadAllSkus();
   if (packageId.value) {
     loadPackageDetail();
@@ -716,5 +796,55 @@ onLoad((options) => {
 .modal-btn.cancel {
   background: #f0f0f0;
   color: #666666;
+}
+
+.category-selector {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20rpx;
+  background: #f8f8f8;
+  border-radius: 8rpx;
+  font-size: 28rpx;
+}
+
+.selected-category {
+  color: #333333;
+}
+
+.category-placeholder {
+  color: #999999;
+}
+
+.category-arrow {
+  color: #999999;
+  font-size: 32rpx;
+}
+
+.category-picker-modal {
+  max-height: 70vh;
+}
+
+.category-picker-list {
+  max-height: 500rpx;
+}
+
+.category-picker-item {
+  padding: 24rpx 20rpx;
+  border-bottom: 1rpx solid #e0e0e0;
+  font-size: 28rpx;
+  color: #333333;
+}
+
+.category-picker-item.active {
+  background: #e6f7ff;
+  color: #1890ff;
+}
+
+.empty-categories {
+  padding: 40rpx;
+  text-align: center;
+  color: #999999;
+  font-size: 26rpx;
 }
 </style>

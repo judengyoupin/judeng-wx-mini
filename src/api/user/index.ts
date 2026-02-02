@@ -89,6 +89,7 @@ export const getUser = async ({
         nickname
         bio
         mobile
+        avatar_url
       }
     }
   `;
@@ -103,6 +104,47 @@ export const getUser = async ({
   }
 
   return result.users_by_pk;
+};
+
+/** 更新个人资料可写字段 */
+export type UpdateProfileInput = {
+  nickname?: string;
+  avatar_url?: string;
+  bio?: string;
+};
+
+/**
+ * 更新当前用户资料（昵称、头像、简介）
+ * @param userId 当前用户 ID
+ * @param data 要更新的字段
+ * @returns 更新后的用户
+ */
+export const updateUserProfile = async (
+  userId: number,
+  data: UpdateProfileInput
+): Promise<Users> => {
+  const mutation = `
+    mutation UpdateUserProfile($userId: bigint!, $set: users_set_input!) {
+      update_users_by_pk(pk_columns: { id: $userId }, _set: $set) {
+        id
+        nickname
+        bio
+        mobile
+        avatar_url
+      }
+    }
+  `;
+  const result = await client.execute<{ update_users_by_pk: Users | null }>({
+    query: mutation,
+    variables: {
+      userId,
+      set: data,
+    },
+  });
+  if (!result.update_users_by_pk) {
+    throw new Error("更新失败");
+  }
+  return result.update_users_by_pk;
 };
 
 /**

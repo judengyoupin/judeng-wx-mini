@@ -1,13 +1,7 @@
 <template>
   <view class="product-detail-page">
-    <!-- 自定义导航栏 -->
-    <view class="custom-navbar">
-      <view class="navbar-content">
-        <view class="navbar-back" @click="goBack">‹</view>
-        <view class="navbar-title">商品详情</view>
-        <view class="navbar-right"></view>
-      </view>
-    </view>
+    <!-- 统一导航栏（含状态栏高度） -->
+    <PageNavBar :title="navTitle" :show-back="true" @back="goBack" />
 
     <!-- 加载状态 -->
     <view v-if="loading" class="loading-container">
@@ -111,7 +105,7 @@
             <view class="sku-info">
               <view class="sku-name">{{ sku.name }}</view>
               <view class="sku-meta">
-                <text v-if="canViewPrice" class="sku-price">¥{{ formatPrice(sku.price) }}</text>
+                <text v-if="canViewPrice" class="sku-price">¥{{ formatPrice((sku.price || 0) * priceFactor) }}</text>
                 <text class="sku-stock" :class="{ 'stock-zero': sku.stock <= 0 }">
                   {{ sku.stock > 0 ? `库存: ${sku.stock}` : '缺货' }}
                 </text>
@@ -184,12 +178,18 @@ import { onLoad } from '@dcloudio/uni-app';
 import { getProductDetail } from '@/api/product/index';
 import { addToCart } from '@/api/cart/index';
 import { user_token, userInfo, companyInfo } from '@/store/userStore';
-import { isCompanyUser } from '@/utils/auth';
+import { getCompanyUserRole } from '@/utils/auth';
+import PageNavBar from '@/components/PageNavBar.vue';
 
 const productId = ref<number | null>(null);
 const productDetail = ref<any>(null);
 const loading = ref(false);
 const selectedSkuIds = ref<number[]>([]);
+
+// 用户权限和价格系数
+const canViewPrice = ref(false);
+const canAddToCart = ref(false);
+const priceFactor = ref(1); // 价格系数，默认为1
 
 // 计算属性
 const skus = computed(() => {
@@ -221,9 +221,18 @@ const sceneImageUrls = computed(() => {
   return sceneImages.value.map((img: any) => img.file_url).filter(Boolean);
 });
 
+const navTitle = computed(() => {
+  const name = companyInfo.value?.name;
+  return name ? `${name} - 商品详情` : '商品详情';
+});
+
+// 计算最低价格（应用价格系数）
 const minPrice = computed(() => {
   if (!skus.value.length) return null;
-  const prices = skus.value.map((sku: any) => sku.price || 0).filter(p => p > 0);
+  const prices = skus.value.map((sku: any) => {
+    const basePrice = sku.price || 0;
+    return basePrice > 0 ? basePrice * priceFactor.value : 0;
+  }).filter(p => p > 0);
   return prices.length > 0 ? Math.min(...prices) : null;
 });
 
@@ -233,25 +242,31 @@ const hasMultiplePrices = computed(() => {
   return new Set(prices).size > 1;
 });
 
-const canViewPrice = ref(false);
-const canAddToCart = ref(false);
-
 // 检查权限
 const checkPermissions = async () => {
   if (!user_token.value || !userInfo.value?.id) {
     canViewPrice.value = false;
     canAddToCart.value = false;
+    priceFactor.value = 1;
     return;
   }
 
   try {
-    const isUser = await isCompanyUser();
-    canViewPrice.value = isUser;
-    canAddToCart.value = isUser;
+    const roleInfo = await getCompanyUserRole();
+    if (roleInfo) {
+      canViewPrice.value = roleInfo.canViewPrice;
+      canAddToCart.value = roleInfo.canViewPrice; // 能查看价格才能加入购物车
+      priceFactor.value = roleInfo.priceFactor || 1;
+    } else {
+      canViewPrice.value = false;
+      canAddToCart.value = false;
+      priceFactor.value = 1;
+    }
   } catch (error) {
     console.error('检查权限失败:', error);
     canViewPrice.value = false;
     canAddToCart.value = false;
+    priceFactor.value = 1;
   }
 };
 
@@ -402,52 +417,13 @@ onLoad((options) => {
   padding-bottom: 120rpx;
 }
 
-.custom-navbar {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 88rpx;
-  background: #ffffff;
-  z-index: 1000;
-  border-bottom: 1rpx solid #e0e0e0;
-}
-
-.navbar-content {
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 30rpx;
-  padding-top: var(--status-bar-height, 0);
-}
-
-.navbar-back {
-  font-size: 48rpx;
-  color: #333333;
-  width: 60rpx;
-  text-align: left;
-}
-
-.navbar-title {
-  font-size: 36rpx;
-  font-weight: bold;
-  color: #333333;
-  flex: 1;
-  text-align: center;
-}
-
-.navbar-right {
-  width: 60rpx;
-}
-
+/* 内容区高度：扣除底部占位，导航栏由 PageNavBar 占位 */
 .scroll-content {
-  margin-top: 88rpx;
-  height: calc(100vh - 88rpx - 120rpx);
+  height: calc(100vh - 120rpx);
+  min-height: 0;
 }
 
 .loading-container {
-  margin-top: 88rpx;
   padding: 200rpx 0;
   text-align: center;
   color: #999999;

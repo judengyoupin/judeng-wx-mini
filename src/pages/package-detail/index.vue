@@ -1,13 +1,7 @@
 <template>
   <view class="package-detail-page">
-    <!-- 自定义导航栏 -->
-    <view class="custom-navbar">
-      <view class="navbar-content">
-        <view class="navbar-back" @click="goBack">‹</view>
-        <view class="navbar-title">套餐详情</view>
-        <view class="navbar-right"></view>
-      </view>
-    </view>
+    <!-- 统一导航栏（含状态栏高度） -->
+    <PageNavBar :title="navTitle" :show-back="true" @back="goBack" />
 
     <!-- 加载状态 -->
     <view v-if="loading" class="loading-container">
@@ -50,7 +44,7 @@
             <view class="product-name">{{ item.product_sku?.product?.name || '商品' }}</view>
             <view class="product-spec">{{ item.product_sku?.name || '规格' }}</view>
             <view class="product-price-row">
-              <text class="product-price">¥{{ formatPrice(item.product_sku?.price || 0) }}</text>
+              <text class="product-price">¥{{ formatPrice((item.product_sku?.price || 0) * priceFactor) }}</text>
               <text class="product-quantity">×{{ item.quantity }}</text>
             </view>
           </view>
@@ -77,21 +71,49 @@ import { ref, computed, onMounted } from 'vue';
 import { onLoad } from '@dcloudio/uni-app';
 import { getPackageDetail } from '@/api/package/index';
 import { addToCart } from '@/api/cart/index';
-import { user_token } from '@/store/userStore';
+import { user_token, userInfo, companyInfo } from '@/store/userStore';
+import { getCompanyUserRole } from '@/utils/auth';
 
 const packageId = ref<number | null>(null);
 const packageDetail = ref<any>(null);
 const loading = ref(false);
+const priceFactor = ref(1); // 价格系数，默认为1
 
-// 计算套餐总价
+// 计算套餐总价（应用价格系数）
+const navTitle = computed(() => {
+  const name = companyInfo.value?.name;
+  return name ? `${name} - 套餐详情` : '套餐详情';
+});
+
 const totalPackagePrice = computed(() => {
   if (!packageDetail.value?.package_product_skus) {
     return 0;
   }
   return packageDetail.value.package_product_skus.reduce((sum: number, item: any) => {
-    return sum + (item.product_sku?.price || 0) * item.quantity;
+    const basePrice = item.product_sku?.price || 0;
+    return sum + basePrice * priceFactor.value * item.quantity;
   }, 0);
 });
+
+// 加载价格系数
+const loadPriceFactor = async () => {
+  if (!user_token.value || !userInfo.value?.id) {
+    priceFactor.value = 1;
+    return;
+  }
+
+  try {
+    const roleInfo = await getCompanyUserRole();
+    if (roleInfo) {
+      priceFactor.value = roleInfo.priceFactor || 1;
+    } else {
+      priceFactor.value = 1;
+    }
+  } catch (error) {
+    console.error('加载价格系数失败:', error);
+    priceFactor.value = 1;
+  }
+};
 
 // 加载套餐详情
 const loadPackageDetail = async () => {
@@ -100,6 +122,9 @@ const loadPackageDetail = async () => {
   loading.value = true;
 
   try {
+    // 先加载价格系数
+    await loadPriceFactor();
+    
     const detail = await getPackageDetail(packageId.value);
     packageDetail.value = detail;
   } catch (error: any) {
@@ -193,52 +218,13 @@ onLoad((options) => {
   padding-bottom: 120rpx;
 }
 
-.custom-navbar {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 88rpx;
-  background: #ffffff;
-  z-index: 1000;
-  border-bottom: 1rpx solid #e0e0e0;
-}
-
-.navbar-content {
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 30rpx;
-  padding-top: var(--status-bar-height, 0);
-}
-
-.navbar-back {
-  font-size: 48rpx;
-  color: #333333;
-  width: 60rpx;
-  text-align: left;
-}
-
-.navbar-title {
-  font-size: 36rpx;
-  font-weight: bold;
-  color: #333333;
-  flex: 1;
-  text-align: center;
-}
-
-.navbar-right {
-  width: 60rpx;
-}
-
+/* 内容区高度：扣除底部占位，导航栏由 PageNavBar 占位 */
 .scroll-content {
-  margin-top: 88rpx;
-  height: calc(100vh - 88rpx - 120rpx);
+  height: calc(100vh - 120rpx);
+  min-height: 0;
 }
 
 .loading-container {
-  margin-top: 88rpx;
   padding: 200rpx 0;
   text-align: center;
   color: #999999;

@@ -70,15 +70,12 @@
       </view>
     </view>
 
-    <!-- 管理功能区域 -->
-    <view v-if="isAdmin || isCompanyAdminUser" class="admin-section">
+    <!-- 超级管理员区域：仅 user.role === admin 可见 -->
+    <view v-if="isAdmin" class="admin-section">
       <view class="section-header">
-        <text class="section-title">管理功能</text>
+        <text class="section-title">超级管理员</text>
       </view>
-      
-      <!-- 平台管理员 -->
-      <template v-if="isAdmin">
-        <view class="admin-grid">
+      <view class="admin-grid">
           <view class="admin-item" @click="goToCompanyManagement">
             <view class="admin-icon-wrapper company">
               <text class="admin-icon">🏢</text>
@@ -93,36 +90,73 @@
             <text class="admin-label">配置管理</text>
             <text class="admin-desc">设置默认展示</text>
           </view>
+          <view class="admin-item" @tap="goToUserManagement" @click="goToUserManagement">
+            <view class="admin-icon-wrapper user">
+              <text class="admin-icon">👥</text>
+            </view>
+            <text class="admin-label">账号管理</text>
+            <text class="admin-desc">管理用户账号</text>
+          </view>
         </view>
-      </template>
+    </view>
 
-      <!-- 公司管理员 -->
-      <template v-if="isCompanyAdminUser">
-        <view class="admin-grid">
+    <!-- 我的公司板块：进入某公司且 company_user.role === admin 可见 -->
+    <view v-if="isCompanyAdminUser" class="admin-section">
+      <view class="section-header">
+        <text class="section-title">我的公司</text>
+      </view>
+      <view class="admin-grid">
+          <view class="admin-item" @click="goToCompanySettings">
+            <view class="admin-icon-wrapper settings">
+              <text class="admin-icon">⚙️</text>
+            </view>
+            <text class="admin-label">公司设置</text>
+            <text class="admin-desc">设置logo、轮播图、名称、密钥</text>
+          </view>
+          <view class="admin-item" @click="goToCategoryManagement">
+            <view class="admin-icon-wrapper category">
+              <text class="admin-icon">📂</text>
+            </view>
+            <text class="admin-label">分类管理</text>
+            <text class="admin-desc">管理本公司下的分类</text>
+          </view>
           <view class="admin-item" @click="goToProductManagement">
             <view class="admin-icon-wrapper product">
               <text class="admin-icon">📦</text>
             </view>
             <text class="admin-label">商品管理</text>
-            <text class="admin-desc">管理商品分类</text>
+            <text class="admin-desc">管理本公司下的商品</text>
           </view>
-          <view class="admin-item" @click="goToOrderManagement">
+          <view class="admin-item" @click="goToPackageManagement">
+            <view class="admin-icon-wrapper package">
+              <text class="admin-icon">🎁</text>
+            </view>
+            <text class="admin-label">套餐管理</text>
+            <text class="admin-desc">管理本公司下的套餐</text>
+          </view>
+          <view class="admin-item" @click="goToCompanyUserManagement">
+            <view class="admin-icon-wrapper user">
+              <text class="admin-icon">👥</text>
+            </view>
+            <text class="admin-label">用户管理</text>
+            <text class="admin-desc">管理本公司下的用户</text>
+          </view>
+          <view class="admin-item" @click="goToCompanyOrderManagement">
             <view class="admin-icon-wrapper order">
               <text class="admin-icon">📋</text>
             </view>
             <text class="admin-label">订单管理</text>
-            <text class="admin-desc">处理订单</text>
+            <text class="admin-desc">查看本公司下的用户订单</text>
           </view>
         </view>
-      </template>
     </view>
 
-    <!-- 注册提示 -->
-    <view v-if="user_token && !isCompanyUser" class="register-tip">
-      <view class="tip-icon">💡</view>
+    <!-- 无公司账号提示：进入某公司但该用户未注册为公司用户时显示 -->
+    <view v-if="user_token && companyInfo?.id && !isCompanyUser" class="register-tip">
+      <view class="tip-icon">⚠️</view>
       <view class="tip-content">
-        <text class="tip-title">提示</text>
-        <text class="tip-text">您还未注册为公司用户，请联系管理员注册后即可查看价格和下单</text>
+        <text class="tip-title">暂无该公司账号</text>
+        <text class="tip-text">您在该公司尚未注册账号，无法下单或查看价格。请联系管理员为您注册后再使用。</text>
       </view>
     </view>
 
@@ -239,6 +273,35 @@ const goToSettings = () => {
   });
 };
 
+// 跳转到公司设置（公司管理员）
+const goToCompanySettings = () => {
+  if (!user_token.value) {
+    goToLogin();
+    return;
+  }
+  if (!companyInfo.value?.id) {
+    uni.showToast({
+      title: '公司信息不存在',
+      icon: 'none',
+    });
+    return;
+  }
+  uni.navigateTo({
+    url: `/subPackages/company/company-settings/index?id=${companyInfo.value.id}`,
+  });
+};
+
+// 跳转到分类管理（公司管理员）
+const goToCategoryManagement = () => {
+  if (!user_token.value) {
+    goToLogin();
+    return;
+  }
+  uni.navigateTo({
+    url: '/subPackages/company/category-list/index',
+  });
+};
+
 // 跳转到商品管理（公司管理员）
 const goToProductManagement = () => {
   if (!user_token.value) {
@@ -246,18 +309,47 @@ const goToProductManagement = () => {
     return;
   }
   uni.navigateTo({
-    url: '/subPackages/admin/product-list/index',
+    url: '/subPackages/company/product-list/index',
   });
 };
 
-// 跳转到订单管理（公司管理员）
-const goToOrderManagement = () => {
+// 跳转到套餐管理（公司管理员）
+const goToPackageManagement = () => {
   if (!user_token.value) {
     goToLogin();
     return;
   }
   uni.navigateTo({
-    url: '/subPackages/admin/order-list/index',
+    url: '/subPackages/company/package-list/index',
+  });
+};
+
+// 跳转到公司用户管理（公司管理员）
+const goToCompanyUserManagement = () => {
+  if (!user_token.value) {
+    goToLogin();
+    return;
+  }
+  uni.navigateTo({
+    url: '/subPackages/company/company-user-list/index',
+  });
+};
+
+// 跳转到公司订单管理（公司管理员，查看本公司下的用户订单）
+const goToCompanyOrderManagement = () => {
+  if (!user_token.value) {
+    goToLogin();
+    return;
+  }
+  if (!companyInfo.value?.id) {
+    uni.showToast({
+      title: '公司信息不存在',
+      icon: 'none',
+    });
+    return;
+  }
+  uni.navigateTo({
+    url: '/subPackages/company/order-list/index',
   });
 };
 
@@ -280,6 +372,30 @@ const goToConfigManagement = () => {
   }
   uni.navigateTo({
     url: '/subPackages/admin/config/index',
+  });
+};
+
+// 跳转到账号管理（平台管理员）
+const goToUserManagement = () => {
+  console.log('点击账号管理');
+  if (!user_token.value) {
+    goToLogin();
+    return;
+  }
+  console.log('准备跳转到账号管理页面');
+  uni.navigateTo({
+    url: '/subPackages/admin/user-list/index',
+    success: () => {
+      console.log('跳转成功');
+    },
+    fail: (err) => {
+      console.error('跳转失败:', err);
+      uni.showToast({
+        title: '页面跳转失败: ' + (err.errMsg || '未知错误'),
+        icon: 'none',
+        duration: 3000,
+      });
+    },
   });
 };
 
@@ -644,12 +760,36 @@ onShow(() => {
   background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
 }
 
+.admin-icon-wrapper.user {
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+}
+
 .admin-icon-wrapper.product {
   background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
 }
 
+.admin-icon-wrapper.category {
+  background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+}
+
 .admin-icon-wrapper.order {
   background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+}
+
+.admin-icon-wrapper.company {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.admin-icon-wrapper.settings {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+
+.admin-icon-wrapper.package {
+  background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+}
+
+.admin-icon-wrapper.user {
+  background: linear-gradient(135deg, #30cfd0 0%, #330867 100%);
 }
 
 .admin-icon {

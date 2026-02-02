@@ -1,6 +1,8 @@
+import { projectConfig } from '@/project-config';
+
 /**
  * 获取七牛云上传凭证
- * @param apiBaseUrl 后端 API 地址（可选，默认从项目配置读取）
+ * @param apiBaseUrl 后端 API 地址（可选，默认从 project-config 的 apiBaseUrl 读取）
  * @returns 上传凭证和配置信息
  */
 export const get_upload_token = async (
@@ -12,8 +14,7 @@ export const get_upload_token = async (
   dirPath?: string;
   uploadUrl: string;
 }> => {
-  // 替换为你的后端 API 地址，建议在项目配置中统一管理
-  const API_BASE_URL = apiBaseUrl || 'http://localhost:3000';
+  const API_BASE_URL = apiBaseUrl ?? projectConfig.apiBaseUrl;
   
   const response = await uni.request({
     url: `${API_BASE_URL}/api/qiniu-upload/token`,
@@ -53,6 +54,19 @@ export const get_upload_token = async (
   return data.data;
 };
 
+/** 从路径中解析文件后缀（若有） */
+function getExtensionFromPath(path: string): string {
+  const match = path.match(/\.([a-zA-Z0-9]+)$/);
+  return match ? '.' + match[1].toLowerCase() : '';
+}
+
+/** 规范化后缀：保证以 . 开头 */
+function normalizeExt(ext: string | undefined): string {
+  if (!ext) return '';
+  const s = ext.trim().toLowerCase();
+  return s.startsWith('.') ? s : '.' + s;
+}
+
 /**
  * 上传文件到七牛云（带进度）
  * @param filePath 文件路径
@@ -64,17 +78,25 @@ export const get_upload_token = async (
  */
 /**
  * 上传文件（便捷方法）
+ * @param filePath 本地临时路径
+ * @param onProgress 进度回调（可选）
+ * @param ext 文件后缀（可选，如 '.jpg' / 'mp4'），不传则尝试从 filePath 解析，保证返回的 URL 带后缀
  */
+/** 无后缀时的默认后缀（多数上传为图片） */
+const DEFAULT_SUFFIX = '.jpg';
+
 export const uploadFile = async (
-  filePath: string, 
-  onProgress?: (progress: number) => void
+  filePath: string,
+  onProgress?: (progress: number) => void,
+  ext?: string
 ): Promise<string> => {
   const tokenInfo = await get_upload_token();
-  const key = `${tokenInfo.dirPath || ''}${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  const suffix = normalizeExt(ext) || getExtensionFromPath(filePath) || DEFAULT_SUFFIX;
+  const key = `${tokenInfo.dirPath || ''}${Date.now()}_${Math.random().toString(36).substr(2, 9)}${suffix}`;
   const result = await upload_to_qiniu(filePath, tokenInfo.token, key, tokenInfo.uploadUrl, onProgress);
-  // 拼接完整URL
   if (tokenInfo.baseUrl) {
-    return `${tokenInfo.baseUrl}/${result.key}`;
+    const base = tokenInfo.baseUrl.replace(/\/$/, '');
+    return `${base}/${result.key}`;
   }
   return result.key;
 };

@@ -4,6 +4,7 @@ export interface PackageInput {
   name: string;
   cover_image_url: string;
   description?: string;
+  category_categories?: number;
 }
 
 export interface PackageProductSkuInput {
@@ -13,16 +14,19 @@ export interface PackageProductSkuInput {
 }
 
 /**
- * 获取套餐列表
+ * 获取套餐列表（可选按公司筛选）
  */
 export async function getPackageList(params: {
+  companyId?: number;
   limit?: number;
   offset?: number;
 }) {
+  const hasCompany = params.companyId != null;
+  const whereStr = hasCompany ? 'where: { company_companies: { _eq: $companyId } }, ' : '';
   const query = `
-    query GetPackageList($limit: Int, $offset: Int) {
+    query GetPackageList($limit: Int, $offset: Int${hasCompany ? ', $companyId: bigint!' : ''}) {
       packages(
-        limit: $limit
+        ${whereStr}limit: $limit
         offset: $offset
         order_by: { created_at: desc }
       ) {
@@ -30,6 +34,11 @@ export async function getPackageList(params: {
         name
         cover_image_url
         description
+        category_categories
+        category {
+          id
+          name
+        }
         created_at
         updated_at
         package_product_skus {
@@ -45,7 +54,9 @@ export async function getPackageList(params: {
           }
         }
       }
-      packages_aggregate {
+      packages_aggregate(
+        ${whereStr.replace(', ', '')}
+      ) {
         aggregate {
           count
         }
@@ -53,12 +64,17 @@ export async function getPackageList(params: {
     }
   `;
 
+  const variables: any = {
+    limit: params.limit || 20,
+    offset: params.offset || 0,
+  };
+  if (hasCompany) {
+    variables.companyId = params.companyId;
+  }
+
   const result = await client.execute({
     query,
-    variables: {
-      limit: params.limit || 20,
-      offset: params.offset || 0,
-    },
+    variables,
   });
 
   return {
@@ -78,6 +94,11 @@ export async function getPackageDetail(packageId: number) {
         name
         cover_image_url
         description
+        category_categories
+        category {
+          id
+          name
+        }
         created_at
         updated_at
         package_product_skus {

@@ -42,7 +42,18 @@
             </view>
           </view>
         </view>
+        <view class="company-audit-row">
+          <text class="audit-label">核查：</text>
+          <view class="audit-btns">
+            <view class="audit-btn" @click.stop="goToCompanyOrders(company)">订单</view>
+            <view class="audit-btn" @click.stop="goToCompanyProducts(company)">商品</view>
+            <view class="audit-btn" @click.stop="goToCompanyPackages(company)">套餐</view>
+            <view class="audit-btn" @click.stop="goToCompanyUsers(company)">用户</view>
+            <view class="audit-btn" @click.stop="goToCompanySettings(company)">设置</view>
+          </view>
+        </view>
         <view class="company-actions">
+          <view class="action-btn preview" @click.stop="previewCompany(company)">预览</view>
           <view class="action-btn" @click.stop="goToEditCompany(company.id)">编辑</view>
           <view class="action-btn" @click.stop="authorizeAdmin(company)">授权</view>
           <view class="action-btn delete" @click.stop="handleDelete(company)">删除</view>
@@ -70,40 +81,61 @@
         </view>
         <view class="modal-body">
           <view class="form-item">
-            <view class="label">公司名称</view>
-            <text class="company-name-display">{{ authorizingCompany?.name }}</text>
+            <view class="label">
+              <text class="label-icon">🏢</text>
+              公司名称
+            </view>
+            <view class="company-name-display">
+              <text class="company-name-text">{{ authorizingCompany?.name }}</text>
+            </view>
           </view>
           <view class="form-item">
-            <view class="label">手机号 <text class="required">*</text></view>
-            <input 
-              class="input" 
-              v-model="authorizeForm.mobile" 
-              placeholder="请输入用户手机号"
-              maxlength="11"
-              type="number"
-            />
+            <view class="label">
+              <text class="label-icon">📱</text>
+              手机号 <text class="required">*</text>
+            </view>
+            <view class="input-wrapper">
+              <input 
+                class="input" 
+                v-model="authorizeForm.mobile" 
+                placeholder="请输入11位手机号"
+                maxlength="11"
+                type="number"
+                placeholder-style="color: #c0c0c0;"
+              />
+            </view>
             <button 
               class="search-btn" 
               @click="searchUserForAuthorize"
               :disabled="!authorizeForm.mobile || authorizeForm.mobile.length !== 11"
+              :class="{ disabled: !authorizeForm.mobile || authorizeForm.mobile.length !== 11 }"
             >
-              搜索用户
+              <text class="search-icon">🔍</text>
+              <text>搜索用户</text>
             </button>
           </view>
 
           <view v-if="searchedUser" class="searched-user-info">
-            <image 
-              v-if="searchedUser.avatar_url" 
-              :src="searchedUser.avatar_url" 
-              class="searched-avatar"
-              mode="aspectFill"
-            />
-            <view v-else class="searched-avatar-placeholder">
-              <text>{{ searchedUser.nickname?.[0] || 'U' }}</text>
+            <view class="searched-user-header">
+              <text class="searched-user-title">找到的用户</text>
             </view>
-            <view class="searched-details">
-              <text class="searched-name">{{ searchedUser.nickname || searchedUser.mobile }}</text>
-              <text class="searched-phone">{{ searchedUser.mobile }}</text>
+            <view class="searched-user-content">
+              <image 
+                v-if="searchedUser.avatar_url" 
+                :src="searchedUser.avatar_url" 
+                class="searched-avatar"
+                mode="aspectFill"
+              />
+              <view v-else class="searched-avatar-placeholder">
+                <text>{{ (searchedUser.nickname || searchedUser.mobile || 'U').charAt(0).toUpperCase() }}</text>
+              </view>
+              <view class="searched-details">
+                <text class="searched-name">{{ searchedUser.nickname || '未设置昵称' }}</text>
+                <text class="searched-phone">{{ searchedUser.mobile }}</text>
+              </view>
+              <view class="searched-check">
+                <text class="check-icon">✓</text>
+              </view>
             </view>
           </view>
         </view>
@@ -120,6 +152,7 @@
 import { ref, onMounted } from 'vue';
 import { onPullDownRefresh, onReachBottom, onShow } from '@dcloudio/uni-app';
 import { getCompanyList, deleteCompany, authorizeCompanyAdmin, searchUserByMobileForPlatform } from '@/api/admin/platform';
+import { syncCompanyInfo } from '@/api/company/index';
 
 const companies = ref<any[]>([]);
 const loading = ref(false);
@@ -283,10 +316,82 @@ const goToAddCompany = () => {
   });
 };
 
+// 预览公司（跳转到首页并切换公司）
+const previewCompany = async (company: any) => {
+  if (!company?.id) {
+    return;
+  }
+  
+  try {
+    // 同步公司信息
+    await syncCompanyInfo(company.id);
+    
+    // 保存到本地存储
+    uni.setStorageSync('companyId', company.id);
+    
+    // 跳转到首页（首页是 tabBar，使用 switchTab）
+    uni.switchTab({
+      url: '/pages/index/index',
+      success: () => {
+        uni.showToast({
+          title: `已切换到${company.name}`,
+          icon: 'success',
+          duration: 2000,
+        });
+      },
+      fail: (err) => {
+        console.error('跳转失败:', err);
+        uni.showToast({
+          title: '跳转失败',
+          icon: 'none',
+        });
+      },
+    });
+  } catch (error: any) {
+    console.error('同步公司信息失败:', error);
+    uni.showToast({
+      title: error.message || '切换失败',
+      icon: 'none',
+    });
+  }
+};
+
 // 跳转到编辑公司
 const goToEditCompany = (companyId: number) => {
   uni.navigateTo({
     url: `/subPackages/admin/company-edit/index?id=${companyId}`,
+  });
+};
+
+// 超级管理员核查：按公司查看订单、商品、套餐、设置（带 companyId 参数）
+const goToCompanyOrders = (company: any) => {
+  if (!company?.id) return;
+  uni.navigateTo({
+    url: `/subPackages/company/order-list/index?companyId=${company.id}`,
+  });
+};
+const goToCompanyProducts = (company: any) => {
+  if (!company?.id) return;
+  uni.navigateTo({
+    url: `/subPackages/company/product-list/index?companyId=${company.id}`,
+  });
+};
+const goToCompanyPackages = (company: any) => {
+  if (!company?.id) return;
+  uni.navigateTo({
+    url: `/subPackages/company/package-list/index?companyId=${company.id}`,
+  });
+};
+const goToCompanySettings = (company: any) => {
+  if (!company?.id) return;
+  uni.navigateTo({
+    url: `/subPackages/company/company-settings/index?companyId=${company.id}`,
+  });
+};
+const goToCompanyUsers = (company: any) => {
+  if (!company?.id) return;
+  uni.navigateTo({
+    url: `/subPackages/company/company-user-list/index?companyId=${company.id}`,
   });
 };
 
@@ -395,6 +500,39 @@ onReachBottom(() => {
   color: #667eea;
 }
 
+.company-audit-row {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  margin-bottom: 16rpx;
+  padding: 12rpx 0;
+  border-bottom: 1rpx solid #f0f0f0;
+}
+
+.audit-label {
+  font-size: 24rpx;
+  color: #999;
+  flex-shrink: 0;
+}
+
+.audit-btns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+}
+
+.audit-btn {
+  padding: 8rpx 16rpx;
+  background: #e8f4ff;
+  color: #1890ff;
+  border-radius: 8rpx;
+  font-size: 24rpx;
+}
+
+.audit-btn:active {
+  opacity: 0.8;
+}
+
 .company-actions {
   display: flex;
   gap: 10rpx;
@@ -407,6 +545,18 @@ onReachBottom(() => {
   color: #333333;
   border-radius: 8rpx;
   font-size: 24rpx;
+  transition: all 0.2s;
+}
+
+.action-btn:active {
+  opacity: 0.8;
+  transform: scale(0.95);
+}
+
+.action-btn.preview {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #ffffff;
+  font-weight: 500;
 }
 
 .action-btn.delete {
@@ -449,120 +599,229 @@ onReachBottom(() => {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4rpx);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
+  animation: fade-in 0.3s ease;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .modal-content {
   width: 90%;
   max-width: 600rpx;
   background: #ffffff;
-  border-radius: 16rpx;
+  border-radius: 24rpx;
   overflow: hidden;
+  box-shadow: 0 20rpx 60rpx rgba(0, 0, 0, 0.3);
+  animation: slide-up 0.3s ease;
+}
+
+@keyframes slide-up {
+  from {
+    transform: translateY(50rpx);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 
 .modal-header {
-  padding: 30rpx;
-  border-bottom: 1rpx solid #e0e0e0;
+  padding: 40rpx 40rpx 30rpx;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
 .modal-title {
-  font-size: 32rpx;
+  font-size: 36rpx;
   font-weight: bold;
-  color: #333333;
+  color: #ffffff;
 }
 
 .modal-close {
   font-size: 48rpx;
-  color: #999999;
+  color: rgba(255, 255, 255, 0.9);
   line-height: 1;
+  width: 60rpx;
+  height: 60rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: background 0.2s;
+}
+
+.modal-close:active {
+  background: rgba(255, 255, 255, 0.2);
 }
 
 .modal-body {
-  padding: 30rpx;
+  padding: 40rpx;
   max-height: 60vh;
   overflow-y: auto;
+  background: #ffffff;
 }
 
 .form-item {
-  margin-bottom: 30rpx;
+  margin-bottom: 40rpx;
+}
+
+.form-item:last-child {
+  margin-bottom: 0;
 }
 
 .label {
   font-size: 28rpx;
-  color: #666666;
+  color: #333333;
   margin-bottom: 16rpx;
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  font-weight: 500;
+}
+
+.label-icon {
+  font-size: 32rpx;
 }
 
 .required {
   color: #ff6b6b;
+  font-weight: bold;
+}
+
+.input-wrapper {
+  position: relative;
+  margin-bottom: 20rpx;
 }
 
 .input {
   width: 100%;
-  padding: 20rpx;
-  background: #f8f8f8;
-  border-radius: 8rpx;
-  font-size: 28rpx;
+  min-height: 88rpx;
+  padding: 28rpx 30rpx;
+  background: #f8f9fa;
+  border: 2rpx solid #e9ecef;
+  border-radius: 16rpx;
+  font-size: 30rpx;
+  color: #333333;
   box-sizing: border-box;
+  transition: all 0.3s;
+  line-height: 1.5;
+}
+
+.input:focus {
+  background: #ffffff;
+  border-color: #667eea;
+  box-shadow: 0 0 0 4rpx rgba(102, 126, 234, 0.1);
 }
 
 .search-btn {
-  margin-top: 10rpx;
-  padding: 10rpx 20rpx;
-  background: #667eea;
+  width: 100%;
+  padding: 24rpx;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: #ffffff;
-  border-radius: 8rpx;
-  font-size: 26rpx;
+  border-radius: 16rpx;
+  font-size: 30rpx;
+  font-weight: 500;
   border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12rpx;
+  box-shadow: 0 8rpx 20rpx rgba(102, 126, 234, 0.3);
+  transition: all 0.3s;
 }
 
-.search-btn[disabled] {
-  background: #cccccc;
-  color: #999999;
+.search-btn:active {
+  transform: scale(0.98);
+  box-shadow: 0 4rpx 12rpx rgba(102, 126, 234, 0.3);
+}
+
+.search-btn.disabled {
+  background: #e9ecef;
+  color: #adb5bd;
+  box-shadow: none;
+}
+
+.search-icon {
+  font-size: 32rpx;
 }
 
 .company-name-display {
-  font-size: 28rpx;
+  padding: 24rpx 30rpx;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border-radius: 16rpx;
+  border: 2rpx solid #e9ecef;
+}
+
+.company-name-text {
+  font-size: 30rpx;
   color: #333333;
-  padding: 10rpx;
-  background: #f8f8f8;
-  border-radius: 8rpx;
+  font-weight: 500;
 }
 
 .searched-user-info {
-  padding: 20rpx;
-  background: #f8f8f8;
-  border-radius: 8rpx;
+  margin-top: 30rpx;
+  background: linear-gradient(135deg, #f0f7ff 0%, #e0e7ff 100%);
+  border-radius: 16rpx;
+  border: 2rpx solid #c7d2fe;
+  overflow: hidden;
+}
+
+.searched-user-header {
+  padding: 20rpx 24rpx;
+  background: rgba(102, 126, 234, 0.1);
+  border-bottom: 1rpx solid rgba(102, 126, 234, 0.2);
+}
+
+.searched-user-title {
+  font-size: 24rpx;
+  color: #667eea;
+  font-weight: 500;
+}
+
+.searched-user-content {
+  padding: 24rpx;
   display: flex;
   align-items: center;
   gap: 20rpx;
 }
 
 .searched-avatar {
-  width: 80rpx;
-  height: 80rpx;
+  width: 96rpx;
+  height: 96rpx;
   border-radius: 50%;
   background: #f0f0f0;
+  border: 3rpx solid #ffffff;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
 }
 
 .searched-avatar-placeholder {
-  width: 80rpx;
-  height: 80rpx;
+  width: 96rpx;
+  height: 96rpx;
   border-radius: 50%;
-  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   display: flex;
   align-items: center;
   justify-content: center;
   color: #ffffff;
-  font-size: 28rpx;
+  font-size: 36rpx;
   font-weight: bold;
+  border: 3rpx solid #ffffff;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
 }
 
 .searched-details {
@@ -573,35 +832,67 @@ onReachBottom(() => {
 }
 
 .searched-name {
-  font-size: 28rpx;
-  font-weight: bold;
-  color: #333333;
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #1e293b;
 }
 
 .searched-phone {
-  font-size: 24rpx;
-  color: #999999;
+  font-size: 26rpx;
+  color: #64748b;
+}
+
+.searched-check {
+  width: 48rpx;
+  height: 48rpx;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4rpx 12rpx rgba(16, 185, 129, 0.3);
+}
+
+.check-icon {
+  color: #ffffff;
+  font-size: 28rpx;
+  font-weight: bold;
 }
 
 .modal-footer {
-  padding: 30rpx;
-  border-top: 1rpx solid #e0e0e0;
+  padding: 30rpx 40rpx 40rpx;
+  border-top: 1rpx solid #f1f5f9;
   display: flex;
   gap: 20rpx;
+  background: #ffffff;
 }
 
 .modal-btn {
   flex: 1;
-  padding: 20rpx;
-  background: #667eea;
+  padding: 24rpx;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: #ffffff;
-  border-radius: 8rpx;
-  font-size: 28rpx;
+  border-radius: 16rpx;
+  font-size: 30rpx;
+  font-weight: 500;
   border: none;
+  box-shadow: 0 8rpx 20rpx rgba(102, 126, 234, 0.3);
+  transition: all 0.3s;
+}
+
+.modal-btn:active {
+  transform: scale(0.98);
+  box-shadow: 0 4rpx 12rpx rgba(102, 126, 234, 0.3);
 }
 
 .modal-btn.cancel {
-  background: #f0f0f0;
-  color: #666666;
+  background: #f1f5f9;
+  color: #64748b;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.05);
+}
+
+.modal-btn.cancel:active {
+  background: #e2e8f0;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
 }
 </style>

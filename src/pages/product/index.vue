@@ -1,13 +1,7 @@
 <template>
   <view class="product-list-page">
-    <!-- 自定义导航栏 -->
-    <view class="custom-navbar">
-      <view class="navbar-content">
-        <view class="navbar-back" @click="goBack">‹</view>
-        <view class="navbar-title">{{ pageTitle }}</view>
-        <view class="navbar-right"></view>
-      </view>
-    </view>
+    <!-- 统一导航栏（含状态栏高度） -->
+    <PageNavBar :title="pageTitle" :show-back="true" @back="goBack" />
 
     <!-- 搜索栏 -->
     <view class="search-bar">
@@ -86,8 +80,9 @@
 import { ref, computed } from 'vue';
 import { onLoad } from '@dcloudio/uni-app';
 import { getProductList } from '@/api/product/index';
-import { userInfo, user_token } from '@/store/userStore';
-import { isCompanyUser } from '@/utils/auth';
+import { userInfo, user_token, companyInfo } from '@/store/userStore';
+import { getCompanyUserRole } from '@/utils/auth';
+import PageNavBar from '@/components/PageNavBar.vue';
 
 const keyword = ref('');
 const products = ref<any[]>([]);
@@ -99,10 +94,11 @@ const pageSize = 10;
 const categoryId = ref<number | null>(null);
 const categoryName = ref('');
 const canViewPrice = ref(false);
+const priceFactor = ref(1); // 价格系数，默认为1
 
 const pageTitle = computed(() => {
   if (categoryName.value) return categoryName.value;
-  return '商品列表';
+  return companyInfo.value?.name || '商品列表';
 });
 
 // 从富文本提取纯文本
@@ -116,21 +112,31 @@ const truncateText = (text: string, length: number) => {
   return text.length > length ? text.slice(0, length) + '...' : text;
 };
 
+// 计算最低价格（应用价格系数）
 const getMinPrice = (product: any) => {
   if (!product.product_skus || product.product_skus.length === 0) return '0.00';
-  const prices = product.product_skus.map((sku: any) => sku.price);
+  const prices = product.product_skus.map((sku: any) => (sku.price || 0) * priceFactor.value);
   return Math.min(...prices).toFixed(2);
 };
 
 const checkPermissions = async () => {
   if (!user_token.value) {
     canViewPrice.value = false;
+    priceFactor.value = 1;
     return;
   }
   try {
-    canViewPrice.value = await isCompanyUser();
+    const roleInfo = await getCompanyUserRole();
+    if (roleInfo) {
+      canViewPrice.value = roleInfo.canViewPrice;
+      priceFactor.value = roleInfo.priceFactor || 1;
+    } else {
+      canViewPrice.value = false;
+      priceFactor.value = 1;
+    }
   } catch (e) {
     canViewPrice.value = false;
+    priceFactor.value = 1;
   }
 };
 
@@ -227,40 +233,6 @@ onLoad(async (options) => {
   background: #f5f5f5;
   display: flex;
   flex-direction: column;
-}
-
-.custom-navbar {
-  height: 88rpx;
-  background: #ffffff;
-  padding-top: var(--status-bar-height);
-  display: flex;
-  align-items: center;
-  border-bottom: 1rpx solid #f0f0f0;
-}
-
-.navbar-content {
-  width: 100%;
-  height: 88rpx;
-  display: flex;
-  align-items: center;
-  padding: 0 30rpx;
-}
-
-.navbar-back {
-  font-size: 48rpx;
-  width: 60rpx;
-  line-height: 1;
-}
-
-.navbar-title {
-  flex: 1;
-  text-align: center;
-  font-size: 32rpx;
-  font-weight: bold;
-}
-
-.navbar-right {
-  width: 60rpx;
 }
 
 .search-bar {

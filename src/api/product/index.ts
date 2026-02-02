@@ -1,5 +1,6 @@
 import client from '@/config-lib/hasura-graphql-client/hasura-graphql-client';
 import { companyInfo } from '@/store/userStore';
+import { getDefaultCompanyId } from '@/api/config/index';
 
 /**
  * 获取商品详情（前端展示）
@@ -48,6 +49,7 @@ export async function getProductDetail(productId: number) {
 
 /**
  * 获取商品列表（前端展示）
+ * 合并当前公司和默认公司的商品数据
  */
 export async function getProductList(params: {
   companyId?: number;
@@ -56,9 +58,22 @@ export async function getProductList(params: {
   limit?: number;
   offset?: number;
 }) {
-  const companyId = params.companyId || companyInfo.value?.id;
+  const currentCompanyId = params.companyId || companyInfo.value?.id;
   
-  if (!companyId) {
+  // 获取默认公司ID
+  const defaultCompanyId = await getDefaultCompanyId();
+  
+  // 确定要查询的公司ID列表（去重）
+  const companyIds: number[] = [];
+  if (currentCompanyId) {
+    companyIds.push(currentCompanyId);
+  }
+  if (defaultCompanyId && defaultCompanyId !== currentCompanyId) {
+    companyIds.push(defaultCompanyId);
+  }
+  
+  // 如果没有公司ID，返回空
+  if (companyIds.length === 0) {
     return {
       products: [],
       total: 0,
@@ -66,11 +81,17 @@ export async function getProductList(params: {
   }
 
   // 动态构建 where 条件
-  const whereConditions: string[] = [
-    '{ company_companies: { _eq: $companyId } }',
-    '{ is_deleted: { _eq: false } }',
-    '{ is_shelved: { _eq: false } }',
-  ];
+  const whereConditions: string[] = [];
+  
+  // 添加公司过滤条件
+  if (companyIds.length === 1) {
+    whereConditions.push('{ company_companies: { _eq: $companyId } }');
+  } else {
+    whereConditions.push('{ company_companies: { _in: $companyIds } }');
+  }
+  
+  whereConditions.push('{ is_deleted: { _eq: false } }');
+  whereConditions.push('{ is_shelved: { _eq: false } }');
 
   if (params.categoryId) {
     whereConditions.push('{ category_categories: { _eq: $categoryId } }');
@@ -83,22 +104,29 @@ export async function getProductList(params: {
   // 根据条件动态构建查询
   const hasCategory = !!params.categoryId;
   const hasKeyword = !!(params.keyword && params.keyword.trim());
+  const hasMultipleCompanies = companyIds.length > 1;
 
   let query = '';
   let variables: any = {
-    companyId,
     limit: params.limit || 20,
     offset: params.offset || 0,
   };
+  
+  // 根据公司数量设置变量
+  if (hasMultipleCompanies) {
+    variables.companyIds = companyIds;
+  } else {
+    variables.companyId = companyIds[0];
+  }
 
   if (hasCategory && hasKeyword) {
+    const queryVars = hasMultipleCompanies
+      ? '$companyIds: [bigint!]!, $categoryId: bigint!, $keyword: String!, $limit: Int, $offset: Int'
+      : '$companyId: bigint!, $categoryId: bigint!, $keyword: String!, $limit: Int, $offset: Int';
+    
     query = `
       query GetProductList(
-        $companyId: bigint!
-        $categoryId: bigint!
-        $keyword: String!
-        $limit: Int
-        $offset: Int
+        ${queryVars}
       ) {
         products(
           where: {
@@ -142,12 +170,13 @@ export async function getProductList(params: {
     variables.categoryId = params.categoryId;
     variables.keyword = `%${params.keyword.trim()}%`;
   } else if (hasCategory) {
+    const queryVars = hasMultipleCompanies
+      ? '$companyIds: [bigint!]!, $categoryId: bigint!, $limit: Int, $offset: Int'
+      : '$companyId: bigint!, $categoryId: bigint!, $limit: Int, $offset: Int';
+    
     query = `
       query GetProductList(
-        $companyId: bigint!
-        $categoryId: bigint!
-        $limit: Int
-        $offset: Int
+        ${queryVars}
       ) {
         products(
           where: {
@@ -190,12 +219,13 @@ export async function getProductList(params: {
     `;
     variables.categoryId = params.categoryId;
   } else if (hasKeyword) {
+    const queryVars = hasMultipleCompanies
+      ? '$companyIds: [bigint!]!, $keyword: String!, $limit: Int, $offset: Int'
+      : '$companyId: bigint!, $keyword: String!, $limit: Int, $offset: Int';
+    
     query = `
       query GetProductList(
-        $companyId: bigint!
-        $keyword: String!
-        $limit: Int
-        $offset: Int
+        ${queryVars}
       ) {
         products(
           where: {
@@ -238,11 +268,13 @@ export async function getProductList(params: {
     `;
     variables.keyword = `%${params.keyword.trim()}%`;
   } else {
+    const queryVars = hasMultipleCompanies
+      ? '$companyIds: [bigint!]!, $limit: Int, $offset: Int'
+      : '$companyId: bigint!, $limit: Int, $offset: Int';
+    
     query = `
       query GetProductList(
-        $companyId: bigint!
-        $limit: Int
-        $offset: Int
+        ${queryVars}
       ) {
         products(
           where: {

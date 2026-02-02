@@ -820,11 +820,47 @@ type categories {
   """是否删除"""
   is_deleted: Boolean!
 
-  """分类层级（0为顶级）"""
+  """分类层级（0为顶级），最多三级，0 1 2"""
   level: bigint!
 
   """分类名称"""
   name: String!
+
+  """An array relationship"""
+  packages(
+    """distinct select on columns"""
+    distinct_on: [packages_select_column!]
+
+    """limit the number of rows returned"""
+    limit: Int
+
+    """skip the first n rows. Use only with order_by"""
+    offset: Int
+
+    """sort the rows by one or more columns"""
+    order_by: [packages_order_by!]
+
+    """filter the rows returned"""
+    where: packages_bool_exp
+  ): [packages!]!
+
+  """An aggregate relationship"""
+  packages_aggregate(
+    """distinct select on columns"""
+    distinct_on: [packages_select_column!]
+
+    """limit the number of rows returned"""
+    limit: Int
+
+    """skip the first n rows. Use only with order_by"""
+    offset: Int
+
+    """sort the rows by one or more columns"""
+    order_by: [packages_order_by!]
+
+    """filter the rows returned"""
+    where: packages_bool_exp
+  ): packages_aggregate!
 
   """父级分类id，为空时对应的level=0"""
   parent_categories: bigint
@@ -865,11 +901,14 @@ type categories {
     where: products_bool_exp
   ): products_aggregate!
 
-  """点击该分类后展示的UI样式，1.categories（继续展示分类）2.products（展示产品）"""
+  """点击该分类后展示的UI样式，1.categories（继续展示分类）2.products（展示该分类下的产品）"""
   route_ui_style: String!
 
   """排序，越小的在前"""
   sort_order: bigint!
+
+  """分类类型，1、product（产品分类） 2.package（套餐分类）"""
+  type: String!
   updated_at: timestamptz!
 }
 
@@ -958,7 +997,7 @@ type categories_avg_fields {
   company_companies: Float
   id: Float
 
-  """分类层级（0为顶级）"""
+  """分类层级（0为顶级），最多三级，0 1 2"""
   level: Float
 
   """父级分类id，为空时对应的level=0"""
@@ -976,7 +1015,7 @@ input categories_avg_order_by {
   company_companies: order_by
   id: order_by
 
-  """分类层级（0为顶级）"""
+  """分类层级（0为顶级），最多三级，0 1 2"""
   level: order_by
 
   """父级分类id，为空时对应的level=0"""
@@ -1004,11 +1043,14 @@ input categories_bool_exp {
   is_deleted: Boolean_comparison_exp
   level: bigint_comparison_exp
   name: String_comparison_exp
+  packages: packages_bool_exp
+  packages_aggregate: packages_aggregate_bool_exp
   parent_categories: bigint_comparison_exp
   products: products_bool_exp
   products_aggregate: products_aggregate_bool_exp
   route_ui_style: String_comparison_exp
   sort_order: bigint_comparison_exp
+  type: String_comparison_exp
   updated_at: timestamptz_comparison_exp
 }
 
@@ -1030,7 +1072,7 @@ input categories_inc_input {
   company_companies: bigint
   id: bigint
 
-  """分类层级（0为顶级）"""
+  """分类层级（0为顶级），最多三级，0 1 2"""
   level: bigint
 
   """父级分类id，为空时对应的level=0"""
@@ -1059,21 +1101,25 @@ input categories_insert_input {
   """是否删除"""
   is_deleted: Boolean
 
-  """分类层级（0为顶级）"""
+  """分类层级（0为顶级），最多三级，0 1 2"""
   level: bigint
 
   """分类名称"""
   name: String
+  packages: packages_arr_rel_insert_input
 
   """父级分类id，为空时对应的level=0"""
   parent_categories: bigint
   products: products_arr_rel_insert_input
 
-  """点击该分类后展示的UI样式，1.categories（继续展示分类）2.products（展示产品）"""
+  """点击该分类后展示的UI样式，1.categories（继续展示分类）2.products（展示该分类下的产品）"""
   route_ui_style: String
 
   """排序，越小的在前"""
   sort_order: bigint
+
+  """分类类型，1、product（产品分类） 2.package（套餐分类）"""
+  type: String
   updated_at: timestamptz
 }
 
@@ -1087,7 +1133,7 @@ type categories_max_fields {
   icon_url: String
   id: bigint
 
-  """分类层级（0为顶级）"""
+  """分类层级（0为顶级），最多三级，0 1 2"""
   level: bigint
 
   """分类名称"""
@@ -1096,11 +1142,14 @@ type categories_max_fields {
   """父级分类id，为空时对应的level=0"""
   parent_categories: bigint
 
-  """点击该分类后展示的UI样式，1.categories（继续展示分类）2.products（展示产品）"""
+  """点击该分类后展示的UI样式，1.categories（继续展示分类）2.products（展示该分类下的产品）"""
   route_ui_style: String
 
   """排序，越小的在前"""
   sort_order: bigint
+
+  """分类类型，1、product（产品分类） 2.package（套餐分类）"""
+  type: String
   updated_at: timestamptz
 }
 
@@ -1116,7 +1165,7 @@ input categories_max_order_by {
   icon_url: order_by
   id: order_by
 
-  """分类层级（0为顶级）"""
+  """分类层级（0为顶级），最多三级，0 1 2"""
   level: order_by
 
   """分类名称"""
@@ -1125,11 +1174,14 @@ input categories_max_order_by {
   """父级分类id，为空时对应的level=0"""
   parent_categories: order_by
 
-  """点击该分类后展示的UI样式，1.categories（继续展示分类）2.products（展示产品）"""
+  """点击该分类后展示的UI样式，1.categories（继续展示分类）2.products（展示该分类下的产品）"""
   route_ui_style: order_by
 
   """排序，越小的在前"""
   sort_order: order_by
+
+  """分类类型，1、product（产品分类） 2.package（套餐分类）"""
+  type: order_by
   updated_at: order_by
 }
 
@@ -1143,7 +1195,7 @@ type categories_min_fields {
   icon_url: String
   id: bigint
 
-  """分类层级（0为顶级）"""
+  """分类层级（0为顶级），最多三级，0 1 2"""
   level: bigint
 
   """分类名称"""
@@ -1152,11 +1204,14 @@ type categories_min_fields {
   """父级分类id，为空时对应的level=0"""
   parent_categories: bigint
 
-  """点击该分类后展示的UI样式，1.categories（继续展示分类）2.products（展示产品）"""
+  """点击该分类后展示的UI样式，1.categories（继续展示分类）2.products（展示该分类下的产品）"""
   route_ui_style: String
 
   """排序，越小的在前"""
   sort_order: bigint
+
+  """分类类型，1、product（产品分类） 2.package（套餐分类）"""
+  type: String
   updated_at: timestamptz
 }
 
@@ -1172,7 +1227,7 @@ input categories_min_order_by {
   icon_url: order_by
   id: order_by
 
-  """分类层级（0为顶级）"""
+  """分类层级（0为顶级），最多三级，0 1 2"""
   level: order_by
 
   """分类名称"""
@@ -1181,11 +1236,14 @@ input categories_min_order_by {
   """父级分类id，为空时对应的level=0"""
   parent_categories: order_by
 
-  """点击该分类后展示的UI样式，1.categories（继续展示分类）2.products（展示产品）"""
+  """点击该分类后展示的UI样式，1.categories（继续展示分类）2.products（展示该分类下的产品）"""
   route_ui_style: order_by
 
   """排序，越小的在前"""
   sort_order: order_by
+
+  """分类类型，1、product（产品分类） 2.package（套餐分类）"""
+  type: order_by
   updated_at: order_by
 }
 
@@ -1231,10 +1289,12 @@ input categories_order_by {
   is_deleted: order_by
   level: order_by
   name: order_by
+  packages_aggregate: packages_aggregate_order_by
   parent_categories: order_by
   products_aggregate: products_aggregate_order_by
   route_ui_style: order_by
   sort_order: order_by
+  type: order_by
   updated_at: order_by
 }
 
@@ -1278,6 +1338,9 @@ enum categories_select_column {
   sort_order
 
   """column name"""
+  type
+
+  """column name"""
   updated_at
 }
 
@@ -1312,7 +1375,7 @@ input categories_set_input {
   """是否删除"""
   is_deleted: Boolean
 
-  """分类层级（0为顶级）"""
+  """分类层级（0为顶级），最多三级，0 1 2"""
   level: bigint
 
   """分类名称"""
@@ -1321,11 +1384,14 @@ input categories_set_input {
   """父级分类id，为空时对应的level=0"""
   parent_categories: bigint
 
-  """点击该分类后展示的UI样式，1.categories（继续展示分类）2.products（展示产品）"""
+  """点击该分类后展示的UI样式，1.categories（继续展示分类）2.products（展示该分类下的产品）"""
   route_ui_style: String
 
   """排序，越小的在前"""
   sort_order: bigint
+
+  """分类类型，1、product（产品分类） 2.package（套餐分类）"""
+  type: String
   updated_at: timestamptz
 }
 
@@ -1335,7 +1401,7 @@ type categories_stddev_fields {
   company_companies: Float
   id: Float
 
-  """分类层级（0为顶级）"""
+  """分类层级（0为顶级），最多三级，0 1 2"""
   level: Float
 
   """父级分类id，为空时对应的level=0"""
@@ -1353,7 +1419,7 @@ input categories_stddev_order_by {
   company_companies: order_by
   id: order_by
 
-  """分类层级（0为顶级）"""
+  """分类层级（0为顶级），最多三级，0 1 2"""
   level: order_by
 
   """父级分类id，为空时对应的level=0"""
@@ -1369,7 +1435,7 @@ type categories_stddev_pop_fields {
   company_companies: Float
   id: Float
 
-  """分类层级（0为顶级）"""
+  """分类层级（0为顶级），最多三级，0 1 2"""
   level: Float
 
   """父级分类id，为空时对应的level=0"""
@@ -1387,7 +1453,7 @@ input categories_stddev_pop_order_by {
   company_companies: order_by
   id: order_by
 
-  """分类层级（0为顶级）"""
+  """分类层级（0为顶级），最多三级，0 1 2"""
   level: order_by
 
   """父级分类id，为空时对应的level=0"""
@@ -1403,7 +1469,7 @@ type categories_stddev_samp_fields {
   company_companies: Float
   id: Float
 
-  """分类层级（0为顶级）"""
+  """分类层级（0为顶级），最多三级，0 1 2"""
   level: Float
 
   """父级分类id，为空时对应的level=0"""
@@ -1421,7 +1487,7 @@ input categories_stddev_samp_order_by {
   company_companies: order_by
   id: order_by
 
-  """分类层级（0为顶级）"""
+  """分类层级（0为顶级），最多三级，0 1 2"""
   level: order_by
 
   """父级分类id，为空时对应的level=0"""
@@ -1455,7 +1521,7 @@ input categories_stream_cursor_value_input {
   """是否删除"""
   is_deleted: Boolean
 
-  """分类层级（0为顶级）"""
+  """分类层级（0为顶级），最多三级，0 1 2"""
   level: bigint
 
   """分类名称"""
@@ -1464,11 +1530,14 @@ input categories_stream_cursor_value_input {
   """父级分类id，为空时对应的level=0"""
   parent_categories: bigint
 
-  """点击该分类后展示的UI样式，1.categories（继续展示分类）2.products（展示产品）"""
+  """点击该分类后展示的UI样式，1.categories（继续展示分类）2.products（展示该分类下的产品）"""
   route_ui_style: String
 
   """排序，越小的在前"""
   sort_order: bigint
+
+  """分类类型，1、product（产品分类） 2.package（套餐分类）"""
+  type: String
   updated_at: timestamptz
 }
 
@@ -1478,7 +1547,7 @@ type categories_sum_fields {
   company_companies: bigint
   id: bigint
 
-  """分类层级（0为顶级）"""
+  """分类层级（0为顶级），最多三级，0 1 2"""
   level: bigint
 
   """父级分类id，为空时对应的level=0"""
@@ -1496,7 +1565,7 @@ input categories_sum_order_by {
   company_companies: order_by
   id: order_by
 
-  """分类层级（0为顶级）"""
+  """分类层级（0为顶级），最多三级，0 1 2"""
   level: order_by
 
   """父级分类id，为空时对应的level=0"""
@@ -1541,6 +1610,9 @@ enum categories_update_column {
   sort_order
 
   """column name"""
+  type
+
+  """column name"""
   updated_at
 }
 
@@ -1561,7 +1633,7 @@ type categories_var_pop_fields {
   company_companies: Float
   id: Float
 
-  """分类层级（0为顶级）"""
+  """分类层级（0为顶级），最多三级，0 1 2"""
   level: Float
 
   """父级分类id，为空时对应的level=0"""
@@ -1579,7 +1651,7 @@ input categories_var_pop_order_by {
   company_companies: order_by
   id: order_by
 
-  """分类层级（0为顶级）"""
+  """分类层级（0为顶级），最多三级，0 1 2"""
   level: order_by
 
   """父级分类id，为空时对应的level=0"""
@@ -1595,7 +1667,7 @@ type categories_var_samp_fields {
   company_companies: Float
   id: Float
 
-  """分类层级（0为顶级）"""
+  """分类层级（0为顶级），最多三级，0 1 2"""
   level: Float
 
   """父级分类id，为空时对应的level=0"""
@@ -1613,7 +1685,7 @@ input categories_var_samp_order_by {
   company_companies: order_by
   id: order_by
 
-  """分类层级（0为顶级）"""
+  """分类层级（0为顶级），最多三级，0 1 2"""
   level: order_by
 
   """父级分类id，为空时对应的level=0"""
@@ -1629,7 +1701,7 @@ type categories_variance_fields {
   company_companies: Float
   id: Float
 
-  """分类层级（0为顶级）"""
+  """分类层级（0为顶级），最多三级，0 1 2"""
   level: Float
 
   """父级分类id，为空时对应的level=0"""
@@ -1647,7 +1719,7 @@ input categories_variance_order_by {
   company_companies: order_by
   id: order_by
 
-  """分类层级（0为顶级）"""
+  """分类层级（0为顶级），最多三级，0 1 2"""
   level: order_by
 
   """父级分类id，为空时对应的level=0"""
@@ -1662,12 +1734,12 @@ type companies {
   """
   底部轮播图（json数组）export interface BannerItem { /** 文件类型（如：image、video） */ file_type?: string; /** 文件 URL */ file_url: string; /** 跳转链接（小程序路径或外部链接） */ link?: string; /** 排序索引 */ sort?: number; /** 标题 */ title?: string; }
   """
-  banner_bottom: [jsonb!]!
+  banner_bottom: [json!]!
 
   """
   顶部轮播图（json数组）export interface BannerItem { /** 文件类型（如：image、video） */ file_type?: string; /** 文件 URL */ file_url: string; /** 跳转链接（小程序路径或外部链接） */ link?: string; /** 排序索引 */ sort?: number; /** 标题 */ title?: string; }
   """
-  banner_top: [jsonb!]!
+  banner_top: [json!]!
 
   """An array relationship"""
   categories(
@@ -1899,8 +1971,8 @@ input companies_bool_exp {
   _and: [companies_bool_exp!]
   _not: companies_bool_exp
   _or: [companies_bool_exp!]
-  banner_bottom: jsonb_array_comparison_exp
-  banner_top: jsonb_array_comparison_exp
+  banner_bottom: json_array_comparison_exp
+  banner_top: json_array_comparison_exp
   categories: categories_bool_exp
   categories_aggregate: categories_aggregate_bool_exp
   company_users: company_users_bool_exp
@@ -1948,12 +2020,12 @@ input companies_insert_input {
   """
   底部轮播图（json数组）export interface BannerItem { /** 文件类型（如：image、video） */ file_type?: string; /** 文件 URL */ file_url: string; /** 跳转链接（小程序路径或外部链接） */ link?: string; /** 排序索引 */ sort?: number; /** 标题 */ title?: string; }
   """
-  banner_bottom: [jsonb!]
+  banner_bottom: [json!]
 
   """
   顶部轮播图（json数组）export interface BannerItem { /** 文件类型（如：image、video） */ file_type?: string; /** 文件 URL */ file_url: string; /** 跳转链接（小程序路径或外部链接） */ link?: string; /** 排序索引 */ sort?: number; /** 标题 */ title?: string; }
   """
-  banner_top: [jsonb!]
+  banner_top: [json!]
   categories: categories_arr_rel_insert_input
   company_users: company_users_arr_rel_insert_input
   created_at: timestamptz
@@ -1978,12 +2050,12 @@ type companies_max_fields {
   """
   底部轮播图（json数组）export interface BannerItem { /** 文件类型（如：image、video） */ file_type?: string; /** 文件 URL */ file_url: string; /** 跳转链接（小程序路径或外部链接） */ link?: string; /** 排序索引 */ sort?: number; /** 标题 */ title?: string; }
   """
-  banner_bottom: [jsonb!]
+  banner_bottom: [json!]
 
   """
   顶部轮播图（json数组）export interface BannerItem { /** 文件类型（如：image、video） */ file_type?: string; /** 文件 URL */ file_url: string; /** 跳转链接（小程序路径或外部链接） */ link?: string; /** 排序索引 */ sort?: number; /** 标题 */ title?: string; }
   """
-  banner_top: [jsonb!]
+  banner_top: [json!]
   created_at: timestamptz
   id: bigint
 
@@ -2003,12 +2075,12 @@ type companies_min_fields {
   """
   底部轮播图（json数组）export interface BannerItem { /** 文件类型（如：image、video） */ file_type?: string; /** 文件 URL */ file_url: string; /** 跳转链接（小程序路径或外部链接） */ link?: string; /** 排序索引 */ sort?: number; /** 标题 */ title?: string; }
   """
-  banner_bottom: [jsonb!]
+  banner_bottom: [json!]
 
   """
   顶部轮播图（json数组）export interface BannerItem { /** 文件类型（如：image、video） */ file_type?: string; /** 文件 URL */ file_url: string; /** 跳转链接（小程序路径或外部链接） */ link?: string; /** 排序索引 */ sort?: number; /** 标题 */ title?: string; }
   """
-  banner_top: [jsonb!]
+  banner_top: [json!]
   created_at: timestamptz
   id: bigint
 
@@ -2111,12 +2183,12 @@ input companies_set_input {
   """
   底部轮播图（json数组）export interface BannerItem { /** 文件类型（如：image、video） */ file_type?: string; /** 文件 URL */ file_url: string; /** 跳转链接（小程序路径或外部链接） */ link?: string; /** 排序索引 */ sort?: number; /** 标题 */ title?: string; }
   """
-  banner_bottom: [jsonb!]
+  banner_bottom: [json!]
 
   """
   顶部轮播图（json数组）export interface BannerItem { /** 文件类型（如：image、video） */ file_type?: string; /** 文件 URL */ file_url: string; /** 跳转链接（小程序路径或外部链接） */ link?: string; /** 排序索引 */ sort?: number; /** 标题 */ title?: string; }
   """
-  banner_top: [jsonb!]
+  banner_top: [json!]
   created_at: timestamptz
   id: bigint
 
@@ -2162,12 +2234,12 @@ input companies_stream_cursor_value_input {
   """
   底部轮播图（json数组）export interface BannerItem { /** 文件类型（如：image、video） */ file_type?: string; /** 文件 URL */ file_url: string; /** 跳转链接（小程序路径或外部链接） */ link?: string; /** 排序索引 */ sort?: number; /** 标题 */ title?: string; }
   """
-  banner_bottom: [jsonb!]
+  banner_bottom: [json!]
 
   """
   顶部轮播图（json数组）export interface BannerItem { /** 文件类型（如：image、video） */ file_type?: string; /** 文件 URL */ file_url: string; /** 跳转链接（小程序路径或外部链接） */ link?: string; /** 排序索引 */ sort?: number; /** 标题 */ title?: string; }
   """
-  banner_top: [jsonb!]
+  banner_top: [json!]
   created_at: timestamptz
   id: bigint
 
@@ -2916,11 +2988,13 @@ type configs {
   name: String!
   updated_at: timestamptz!
 
-  """配置值（json数据，type=string｜number｜array｜json、content存放对应类型的值）"""
+  """
+  配置值（json数据，type=string｜number｜array｜json、type为json或者array的时候content键存放对应的值）
+  """
   value(
     """JSON select path"""
     path: String
-  ): jsonb
+  ): json
 }
 
 """
@@ -2948,12 +3022,6 @@ type configs_aggregate_fields {
   variance: configs_variance_fields
 }
 
-"""append existing jsonb value of filtered columns with new jsonb value"""
-input configs_append_input {
-  """配置值（json数据，type=string｜number｜array｜json、content存放对应类型的值）"""
-  value: jsonb
-}
-
 """aggregate avg on columns"""
 type configs_avg_fields {
   id: Float
@@ -2972,7 +3040,7 @@ input configs_bool_exp {
   is_deletable: Boolean_comparison_exp
   name: String_comparison_exp
   updated_at: timestamptz_comparison_exp
-  value: jsonb_comparison_exp
+  value: json_comparison_exp
 }
 
 """
@@ -2988,30 +3056,6 @@ enum configs_constraint {
   unique or primary key constraint on columns "id"
   """
   configs_pkey
-}
-
-"""
-delete the field or element with specified path (for JSON arrays, negative integers count from the end)
-"""
-input configs_delete_at_path_input {
-  """配置值（json数据，type=string｜number｜array｜json、content存放对应类型的值）"""
-  value: [String!]
-}
-
-"""
-delete the array element with specified index (negative integers count from the end). throws an error if top level container is not an array
-"""
-input configs_delete_elem_input {
-  """配置值（json数据，type=string｜number｜array｜json、content存放对应类型的值）"""
-  value: Int
-}
-
-"""
-delete key/value pair or string element. key/value pairs are matched based on their key value
-"""
-input configs_delete_key_input {
-  """配置值（json数据，type=string｜number｜array｜json、content存放对应类型的值）"""
-  value: String
 }
 
 """
@@ -3038,8 +3082,10 @@ input configs_insert_input {
   name: String
   updated_at: timestamptz
 
-  """配置值（json数据，type=string｜number｜array｜json、content存放对应类型的值）"""
-  value: jsonb
+  """
+  配置值（json数据，type=string｜number｜array｜json、type为json或者array的时候content键存放对应的值）
+  """
+  value: json
 }
 
 """aggregate max on columns"""
@@ -3104,12 +3150,6 @@ input configs_pk_columns_input {
   id: bigint!
 }
 
-"""prepend existing jsonb value of filtered columns with new jsonb value"""
-input configs_prepend_input {
-  """配置值（json数据，type=string｜number｜array｜json、content存放对应类型的值）"""
-  value: jsonb
-}
-
 """
 select columns of table "configs"
 """
@@ -3153,8 +3193,10 @@ input configs_set_input {
   name: String
   updated_at: timestamptz
 
-  """配置值（json数据，type=string｜number｜array｜json、content存放对应类型的值）"""
-  value: jsonb
+  """
+  配置值（json数据，type=string｜number｜array｜json、type为json或者array的时候content键存放对应的值）
+  """
+  value: json
 }
 
 """aggregate stddev on columns"""
@@ -3198,8 +3240,10 @@ input configs_stream_cursor_value_input {
   name: String
   updated_at: timestamptz
 
-  """配置值（json数据，type=string｜number｜array｜json、content存放对应类型的值）"""
-  value: jsonb
+  """
+  配置值（json数据，type=string｜number｜array｜json、type为json或者array的时候content键存放对应的值）
+  """
+  value: json
 }
 
 """aggregate sum on columns"""
@@ -3234,29 +3278,8 @@ enum configs_update_column {
 }
 
 input configs_updates {
-  """append existing jsonb value of filtered columns with new jsonb value"""
-  _append: configs_append_input
-
-  """
-  delete the field or element with specified path (for JSON arrays, negative integers count from the end)
-  """
-  _delete_at_path: configs_delete_at_path_input
-
-  """
-  delete the array element with specified index (negative integers count from the end). throws an error if top level container is not an array
-  """
-  _delete_elem: configs_delete_elem_input
-
-  """
-  delete key/value pair or string element. key/value pairs are matched based on their key value
-  """
-  _delete_key: configs_delete_key_input
-
   """increments the numeric columns with given value of the filtered values"""
   _inc: configs_inc_input
-
-  """prepend existing jsonb value of filtered columns with new jsonb value"""
-  _prepend: configs_prepend_input
 
   """sets the columns of the filtered rows to the given values"""
   _set: configs_set_input
@@ -3289,61 +3312,41 @@ enum cursor_ordering {
   DESC
 }
 
-scalar jsonb
+scalar json
 
 """
-Boolean expression to compare columns of type "jsonb". All fields are combined with logical 'AND'.
+Boolean expression to compare columns of type "json". All fields are combined with logical 'AND'.
 """
-input jsonb_array_comparison_exp {
+input json_array_comparison_exp {
   """is the array contained in the given array value"""
-  _contained_in: [jsonb!]
+  _contained_in: [json!]
 
   """does the array contain the given value"""
-  _contains: [jsonb!]
-  _eq: [jsonb!]
-  _gt: [jsonb!]
-  _gte: [jsonb!]
-  _in: [[jsonb!]!]
+  _contains: [json!]
+  _eq: [json!]
+  _gt: [json!]
+  _gte: [json!]
+  _in: [[json!]!]
   _is_null: Boolean
-  _lt: [jsonb!]
-  _lte: [jsonb!]
-  _neq: [jsonb!]
-  _nin: [[jsonb!]!]
-}
-
-input jsonb_cast_exp {
-  String: String_comparison_exp
+  _lt: [json!]
+  _lte: [json!]
+  _neq: [json!]
+  _nin: [[json!]!]
 }
 
 """
-Boolean expression to compare columns of type "jsonb". All fields are combined with logical 'AND'.
+Boolean expression to compare columns of type "json". All fields are combined with logical 'AND'.
 """
-input jsonb_comparison_exp {
-  _cast: jsonb_cast_exp
-
-  """is the column contained in the given json value"""
-  _contained_in: jsonb
-
-  """does the column contain the given json value at the top level"""
-  _contains: jsonb
-  _eq: jsonb
-  _gt: jsonb
-  _gte: jsonb
-
-  """does the string exist as a top-level key in the column"""
-  _has_key: String
-
-  """do all of these strings exist as top-level keys in the column"""
-  _has_keys_all: [String!]
-
-  """do any of these strings exist as top-level keys in the column"""
-  _has_keys_any: [String!]
-  _in: [jsonb!]
+input json_comparison_exp {
+  _eq: json
+  _gt: json
+  _gte: json
+  _in: [json!]
   _is_null: Boolean
-  _lt: jsonb
-  _lte: jsonb
-  _neq: jsonb
-  _nin: [jsonb!]
+  _lt: json
+  _lte: json
+  _neq: json
+  _nin: [json!]
 }
 
 """mutation root"""
@@ -3908,29 +3911,8 @@ type mutation_root {
   update data of the table: "configs"
   """
   update_configs(
-    """append existing jsonb value of filtered columns with new jsonb value"""
-    _append: configs_append_input
-
-    """
-    delete the field or element with specified path (for JSON arrays, negative integers count from the end)
-    """
-    _delete_at_path: configs_delete_at_path_input
-
-    """
-    delete the array element with specified index (negative integers count from the end). throws an error if top level container is not an array
-    """
-    _delete_elem: configs_delete_elem_input
-
-    """
-    delete key/value pair or string element. key/value pairs are matched based on their key value
-    """
-    _delete_key: configs_delete_key_input
-
     """increments the numeric columns with given value of the filtered values"""
     _inc: configs_inc_input
-
-    """prepend existing jsonb value of filtered columns with new jsonb value"""
-    _prepend: configs_prepend_input
 
     """sets the columns of the filtered rows to the given values"""
     _set: configs_set_input
@@ -3943,29 +3925,8 @@ type mutation_root {
   update single row of the table: "configs"
   """
   update_configs_by_pk(
-    """append existing jsonb value of filtered columns with new jsonb value"""
-    _append: configs_append_input
-
-    """
-    delete the field or element with specified path (for JSON arrays, negative integers count from the end)
-    """
-    _delete_at_path: configs_delete_at_path_input
-
-    """
-    delete the array element with specified index (negative integers count from the end). throws an error if top level container is not an array
-    """
-    _delete_elem: configs_delete_elem_input
-
-    """
-    delete key/value pair or string element. key/value pairs are matched based on their key value
-    """
-    _delete_key: configs_delete_key_input
-
     """increments the numeric columns with given value of the filtered values"""
     _inc: configs_inc_input
-
-    """prepend existing jsonb value of filtered columns with new jsonb value"""
-    _prepend: configs_prepend_input
 
     """sets the columns of the filtered rows to the given values"""
     _set: configs_set_input
@@ -5745,7 +5706,7 @@ type package_product_skus {
   """An object relationship"""
   product_sku: product_skus!
 
-  """SKU id"""
+  """SKU id（上架时只能选系统默认公司和自己公司的sku）"""
   product_sku_product_skus: bigint!
 
   """SKU数量"""
@@ -5823,7 +5784,7 @@ type package_product_skus_avg_fields {
   """套餐id"""
   package_packages: Float
 
-  """SKU id"""
+  """SKU id（上架时只能选系统默认公司和自己公司的sku）"""
   product_sku_product_skus: Float
 
   """SKU数量"""
@@ -5839,7 +5800,7 @@ input package_product_skus_avg_order_by {
   """套餐id"""
   package_packages: order_by
 
-  """SKU id"""
+  """SKU id（上架时只能选系统默认公司和自己公司的sku）"""
   product_sku_product_skus: order_by
 
   """SKU数量"""
@@ -5882,7 +5843,7 @@ input package_product_skus_inc_input {
   """套餐id"""
   package_packages: bigint
 
-  """SKU id"""
+  """SKU id（上架时只能选系统默认公司和自己公司的sku）"""
   product_sku_product_skus: bigint
 
   """SKU数量"""
@@ -5901,7 +5862,7 @@ input package_product_skus_insert_input {
   package_packages: bigint
   product_sku: product_skus_obj_rel_insert_input
 
-  """SKU id"""
+  """SKU id（上架时只能选系统默认公司和自己公司的sku）"""
   product_sku_product_skus: bigint
 
   """SKU数量"""
@@ -5917,7 +5878,7 @@ type package_product_skus_max_fields {
   """套餐id"""
   package_packages: bigint
 
-  """SKU id"""
+  """SKU id（上架时只能选系统默认公司和自己公司的sku）"""
   product_sku_product_skus: bigint
 
   """SKU数量"""
@@ -5935,7 +5896,7 @@ input package_product_skus_max_order_by {
   """套餐id"""
   package_packages: order_by
 
-  """SKU id"""
+  """SKU id（上架时只能选系统默认公司和自己公司的sku）"""
   product_sku_product_skus: order_by
 
   """SKU数量"""
@@ -5951,7 +5912,7 @@ type package_product_skus_min_fields {
   """套餐id"""
   package_packages: bigint
 
-  """SKU id"""
+  """SKU id（上架时只能选系统默认公司和自己公司的sku）"""
   product_sku_product_skus: bigint
 
   """SKU数量"""
@@ -5969,7 +5930,7 @@ input package_product_skus_min_order_by {
   """套餐id"""
   package_packages: order_by
 
-  """SKU id"""
+  """SKU id（上架时只能选系统默认公司和自己公司的sku）"""
   product_sku_product_skus: order_by
 
   """SKU数量"""
@@ -6047,7 +6008,7 @@ input package_product_skus_set_input {
   """套餐id"""
   package_packages: bigint
 
-  """SKU id"""
+  """SKU id（上架时只能选系统默认公司和自己公司的sku）"""
   product_sku_product_skus: bigint
 
   """SKU数量"""
@@ -6062,7 +6023,7 @@ type package_product_skus_stddev_fields {
   """套餐id"""
   package_packages: Float
 
-  """SKU id"""
+  """SKU id（上架时只能选系统默认公司和自己公司的sku）"""
   product_sku_product_skus: Float
 
   """SKU数量"""
@@ -6078,7 +6039,7 @@ input package_product_skus_stddev_order_by {
   """套餐id"""
   package_packages: order_by
 
-  """SKU id"""
+  """SKU id（上架时只能选系统默认公司和自己公司的sku）"""
   product_sku_product_skus: order_by
 
   """SKU数量"""
@@ -6092,7 +6053,7 @@ type package_product_skus_stddev_pop_fields {
   """套餐id"""
   package_packages: Float
 
-  """SKU id"""
+  """SKU id（上架时只能选系统默认公司和自己公司的sku）"""
   product_sku_product_skus: Float
 
   """SKU数量"""
@@ -6108,7 +6069,7 @@ input package_product_skus_stddev_pop_order_by {
   """套餐id"""
   package_packages: order_by
 
-  """SKU id"""
+  """SKU id（上架时只能选系统默认公司和自己公司的sku）"""
   product_sku_product_skus: order_by
 
   """SKU数量"""
@@ -6122,7 +6083,7 @@ type package_product_skus_stddev_samp_fields {
   """套餐id"""
   package_packages: Float
 
-  """SKU id"""
+  """SKU id（上架时只能选系统默认公司和自己公司的sku）"""
   product_sku_product_skus: Float
 
   """SKU数量"""
@@ -6138,7 +6099,7 @@ input package_product_skus_stddev_samp_order_by {
   """套餐id"""
   package_packages: order_by
 
-  """SKU id"""
+  """SKU id（上架时只能选系统默认公司和自己公司的sku）"""
   product_sku_product_skus: order_by
 
   """SKU数量"""
@@ -6164,7 +6125,7 @@ input package_product_skus_stream_cursor_value_input {
   """套餐id"""
   package_packages: bigint
 
-  """SKU id"""
+  """SKU id（上架时只能选系统默认公司和自己公司的sku）"""
   product_sku_product_skus: bigint
 
   """SKU数量"""
@@ -6179,7 +6140,7 @@ type package_product_skus_sum_fields {
   """套餐id"""
   package_packages: bigint
 
-  """SKU id"""
+  """SKU id（上架时只能选系统默认公司和自己公司的sku）"""
   product_sku_product_skus: bigint
 
   """SKU数量"""
@@ -6195,7 +6156,7 @@ input package_product_skus_sum_order_by {
   """套餐id"""
   package_packages: order_by
 
-  """SKU id"""
+  """SKU id（上架时只能选系统默认公司和自己公司的sku）"""
   product_sku_product_skus: order_by
 
   """SKU数量"""
@@ -6243,7 +6204,7 @@ type package_product_skus_var_pop_fields {
   """套餐id"""
   package_packages: Float
 
-  """SKU id"""
+  """SKU id（上架时只能选系统默认公司和自己公司的sku）"""
   product_sku_product_skus: Float
 
   """SKU数量"""
@@ -6259,7 +6220,7 @@ input package_product_skus_var_pop_order_by {
   """套餐id"""
   package_packages: order_by
 
-  """SKU id"""
+  """SKU id（上架时只能选系统默认公司和自己公司的sku）"""
   product_sku_product_skus: order_by
 
   """SKU数量"""
@@ -6273,7 +6234,7 @@ type package_product_skus_var_samp_fields {
   """套餐id"""
   package_packages: Float
 
-  """SKU id"""
+  """SKU id（上架时只能选系统默认公司和自己公司的sku）"""
   product_sku_product_skus: Float
 
   """SKU数量"""
@@ -6289,7 +6250,7 @@ input package_product_skus_var_samp_order_by {
   """套餐id"""
   package_packages: order_by
 
-  """SKU id"""
+  """SKU id（上架时只能选系统默认公司和自己公司的sku）"""
   product_sku_product_skus: order_by
 
   """SKU数量"""
@@ -6303,7 +6264,7 @@ type package_product_skus_variance_fields {
   """套餐id"""
   package_packages: Float
 
-  """SKU id"""
+  """SKU id（上架时只能选系统默认公司和自己公司的sku）"""
   product_sku_product_skus: Float
 
   """SKU数量"""
@@ -6319,7 +6280,7 @@ input package_product_skus_variance_order_by {
   """套餐id"""
   package_packages: order_by
 
-  """SKU id"""
+  """SKU id（上架时只能选系统默认公司和自己公司的sku）"""
   product_sku_product_skus: order_by
 
   """SKU数量"""
@@ -6328,6 +6289,15 @@ input package_product_skus_variance_order_by {
 
 """套餐表"""
 type packages {
+  """An object relationship"""
+  category: categories
+
+  """分类id，上架时只能选择系统默认公司和自己公司的分类数据"""
+  category_categories: bigint
+
+  """套餐属于哪个公司"""
+  company_companies: bigint
+
   """套餐封面图"""
   cover_image_url: String!
   created_at: timestamptz!
@@ -6336,8 +6306,14 @@ type packages {
   description: String
   id: bigint!
 
+  """是否下架"""
+  is_shelved: Boolean!
+
   """套餐名称"""
   name: String!
+
+  """An object relationship"""
+  package: packages
 
   """An array relationship"""
   package_product_skus(
@@ -6374,6 +6350,42 @@ type packages {
     """filter the rows returned"""
     where: package_product_skus_bool_exp
   ): package_product_skus_aggregate!
+
+  """An array relationship"""
+  packages(
+    """distinct select on columns"""
+    distinct_on: [packages_select_column!]
+
+    """limit the number of rows returned"""
+    limit: Int
+
+    """skip the first n rows. Use only with order_by"""
+    offset: Int
+
+    """sort the rows by one or more columns"""
+    order_by: [packages_order_by!]
+
+    """filter the rows returned"""
+    where: packages_bool_exp
+  ): [packages!]!
+
+  """An aggregate relationship"""
+  packages_aggregate(
+    """distinct select on columns"""
+    distinct_on: [packages_select_column!]
+
+    """limit the number of rows returned"""
+    limit: Int
+
+    """skip the first n rows. Use only with order_by"""
+    offset: Int
+
+    """sort the rows by one or more columns"""
+    order_by: [packages_order_by!]
+
+    """filter the rows returned"""
+    where: packages_bool_exp
+  ): packages_aggregate!
   updated_at: timestamptz!
 }
 
@@ -6383,6 +6395,33 @@ aggregated selection of "packages"
 type packages_aggregate {
   aggregate: packages_aggregate_fields
   nodes: [packages!]!
+}
+
+input packages_aggregate_bool_exp {
+  bool_and: packages_aggregate_bool_exp_bool_and
+  bool_or: packages_aggregate_bool_exp_bool_or
+  count: packages_aggregate_bool_exp_count
+}
+
+input packages_aggregate_bool_exp_bool_and {
+  arguments: packages_select_column_packages_aggregate_bool_exp_bool_and_arguments_columns!
+  distinct: Boolean
+  filter: packages_bool_exp
+  predicate: Boolean_comparison_exp!
+}
+
+input packages_aggregate_bool_exp_bool_or {
+  arguments: packages_select_column_packages_aggregate_bool_exp_bool_or_arguments_columns!
+  distinct: Boolean
+  filter: packages_bool_exp
+  predicate: Boolean_comparison_exp!
+}
+
+input packages_aggregate_bool_exp_count {
+  arguments: [packages_select_column!]
+  distinct: Boolean
+  filter: packages_bool_exp
+  predicate: Int_comparison_exp!
 }
 
 """
@@ -6402,9 +6441,53 @@ type packages_aggregate_fields {
   variance: packages_variance_fields
 }
 
+"""
+order by aggregate values of table "packages"
+"""
+input packages_aggregate_order_by {
+  avg: packages_avg_order_by
+  count: order_by
+  max: packages_max_order_by
+  min: packages_min_order_by
+  stddev: packages_stddev_order_by
+  stddev_pop: packages_stddev_pop_order_by
+  stddev_samp: packages_stddev_samp_order_by
+  sum: packages_sum_order_by
+  var_pop: packages_var_pop_order_by
+  var_samp: packages_var_samp_order_by
+  variance: packages_variance_order_by
+}
+
+"""
+input type for inserting array relation for remote table "packages"
+"""
+input packages_arr_rel_insert_input {
+  data: [packages_insert_input!]!
+
+  """upsert condition"""
+  on_conflict: packages_on_conflict
+}
+
 """aggregate avg on columns"""
 type packages_avg_fields {
+  """分类id，上架时只能选择系统默认公司和自己公司的分类数据"""
+  category_categories: Float
+
+  """套餐属于哪个公司"""
+  company_companies: Float
   id: Float
+}
+
+"""
+order by avg() on columns of table "packages"
+"""
+input packages_avg_order_by {
+  """分类id，上架时只能选择系统默认公司和自己公司的分类数据"""
+  category_categories: order_by
+
+  """套餐属于哪个公司"""
+  company_companies: order_by
+  id: order_by
 }
 
 """
@@ -6414,13 +6497,20 @@ input packages_bool_exp {
   _and: [packages_bool_exp!]
   _not: packages_bool_exp
   _or: [packages_bool_exp!]
+  category: categories_bool_exp
+  category_categories: bigint_comparison_exp
+  company_companies: bigint_comparison_exp
   cover_image_url: String_comparison_exp
   created_at: timestamptz_comparison_exp
   description: String_comparison_exp
   id: bigint_comparison_exp
+  is_shelved: Boolean_comparison_exp
   name: String_comparison_exp
+  package: packages_bool_exp
   package_product_skus: package_product_skus_bool_exp
   package_product_skus_aggregate: package_product_skus_aggregate_bool_exp
+  packages: packages_bool_exp
+  packages_aggregate: packages_aggregate_bool_exp
   updated_at: timestamptz_comparison_exp
 }
 
@@ -6438,6 +6528,11 @@ enum packages_constraint {
 input type for incrementing numeric columns in table "packages"
 """
 input packages_inc_input {
+  """分类id，上架时只能选择系统默认公司和自己公司的分类数据"""
+  category_categories: bigint
+
+  """套餐属于哪个公司"""
+  company_companies: bigint
   id: bigint
 }
 
@@ -6445,6 +6540,14 @@ input packages_inc_input {
 input type for inserting data into table "packages"
 """
 input packages_insert_input {
+  category: categories_obj_rel_insert_input
+
+  """分类id，上架时只能选择系统默认公司和自己公司的分类数据"""
+  category_categories: bigint
+
+  """套餐属于哪个公司"""
+  company_companies: bigint
+
   """套餐封面图"""
   cover_image_url: String
   created_at: timestamptz
@@ -6453,14 +6556,25 @@ input packages_insert_input {
   description: String
   id: bigint
 
+  """是否下架"""
+  is_shelved: Boolean
+
   """套餐名称"""
   name: String
+  package: packages_obj_rel_insert_input
   package_product_skus: package_product_skus_arr_rel_insert_input
+  packages: packages_arr_rel_insert_input
   updated_at: timestamptz
 }
 
 """aggregate max on columns"""
 type packages_max_fields {
+  """分类id，上架时只能选择系统默认公司和自己公司的分类数据"""
+  category_categories: bigint
+
+  """套餐属于哪个公司"""
+  company_companies: bigint
+
   """套餐封面图"""
   cover_image_url: String
   created_at: timestamptz
@@ -6474,8 +6588,37 @@ type packages_max_fields {
   updated_at: timestamptz
 }
 
+"""
+order by max() on columns of table "packages"
+"""
+input packages_max_order_by {
+  """分类id，上架时只能选择系统默认公司和自己公司的分类数据"""
+  category_categories: order_by
+
+  """套餐属于哪个公司"""
+  company_companies: order_by
+
+  """套餐封面图"""
+  cover_image_url: order_by
+  created_at: order_by
+
+  """套餐介绍"""
+  description: order_by
+  id: order_by
+
+  """套餐名称"""
+  name: order_by
+  updated_at: order_by
+}
+
 """aggregate min on columns"""
 type packages_min_fields {
+  """分类id，上架时只能选择系统默认公司和自己公司的分类数据"""
+  category_categories: bigint
+
+  """套餐属于哪个公司"""
+  company_companies: bigint
+
   """套餐封面图"""
   cover_image_url: String
   created_at: timestamptz
@@ -6487,6 +6630,29 @@ type packages_min_fields {
   """套餐名称"""
   name: String
   updated_at: timestamptz
+}
+
+"""
+order by min() on columns of table "packages"
+"""
+input packages_min_order_by {
+  """分类id，上架时只能选择系统默认公司和自己公司的分类数据"""
+  category_categories: order_by
+
+  """套餐属于哪个公司"""
+  company_companies: order_by
+
+  """套餐封面图"""
+  cover_image_url: order_by
+  created_at: order_by
+
+  """套餐介绍"""
+  description: order_by
+  id: order_by
+
+  """套餐名称"""
+  name: order_by
+  updated_at: order_by
 }
 
 """
@@ -6521,12 +6687,18 @@ input packages_on_conflict {
 
 """Ordering options when selecting data from "packages"."""
 input packages_order_by {
+  category: categories_order_by
+  category_categories: order_by
+  company_companies: order_by
   cover_image_url: order_by
   created_at: order_by
   description: order_by
   id: order_by
+  is_shelved: order_by
   name: order_by
+  package: packages_order_by
   package_product_skus_aggregate: package_product_skus_aggregate_order_by
+  packages_aggregate: packages_aggregate_order_by
   updated_at: order_by
 }
 
@@ -6540,6 +6712,12 @@ select columns of table "packages"
 """
 enum packages_select_column {
   """column name"""
+  category_categories
+
+  """column name"""
+  company_companies
+
+  """column name"""
   cover_image_url
 
   """column name"""
@@ -6552,6 +6730,9 @@ enum packages_select_column {
   id
 
   """column name"""
+  is_shelved
+
+  """column name"""
   name
 
   """column name"""
@@ -6559,9 +6740,31 @@ enum packages_select_column {
 }
 
 """
+select "packages_aggregate_bool_exp_bool_and_arguments_columns" columns of table "packages"
+"""
+enum packages_select_column_packages_aggregate_bool_exp_bool_and_arguments_columns {
+  """column name"""
+  is_shelved
+}
+
+"""
+select "packages_aggregate_bool_exp_bool_or_arguments_columns" columns of table "packages"
+"""
+enum packages_select_column_packages_aggregate_bool_exp_bool_or_arguments_columns {
+  """column name"""
+  is_shelved
+}
+
+"""
 input type for updating data in table "packages"
 """
 input packages_set_input {
+  """分类id，上架时只能选择系统默认公司和自己公司的分类数据"""
+  category_categories: bigint
+
+  """套餐属于哪个公司"""
+  company_companies: bigint
+
   """套餐封面图"""
   cover_image_url: String
   created_at: timestamptz
@@ -6570,6 +6773,9 @@ input packages_set_input {
   description: String
   id: bigint
 
+  """是否下架"""
+  is_shelved: Boolean
+
   """套餐名称"""
   name: String
   updated_at: timestamptz
@@ -6577,17 +6783,68 @@ input packages_set_input {
 
 """aggregate stddev on columns"""
 type packages_stddev_fields {
+  """分类id，上架时只能选择系统默认公司和自己公司的分类数据"""
+  category_categories: Float
+
+  """套餐属于哪个公司"""
+  company_companies: Float
   id: Float
+}
+
+"""
+order by stddev() on columns of table "packages"
+"""
+input packages_stddev_order_by {
+  """分类id，上架时只能选择系统默认公司和自己公司的分类数据"""
+  category_categories: order_by
+
+  """套餐属于哪个公司"""
+  company_companies: order_by
+  id: order_by
 }
 
 """aggregate stddev_pop on columns"""
 type packages_stddev_pop_fields {
+  """分类id，上架时只能选择系统默认公司和自己公司的分类数据"""
+  category_categories: Float
+
+  """套餐属于哪个公司"""
+  company_companies: Float
   id: Float
+}
+
+"""
+order by stddev_pop() on columns of table "packages"
+"""
+input packages_stddev_pop_order_by {
+  """分类id，上架时只能选择系统默认公司和自己公司的分类数据"""
+  category_categories: order_by
+
+  """套餐属于哪个公司"""
+  company_companies: order_by
+  id: order_by
 }
 
 """aggregate stddev_samp on columns"""
 type packages_stddev_samp_fields {
+  """分类id，上架时只能选择系统默认公司和自己公司的分类数据"""
+  category_categories: Float
+
+  """套餐属于哪个公司"""
+  company_companies: Float
   id: Float
+}
+
+"""
+order by stddev_samp() on columns of table "packages"
+"""
+input packages_stddev_samp_order_by {
+  """分类id，上架时只能选择系统默认公司和自己公司的分类数据"""
+  category_categories: order_by
+
+  """套餐属于哪个公司"""
+  company_companies: order_by
+  id: order_by
 }
 
 """
@@ -6603,6 +6860,12 @@ input packages_stream_cursor_input {
 
 """Initial value of the column from where the streaming should start"""
 input packages_stream_cursor_value_input {
+  """分类id，上架时只能选择系统默认公司和自己公司的分类数据"""
+  category_categories: bigint
+
+  """套餐属于哪个公司"""
+  company_companies: bigint
+
   """套餐封面图"""
   cover_image_url: String
   created_at: timestamptz
@@ -6611,6 +6874,9 @@ input packages_stream_cursor_value_input {
   description: String
   id: bigint
 
+  """是否下架"""
+  is_shelved: Boolean
+
   """套餐名称"""
   name: String
   updated_at: timestamptz
@@ -6618,13 +6884,36 @@ input packages_stream_cursor_value_input {
 
 """aggregate sum on columns"""
 type packages_sum_fields {
+  """分类id，上架时只能选择系统默认公司和自己公司的分类数据"""
+  category_categories: bigint
+
+  """套餐属于哪个公司"""
+  company_companies: bigint
   id: bigint
+}
+
+"""
+order by sum() on columns of table "packages"
+"""
+input packages_sum_order_by {
+  """分类id，上架时只能选择系统默认公司和自己公司的分类数据"""
+  category_categories: order_by
+
+  """套餐属于哪个公司"""
+  company_companies: order_by
+  id: order_by
 }
 
 """
 update columns of table "packages"
 """
 enum packages_update_column {
+  """column name"""
+  category_categories
+
+  """column name"""
+  company_companies
+
   """column name"""
   cover_image_url
 
@@ -6636,6 +6925,9 @@ enum packages_update_column {
 
   """column name"""
   id
+
+  """column name"""
+  is_shelved
 
   """column name"""
   name
@@ -6657,17 +6949,68 @@ input packages_updates {
 
 """aggregate var_pop on columns"""
 type packages_var_pop_fields {
+  """分类id，上架时只能选择系统默认公司和自己公司的分类数据"""
+  category_categories: Float
+
+  """套餐属于哪个公司"""
+  company_companies: Float
   id: Float
+}
+
+"""
+order by var_pop() on columns of table "packages"
+"""
+input packages_var_pop_order_by {
+  """分类id，上架时只能选择系统默认公司和自己公司的分类数据"""
+  category_categories: order_by
+
+  """套餐属于哪个公司"""
+  company_companies: order_by
+  id: order_by
 }
 
 """aggregate var_samp on columns"""
 type packages_var_samp_fields {
+  """分类id，上架时只能选择系统默认公司和自己公司的分类数据"""
+  category_categories: Float
+
+  """套餐属于哪个公司"""
+  company_companies: Float
   id: Float
+}
+
+"""
+order by var_samp() on columns of table "packages"
+"""
+input packages_var_samp_order_by {
+  """分类id，上架时只能选择系统默认公司和自己公司的分类数据"""
+  category_categories: order_by
+
+  """套餐属于哪个公司"""
+  company_companies: order_by
+  id: order_by
 }
 
 """aggregate variance on columns"""
 type packages_variance_fields {
+  """分类id，上架时只能选择系统默认公司和自己公司的分类数据"""
+  category_categories: Float
+
+  """套餐属于哪个公司"""
+  company_companies: Float
   id: Float
+}
+
+"""
+order by variance() on columns of table "packages"
+"""
+input packages_variance_order_by {
+  """分类id，上架时只能选择系统默认公司和自己公司的分类数据"""
+  category_categories: order_by
+
+  """套餐属于哪个公司"""
+  company_companies: order_by
+  id: order_by
 }
 
 """产品下的规格"""
@@ -7601,7 +7944,7 @@ type products {
   """An object relationship"""
   category: categories
 
-  """所属分类id"""
+  """所属分类id（上架时只能选系统默认公司和自己公司的分类）"""
   category_categories: bigint
 
   """An object relationship"""
@@ -7618,7 +7961,7 @@ type products {
   description: String
 
   """详细信息媒体内容，jsonb的item项（file_type=video|image、file_url）"""
-  detail_medias: [jsonb!]!
+  detail_medias: [json!]!
   id: bigint!
 
   """是否删除"""
@@ -7667,7 +8010,7 @@ type products {
   ): product_skus_aggregate!
 
   """实拍场景信息媒体内容，jsonb的item项（file_type=video|image、file_url）"""
-  scene_medias: [jsonb!]!
+  scene_medias: [json!]!
   updated_at: timestamptz!
 
   """产品视频url"""
@@ -7755,7 +8098,7 @@ input products_arr_rel_insert_input {
 
 """aggregate avg on columns"""
 type products_avg_fields {
-  """所属分类id"""
+  """所属分类id（上架时只能选系统默认公司和自己公司的分类）"""
   category_categories: Float
 
   """归属公司id"""
@@ -7767,7 +8110,7 @@ type products_avg_fields {
 order by avg() on columns of table "products"
 """
 input products_avg_order_by {
-  """所属分类id"""
+  """所属分类id（上架时只能选系统默认公司和自己公司的分类）"""
   category_categories: order_by
 
   """归属公司id"""
@@ -7789,14 +8132,14 @@ input products_bool_exp {
   cover_image_url: String_comparison_exp
   created_at: timestamptz_comparison_exp
   description: String_comparison_exp
-  detail_medias: jsonb_array_comparison_exp
+  detail_medias: json_array_comparison_exp
   id: bigint_comparison_exp
   is_deleted: Boolean_comparison_exp
   is_shelved: Boolean_comparison_exp
   name: String_comparison_exp
   product_skus: product_skus_bool_exp
   product_skus_aggregate: product_skus_aggregate_bool_exp
-  scene_medias: jsonb_array_comparison_exp
+  scene_medias: json_array_comparison_exp
   updated_at: timestamptz_comparison_exp
   video_url: String_comparison_exp
 }
@@ -7815,7 +8158,7 @@ enum products_constraint {
 input type for incrementing numeric columns in table "products"
 """
 input products_inc_input {
-  """所属分类id"""
+  """所属分类id（上架时只能选系统默认公司和自己公司的分类）"""
   category_categories: bigint
 
   """归属公司id"""
@@ -7829,7 +8172,7 @@ input type for inserting data into table "products"
 input products_insert_input {
   category: categories_obj_rel_insert_input
 
-  """所属分类id"""
+  """所属分类id（上架时只能选系统默认公司和自己公司的分类）"""
   category_categories: bigint
   company: companies_obj_rel_insert_input
 
@@ -7844,7 +8187,7 @@ input products_insert_input {
   description: String
 
   """详细信息媒体内容，jsonb的item项（file_type=video|image、file_url）"""
-  detail_medias: [jsonb!]
+  detail_medias: [json!]
   id: bigint
 
   """是否删除"""
@@ -7858,7 +8201,7 @@ input products_insert_input {
   product_skus: product_skus_arr_rel_insert_input
 
   """实拍场景信息媒体内容，jsonb的item项（file_type=video|image、file_url）"""
-  scene_medias: [jsonb!]
+  scene_medias: [json!]
   updated_at: timestamptz
 
   """产品视频url"""
@@ -7867,7 +8210,7 @@ input products_insert_input {
 
 """aggregate max on columns"""
 type products_max_fields {
-  """所属分类id"""
+  """所属分类id（上架时只能选系统默认公司和自己公司的分类）"""
   category_categories: bigint
 
   """归属公司id"""
@@ -7881,14 +8224,14 @@ type products_max_fields {
   description: String
 
   """详细信息媒体内容，jsonb的item项（file_type=video|image、file_url）"""
-  detail_medias: [jsonb!]
+  detail_medias: [json!]
   id: bigint
 
   """产品名称"""
   name: String
 
   """实拍场景信息媒体内容，jsonb的item项（file_type=video|image、file_url）"""
-  scene_medias: [jsonb!]
+  scene_medias: [json!]
   updated_at: timestamptz
 
   """产品视频url"""
@@ -7899,7 +8242,7 @@ type products_max_fields {
 order by max() on columns of table "products"
 """
 input products_max_order_by {
-  """所属分类id"""
+  """所属分类id（上架时只能选系统默认公司和自己公司的分类）"""
   category_categories: order_by
 
   """归属公司id"""
@@ -7929,7 +8272,7 @@ input products_max_order_by {
 
 """aggregate min on columns"""
 type products_min_fields {
-  """所属分类id"""
+  """所属分类id（上架时只能选系统默认公司和自己公司的分类）"""
   category_categories: bigint
 
   """归属公司id"""
@@ -7943,14 +8286,14 @@ type products_min_fields {
   description: String
 
   """详细信息媒体内容，jsonb的item项（file_type=video|image、file_url）"""
-  detail_medias: [jsonb!]
+  detail_medias: [json!]
   id: bigint
 
   """产品名称"""
   name: String
 
   """实拍场景信息媒体内容，jsonb的item项（file_type=video|image、file_url）"""
-  scene_medias: [jsonb!]
+  scene_medias: [json!]
   updated_at: timestamptz
 
   """产品视频url"""
@@ -7961,7 +8304,7 @@ type products_min_fields {
 order by min() on columns of table "products"
 """
 input products_min_order_by {
-  """所属分类id"""
+  """所属分类id（上架时只能选系统默认公司和自己公司的分类）"""
   category_categories: order_by
 
   """归属公司id"""
@@ -8114,7 +8457,7 @@ enum products_select_column_products_aggregate_bool_exp_bool_or_arguments_column
 input type for updating data in table "products"
 """
 input products_set_input {
-  """所属分类id"""
+  """所属分类id（上架时只能选系统默认公司和自己公司的分类）"""
   category_categories: bigint
 
   """归属公司id"""
@@ -8128,7 +8471,7 @@ input products_set_input {
   description: String
 
   """详细信息媒体内容，jsonb的item项（file_type=video|image、file_url）"""
-  detail_medias: [jsonb!]
+  detail_medias: [json!]
   id: bigint
 
   """是否删除"""
@@ -8141,7 +8484,7 @@ input products_set_input {
   name: String
 
   """实拍场景信息媒体内容，jsonb的item项（file_type=video|image、file_url）"""
-  scene_medias: [jsonb!]
+  scene_medias: [json!]
   updated_at: timestamptz
 
   """产品视频url"""
@@ -8150,7 +8493,7 @@ input products_set_input {
 
 """aggregate stddev on columns"""
 type products_stddev_fields {
-  """所属分类id"""
+  """所属分类id（上架时只能选系统默认公司和自己公司的分类）"""
   category_categories: Float
 
   """归属公司id"""
@@ -8162,7 +8505,7 @@ type products_stddev_fields {
 order by stddev() on columns of table "products"
 """
 input products_stddev_order_by {
-  """所属分类id"""
+  """所属分类id（上架时只能选系统默认公司和自己公司的分类）"""
   category_categories: order_by
 
   """归属公司id"""
@@ -8172,7 +8515,7 @@ input products_stddev_order_by {
 
 """aggregate stddev_pop on columns"""
 type products_stddev_pop_fields {
-  """所属分类id"""
+  """所属分类id（上架时只能选系统默认公司和自己公司的分类）"""
   category_categories: Float
 
   """归属公司id"""
@@ -8184,7 +8527,7 @@ type products_stddev_pop_fields {
 order by stddev_pop() on columns of table "products"
 """
 input products_stddev_pop_order_by {
-  """所属分类id"""
+  """所属分类id（上架时只能选系统默认公司和自己公司的分类）"""
   category_categories: order_by
 
   """归属公司id"""
@@ -8194,7 +8537,7 @@ input products_stddev_pop_order_by {
 
 """aggregate stddev_samp on columns"""
 type products_stddev_samp_fields {
-  """所属分类id"""
+  """所属分类id（上架时只能选系统默认公司和自己公司的分类）"""
   category_categories: Float
 
   """归属公司id"""
@@ -8206,7 +8549,7 @@ type products_stddev_samp_fields {
 order by stddev_samp() on columns of table "products"
 """
 input products_stddev_samp_order_by {
-  """所属分类id"""
+  """所属分类id（上架时只能选系统默认公司和自己公司的分类）"""
   category_categories: order_by
 
   """归属公司id"""
@@ -8227,7 +8570,7 @@ input products_stream_cursor_input {
 
 """Initial value of the column from where the streaming should start"""
 input products_stream_cursor_value_input {
-  """所属分类id"""
+  """所属分类id（上架时只能选系统默认公司和自己公司的分类）"""
   category_categories: bigint
 
   """归属公司id"""
@@ -8241,7 +8584,7 @@ input products_stream_cursor_value_input {
   description: String
 
   """详细信息媒体内容，jsonb的item项（file_type=video|image、file_url）"""
-  detail_medias: [jsonb!]
+  detail_medias: [json!]
   id: bigint
 
   """是否删除"""
@@ -8254,7 +8597,7 @@ input products_stream_cursor_value_input {
   name: String
 
   """实拍场景信息媒体内容，jsonb的item项（file_type=video|image、file_url）"""
-  scene_medias: [jsonb!]
+  scene_medias: [json!]
   updated_at: timestamptz
 
   """产品视频url"""
@@ -8263,7 +8606,7 @@ input products_stream_cursor_value_input {
 
 """aggregate sum on columns"""
 type products_sum_fields {
-  """所属分类id"""
+  """所属分类id（上架时只能选系统默认公司和自己公司的分类）"""
   category_categories: bigint
 
   """归属公司id"""
@@ -8275,7 +8618,7 @@ type products_sum_fields {
 order by sum() on columns of table "products"
 """
 input products_sum_order_by {
-  """所属分类id"""
+  """所属分类id（上架时只能选系统默认公司和自己公司的分类）"""
   category_categories: order_by
 
   """归属公司id"""
@@ -8340,7 +8683,7 @@ input products_updates {
 
 """aggregate var_pop on columns"""
 type products_var_pop_fields {
-  """所属分类id"""
+  """所属分类id（上架时只能选系统默认公司和自己公司的分类）"""
   category_categories: Float
 
   """归属公司id"""
@@ -8352,7 +8695,7 @@ type products_var_pop_fields {
 order by var_pop() on columns of table "products"
 """
 input products_var_pop_order_by {
-  """所属分类id"""
+  """所属分类id（上架时只能选系统默认公司和自己公司的分类）"""
   category_categories: order_by
 
   """归属公司id"""
@@ -8362,7 +8705,7 @@ input products_var_pop_order_by {
 
 """aggregate var_samp on columns"""
 type products_var_samp_fields {
-  """所属分类id"""
+  """所属分类id（上架时只能选系统默认公司和自己公司的分类）"""
   category_categories: Float
 
   """归属公司id"""
@@ -8374,7 +8717,7 @@ type products_var_samp_fields {
 order by var_samp() on columns of table "products"
 """
 input products_var_samp_order_by {
-  """所属分类id"""
+  """所属分类id（上架时只能选系统默认公司和自己公司的分类）"""
   category_categories: order_by
 
   """归属公司id"""
@@ -8384,7 +8727,7 @@ input products_var_samp_order_by {
 
 """aggregate variance on columns"""
 type products_variance_fields {
-  """所属分类id"""
+  """所属分类id（上架时只能选系统默认公司和自己公司的分类）"""
   category_categories: Float
 
   """归属公司id"""
@@ -8396,7 +8739,7 @@ type products_variance_fields {
 order by variance() on columns of table "products"
 """
 input products_variance_order_by {
-  """所属分类id"""
+  """所属分类id（上架时只能选系统默认公司和自己公司的分类）"""
   category_categories: order_by
 
   """归属公司id"""
@@ -8727,9 +9070,7 @@ type query_root {
   """
   package_product_skus_by_pk(id: bigint!): package_product_skus
 
-  """
-  fetch data from the table: "packages"
-  """
+  """An array relationship"""
   packages(
     """distinct select on columns"""
     distinct_on: [packages_select_column!]
@@ -8747,9 +9088,7 @@ type query_root {
     where: packages_bool_exp
   ): [packages!]!
 
-  """
-  fetch aggregated fields from the table: "packages"
-  """
+  """An aggregate relationship"""
   packages_aggregate(
     """distinct select on columns"""
     distinct_on: [packages_select_column!]
@@ -9327,9 +9666,7 @@ type subscription_root {
     where: package_product_skus_bool_exp
   ): [package_product_skus!]!
 
-  """
-  fetch data from the table: "packages"
-  """
+  """An array relationship"""
   packages(
     """distinct select on columns"""
     distinct_on: [packages_select_column!]
@@ -9347,9 +9684,7 @@ type subscription_root {
     where: packages_bool_exp
   ): [packages!]!
 
-  """
-  fetch aggregated fields from the table: "packages"
-  """
+  """An aggregate relationship"""
   packages_aggregate(
     """distinct select on columns"""
     distinct_on: [packages_select_column!]

@@ -47,8 +47,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
-import { onPullDownRefresh, onReachBottom, onShow } from '@dcloudio/uni-app';
+import { ref } from 'vue';
+import { onLoad, onPullDownRefresh, onReachBottom, onShow } from '@dcloudio/uni-app';
+import { companyInfo } from '@/store/userStore';
 import { getPackageList, deletePackage } from '@/api/admin/package';
 
 const packages = ref<any[]>([]);
@@ -56,6 +57,10 @@ const loading = ref(false);
 const page = ref(1);
 const pageSize = 20;
 const hasMore = ref(true);
+
+// 超级管理员从公司管理点进来时传入的 companyId
+const viewCompanyId = ref<number | null>(null);
+const effectiveCompanyId = () => viewCompanyId.value ?? companyInfo.value?.id ?? null;
 
 // 加载套餐列表
 const loadPackages = async (reset = false) => {
@@ -71,7 +76,9 @@ const loadPackages = async (reset = false) => {
   loading.value = true;
 
   try {
+    const companyId = effectiveCompanyId();
     const result = await getPackageList({
+      companyId: companyId ?? undefined,
       limit: pageSize,
       offset: (page.value - 1) * pageSize,
     });
@@ -126,23 +133,24 @@ const handleDelete = (pkg: any) => {
 // 跳转到添加套餐
 const goToAddPackage = () => {
   uni.navigateTo({
-    url: '/subPackages/admin/package-edit/index',
+    url: '/subPackages/company/package-edit/index',
   });
 };
 
 // 跳转到编辑套餐
 const goToEditPackage = (packageId: number) => {
   uni.navigateTo({
-    url: `/subPackages/admin/package-edit/index?id=${packageId}`,
+    url: `/subPackages/company/package-edit/index?id=${packageId}`,
   });
 };
 
-onMounted(() => {
-  loadPackages(true);
+onLoad((options?: { companyId?: string }) => {
+  if (options?.companyId) {
+    viewCompanyId.value = Number(options.companyId);
+  }
 });
 
 onShow(() => {
-  // 页面显示时刷新数据（从编辑页面返回时）
   loadPackages(true);
 });
 

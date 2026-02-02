@@ -1,11 +1,7 @@
 <template>
   <view class="package-page">
-    <!-- 自定义导航栏 -->
-    <view class="custom-navbar">
-      <view class="navbar-content">
-        <view class="navbar-title">套餐</view>
-      </view>
-    </view>
+    <!-- 统一导航栏（含状态栏高度） -->
+    <PageNavBar :title="companyInfo?.name || '套餐'" />
 
     <!-- 搜索框 -->
     <view class="search-box">
@@ -21,13 +17,37 @@
       </view>
     </view>
 
+    <!-- 分类筛选 -->
+    <view class="category-filter">
+      <scroll-view scroll-x class="category-scroll">
+        <view class="category-list">
+          <view
+            class="category-item"
+            :class="{ active: selectedCategoryId === null }"
+            @click="selectCategory(null)"
+          >
+            <text>全部</text>
+          </view>
+          <view
+            v-for="category in categories"
+            :key="category.id"
+            class="category-item"
+            :class="{ active: selectedCategoryId === category.id }"
+            @click="selectCategory(category.id)"
+          >
+            <text>{{ category.name }}</text>
+          </view>
+        </view>
+      </scroll-view>
+    </view>
+
     <!-- 加载状态 -->
     <view v-if="loading" class="loading-container">
       <view class="loading-spinner"></view>
       <text>加载中...</text>
     </view>
 
-    <!-- 套餐列表 -->
+    <!-- 套餐列表：每行 3 个 -->
     <view v-else class="package-list">
       <view
         v-for="pkg in packages"
@@ -42,22 +62,19 @@
         ></image>
         <view class="package-info">
           <view class="package-name">{{ pkg.name }}</view>
-          <view class="package-desc" v-if="pkg.description">
-            {{ pkg.description.length > 50 ? pkg.description.substring(0, 50) + '...' : pkg.description }}
-          </view>
           <view class="package-skus">
-            <text class="sku-count">包含 {{ pkg.package_product_skus?.length || 0 }} 个商品</text>
+            <text class="sku-count">{{ pkg.package_product_skus?.length || 0 }} 个商品</text>
           </view>
         </view>
       </view>
 
-      <!-- 空状态 -->
-      <view v-if="packages.length === 0" class="empty-state">
+      <!-- 空状态（跨整行） -->
+      <view v-if="packages.length === 0" class="empty-state full-row">
         <text class="empty-text">暂无套餐</text>
       </view>
 
-      <!-- 加载更多 -->
-      <view v-if="hasMore && !loading" class="load-more" @click="loadMore">
+      <!-- 加载更多（跨整行） -->
+      <view v-if="hasMore && !loading" class="load-more full-row" @click="loadMore">
         <text>加载更多</text>
       </view>
     </view>
@@ -68,7 +85,9 @@
 import { ref, onMounted } from 'vue';
 import { onPullDownRefresh, onReachBottom } from '@dcloudio/uni-app';
 import { getPackageList } from '@/api/package/index';
+import { getCategoryTree } from '@/api/category/index';
 import { companyInfo } from '@/store/userStore';
+import PageNavBar from '@/components/PageNavBar.vue';
 
 const packages = ref<any[]>([]);
 const loading = ref(false);
@@ -76,6 +95,33 @@ const searchKeyword = ref('');
 const page = ref(1);
 const pageSize = 20;
 const hasMore = ref(true);
+const categories = ref<any[]>([]);
+const selectedCategoryId = ref<number | null>(null);
+const loadingCategories = ref(false);
+
+// 加载分类列表（套餐分类）
+const loadCategories = async () => {
+  if (!companyInfo.value?.id) return;
+
+  loadingCategories.value = true;
+  try {
+    const result = await getCategoryTree(companyInfo.value.id, 'package');
+    if (result.code === 0 && result.data) {
+      // 扁平化分类树，只显示一级分类
+      categories.value = result.data;
+    }
+  } catch (error: any) {
+    console.error('加载分类失败:', error);
+  } finally {
+    loadingCategories.value = false;
+  }
+};
+
+// 选择分类
+const selectCategory = (categoryId: number | null) => {
+  selectedCategoryId.value = categoryId;
+  loadPackages(true); // 重新加载套餐列表
+};
 
 // 加载套餐列表
 const loadPackages = async (reset = false) => {
@@ -101,6 +147,7 @@ const loadPackages = async (reset = false) => {
   try {
     const result = await getPackageList({
       companyId: companyInfo.value.id,
+      categoryId: selectedCategoryId.value || undefined,
       limit: pageSize,
       offset: (page.value - 1) * pageSize,
     });
@@ -156,6 +203,7 @@ const goToPackageDetail = (packageId: number) => {
 };
 
 onMounted(() => {
+  loadCategories();
   loadPackages(true);
 });
 
@@ -174,34 +222,7 @@ onReachBottom(() => {
   background: #f5f5f5;
 }
 
-.custom-navbar {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 88rpx;
-  background: #ffffff;
-  z-index: 1000;
-  border-bottom: 1rpx solid #e0e0e0;
-}
-
-.navbar-content {
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0 30rpx;
-  padding-top: var(--status-bar-height, 0);
-}
-
-.navbar-title {
-  font-size: 36rpx;
-  font-weight: bold;
-  color: #333333;
-}
-
 .search-box {
-  margin-top: 88rpx;
   padding: 20rpx 30rpx;
   background: #ffffff;
   border-bottom: 1rpx solid #e0e0e0;
@@ -251,48 +272,52 @@ onReachBottom(() => {
 
 .package-list {
   padding: 20rpx;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20rpx;
+}
+
+.package-list .full-row {
+  grid-column: 1 / -1;
 }
 
 .package-item {
   background: #ffffff;
   border-radius: 16rpx;
-  margin-bottom: 20rpx;
   overflow: hidden;
   box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
 }
 
 .package-image {
   width: 100%;
-  height: 400rpx;
+  aspect-ratio: 1;
   background: #f0f0f0;
 }
 
 .package-info {
-  padding: 24rpx;
+  padding: 16rpx 12rpx;
 }
 
 .package-name {
-  font-size: 32rpx;
+  font-size: 26rpx;
   font-weight: bold;
   color: #333333;
-  margin-bottom: 12rpx;
-}
-
-.package-desc {
-  font-size: 26rpx;
-  color: #666666;
-  line-height: 1.6;
-  margin-bottom: 12rpx;
+  margin-bottom: 8rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  line-height: 1.4;
 }
 
 .package-skus {
   display: flex;
   align-items: center;
-  gap: 12rpx;
 }
 
 .sku-count {
-  font-size: 24rpx;
+  font-size: 22rpx;
   color: #999999;
 }
 
@@ -311,5 +336,36 @@ onReachBottom(() => {
   text-align: center;
   color: #667eea;
   font-size: 28rpx;
+}
+
+.category-filter {
+  background: #ffffff;
+  border-bottom: 1rpx solid #e0e0e0;
+}
+
+.category-scroll {
+  white-space: nowrap;
+  width: 100%;
+}
+
+.category-list {
+  display: flex;
+  padding: 20rpx 30rpx;
+  gap: 20rpx;
+}
+
+.category-item {
+  padding: 12rpx 24rpx;
+  background: #f5f5f5;
+  border-radius: 30rpx;
+  font-size: 26rpx;
+  color: #666666;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.category-item.active {
+  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+  color: #ffffff;
 }
 </style>

@@ -1,13 +1,7 @@
 <template>
   <view class="category-filter-page">
-    <!-- 自定义导航栏 -->
-    <view class="custom-navbar">
-      <view class="navbar-content">
-        <view class="navbar-back" @click="goBack">‹</view>
-        <view class="navbar-title">{{ pageTitle }}</view>
-        <view class="navbar-right"></view>
-      </view>
-    </view>
+    <!-- 统一导航栏（含状态栏高度） -->
+    <PageNavBar :title="companyInfo?.name || pageTitle" :show-back="true" @back="goBack" />
 
     <view class="content-container">
       <!-- 左侧子分类导航 -->
@@ -93,7 +87,8 @@ import { onLoad } from '@dcloudio/uni-app';
 import { getCategoryTree } from '@/api/category/index';
 import { getProductList } from '@/api/product/index';
 import { userInfo, user_token, companyInfo } from '@/store/userStore';
-import { isCompanyUser } from '@/utils/auth';
+import PageNavBar from '@/components/PageNavBar.vue';
+import { getCompanyUserRole } from '@/utils/auth';
 
 const parentId = ref<number | null>(null);
 const pageTitle = ref('分类筛选');
@@ -106,14 +101,16 @@ const hasMore = ref(true);
 const page = ref(1);
 const pageSize = 10;
 const canViewPrice = ref(false);
+const priceFactor = ref(1); // 价格系数，默认为1
 
 const currentCategory = computed(() => {
   return subCategories.value.find(c => c.id === currentCategoryId.value);
 });
 
+// 计算最低价格（应用价格系数）
 const getMinPrice = (product: any) => {
   if (!product.product_skus || product.product_skus.length === 0) return '0.00';
-  const prices = product.product_skus.map((sku: any) => sku.price);
+  const prices = product.product_skus.map((sku: any) => (sku.price || 0) * priceFactor.value);
   return Math.min(...prices).toFixed(2);
 };
 
@@ -121,12 +118,21 @@ const getMinPrice = (product: any) => {
 const checkPermissions = async () => {
   if (!user_token.value) {
     canViewPrice.value = false;
+    priceFactor.value = 1;
     return;
   }
   try {
-    canViewPrice.value = await isCompanyUser();
+    const roleInfo = await getCompanyUserRole();
+    if (roleInfo) {
+      canViewPrice.value = roleInfo.canViewPrice;
+      priceFactor.value = roleInfo.priceFactor || 1;
+    } else {
+      canViewPrice.value = false;
+      priceFactor.value = 1;
+    }
   } catch (e) {
     canViewPrice.value = false;
+    priceFactor.value = 1;
   }
 };
 
@@ -244,41 +250,6 @@ onLoad(async (options) => {
   background: #f5f5f5;
   display: flex;
   flex-direction: column;
-}
-
-.custom-navbar {
-  height: 88rpx;
-  background: #ffffff;
-  padding-top: var(--status-bar-height);
-  display: flex;
-  align-items: center;
-  border-bottom: 1rpx solid #f0f0f0;
-  flex-shrink: 0;
-}
-
-.navbar-content {
-  width: 100%;
-  height: 88rpx;
-  display: flex;
-  align-items: center;
-  padding: 0 30rpx;
-}
-
-.navbar-back {
-  font-size: 48rpx;
-  width: 60rpx;
-  line-height: 1;
-}
-
-.navbar-title {
-  flex: 1;
-  text-align: center;
-  font-size: 32rpx;
-  font-weight: bold;
-}
-
-.navbar-right {
-  width: 60rpx;
 }
 
 .content-container {

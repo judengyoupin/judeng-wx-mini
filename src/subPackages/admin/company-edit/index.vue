@@ -175,7 +175,7 @@ const uploadLogo = async () => {
       success: async (res) => {
         const tempFilePath = res.tempFilePaths[0];
         try {
-          const url = await uploadFile(tempFilePath);
+          const url = await uploadFile(tempFilePath, undefined, '.jpg');
           form.value.logo_url = url;
         } catch (error: any) {
           uni.showToast({
@@ -373,6 +373,8 @@ onLoad((options) => {
 </script>
 
 <style scoped>
+@import '@/styles/form-inputs.css';
+
 .company-edit-page {
   height: 100vh;
   background: #f5f5f5;
@@ -392,8 +394,6 @@ onLoad((options) => {
 .form-item {
   margin-bottom: 30rpx;
 }
-
-@import '@/styles/form-inputs.css';
 
 .uploaded-image {
   width: 100%;
