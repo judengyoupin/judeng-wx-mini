@@ -1,122 +1,74 @@
 import client from "@/config-lib/hasura-graphql-client/hasura-graphql-client";
 import type { BannerArray } from "@/types/companies";
 
+/** 一次请求返回顶部+底部轮播，供首页等合并请求使用 */
+export interface BannersResult {
+  top: BannerArray;
+  bottom: BannerArray;
+}
+
 /**
- * 获取顶部轮播图
- * 从 companies 表的 banner_top 字段获取
- * 
- * 业务逻辑：
- * - banner_top 是存储在 companies 表中的 JSON 数组字段
- * - 每个元素可以是 URL 字符串或包含图片信息的对象
- * - 返回的数据会经过类型验证和标准化处理
+ * 一次请求获取顶部与底部轮播图（合并请求，减少往返）
  */
-export async function getTopBanners(companyId?: number | null) {
+export async function getBanners(companyId?: number | null): Promise<{ code: number; data: BannersResult; message: string }> {
   try {
     if (!companyId) {
       return {
         code: 0,
-        data: [] as BannerArray,
-        message: "获取顶部轮播图成功",
+        data: { top: [], bottom: [] },
+        message: "获取轮播图成功",
       };
     }
-
     const query = `
-      query GetTopBanners($companyId: bigint!) {
+      query GetBanners($companyId: bigint!) {
         companies_by_pk(id: $companyId) {
           banner_top
+          banner_bottom
         }
       }
     `;
-
-    const result = await client.execute<{ companies_by_pk: { banner_top: BannerArray | null } | null }>({
+    const result = await client.execute<{
+      companies_by_pk: { banner_top: BannerArray | null; banner_bottom: BannerArray | null } | null;
+    }>({
       query,
       variables: { companyId },
     });
-
-    if (!result.companies_by_pk || !result.companies_by_pk.banner_top) {
-      return {
-        code: 0,
-        data: [] as BannerArray,
-        message: "获取顶部轮播图成功",
-      };
-    }
-
-    // banner_top 是 jsonb 数组，需要解析
-    const banners: BannerArray = Array.isArray(result.companies_by_pk.banner_top)
-      ? result.companies_by_pk.banner_top
-      : [];
-
+    const row = result?.companies_by_pk;
+    const top: BannerArray = Array.isArray(row?.banner_top) ? row.banner_top : [];
+    const bottom: BannerArray = Array.isArray(row?.banner_bottom) ? row.banner_bottom : [];
     return {
       code: 0,
-      data: banners,
-      message: "获取顶部轮播图成功",
+      data: { top, bottom },
+      message: "获取轮播图成功",
     };
   } catch (error: any) {
-    console.error("获取顶部轮播图失败:", error);
+    console.error("获取轮播图失败:", error);
     return {
       code: -1,
-      data: [] as BannerArray,
-      message: "获取顶部轮播图失败: " + (error.message || JSON.stringify(error)),
+      data: { top: [], bottom: [] },
+      message: "获取轮播图失败: " + (error.message || JSON.stringify(error)),
     };
   }
 }
 
 /**
+ * 获取顶部轮播图
+ * 从 companies 表的 banner_top 字段获取
+ */
+export async function getTopBanners(companyId?: number | null) {
+  const res = await getBanners(companyId);
+  return res.code === 0
+    ? { code: 0, data: res.data.top, message: "获取顶部轮播图成功" }
+    : { code: res.code, data: [] as BannerArray, message: res.message };
+}
+
+/**
  * 获取底部轮播图
  * 从 companies 表的 banner_bottom 字段获取
- * 
- * 业务逻辑：
- * - banner_bottom 是存储在 companies 表中的 JSON 数组字段
- * - 通常显示在首页分类列表的底部
- * - 数据格式与 banner_top 相同
  */
 export async function getBottomBanners(companyId?: number | null) {
-  try {
-    if (!companyId) {
-      return {
-        code: 0,
-        data: [] as BannerArray,
-        message: "获取底部轮播图成功",
-      };
-    }
-
-    const query = `
-      query GetBottomBanners($companyId: bigint!) {
-        companies_by_pk(id: $companyId) {
-          banner_bottom
-        }
-      }
-    `;
-
-    const result = await client.execute<{ companies_by_pk: { banner_bottom: BannerArray | null } | null }>({
-      query,
-      variables: { companyId },
-    });
-
-    if (!result.companies_by_pk || !result.companies_by_pk.banner_bottom) {
-      return {
-        code: 0,
-        data: [] as BannerArray,
-        message: "获取底部轮播图成功",
-      };
-    }
-
-    // banner_bottom 是 jsonb 数组，需要解析
-    const banners: BannerArray = Array.isArray(result.companies_by_pk.banner_bottom)
-      ? result.companies_by_pk.banner_bottom
-      : [];
-
-    return {
-      code: 0,
-      data: banners,
-      message: "获取底部轮播图成功",
-    };
-  } catch (error: any) {
-    console.error("获取底部轮播图失败:", error);
-    return {
-      code: -1,
-      data: [] as BannerArray,
-      message: "获取底部轮播图失败: " + (error.message || JSON.stringify(error)),
-    };
-  }
+  const res = await getBanners(companyId);
+  return res.code === 0
+    ? { code: 0, data: res.data.bottom, message: "获取底部轮播图成功" }
+    : { code: res.code, data: [] as BannerArray, message: res.message };
 }

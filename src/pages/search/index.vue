@@ -19,9 +19,17 @@
       </view>
     </view>
 
+    <!-- 骨架屏（首屏/搜索加载中且无数据时） -->
+    <view
+      v-if="loading && (searchType === 'product' ? products.length === 0 : packages.length === 0)"
+      class="skeleton-area"
+    >
+      <SkeletonScreen :type="searchType === 'product' ? 'list-grid-2' : 'list-grid-3'" :count="6" />
+    </view>
+
     <!-- 商品列表 -->
     <scroll-view
-      v-if="searchType === 'product'"
+      v-else-if="searchType === 'product'"
       scroll-y
       class="scroll-content"
       @scrolltolower="loadMore"
@@ -53,10 +61,10 @@
           </view>
         </view>
       </view>
-      <view v-else-if="!loading" class="empty-state">
+      <view v-else class="empty-state">
         <text class="empty-text">暂无商品</text>
       </view>
-      <view v-if="loading" class="loading-more">
+      <view v-if="loading && products.length > 0" class="loading-more">
         <view class="loading-spinner"></view>
         <text>加载中...</text>
       </view>
@@ -95,10 +103,10 @@
           </view>
         </view>
       </view>
-      <view v-else-if="!loading" class="empty-state">
+      <view v-else class="empty-state">
         <text class="empty-text">暂无套餐</text>
       </view>
-      <view v-if="loading" class="loading-more">
+      <view v-if="loading && packages.length > 0" class="loading-more">
         <view class="loading-spinner"></view>
         <text>加载中...</text>
       </view>
@@ -117,6 +125,7 @@ import { getPackageList } from '@/api/package/index';
 import { userInfo, user_token, companyInfo } from '@/store/userStore';
 import { getCompanyUserRole } from '@/utils/auth';
 import PageNavBar from '@/components/PageNavBar.vue';
+import SkeletonScreen from '@/components/SkeletonScreen.vue';
 
 const searchType = ref<'product' | 'package'>('product');
 const keyword = ref('');
@@ -325,6 +334,12 @@ onReady(() => {
   font-size: 32rpx;
   color: #999;
   padding: 10rpx;
+}
+
+.skeleton-area {
+  flex: 1;
+  min-height: 400rpx;
+  overflow: hidden;
 }
 
 .scroll-content {

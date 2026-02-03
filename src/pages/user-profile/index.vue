@@ -8,25 +8,32 @@
       <view class="profile-form">
         <view class="form-item avatar-item">
           <view class="form-label">头像</view>
-          <view class="avatar-upload" @click="uploadAvatar">
-            <image
-              v-if="form.avatar_url"
-              class="avatar-preview"
-              :src="form.avatar_url"
-              mode="aspectFill"
-            />
-            <view v-else class="avatar-placeholder">
-              <text class="avatar-icon">📷</text>
-              <text class="avatar-text">点击上传头像</text>
-            </view>
+          <view class="avatar-row">
+            <!-- 微信快捷获取头像：open-type="chooseAvatar" 会调起微信头像选择（含使用微信头像/从相册选） -->
+            <button class="avatar-btn" open-type="chooseAvatar" @chooseavatar="onChooseAvatar">
+              <image
+                v-if="form.avatar_url"
+                class="avatar-preview"
+                :src="form.avatar_url"
+                mode="aspectFill"
+              />
+              <view v-else class="avatar-placeholder">
+                <text class="avatar-icon">👤</text>
+                <text class="avatar-text">点击选择头像</text>
+              </view>
+            </button>
+            <text class="avatar-hint">可使用微信头像或从相册选择</text>
+            <text class="avatar-fallback" @click="uploadAvatar">从相册选择</text>
           </view>
         </view>
         <view class="form-item">
           <view class="form-label">昵称</view>
+          <!-- type="nickname" 在微信中可获得「使用微信昵称」快捷填写 -->
           <input
             class="form-input"
+            type="nickname"
             v-model="form.nickname"
-            placeholder="请输入昵称"
+            placeholder="请输入昵称，可点击使用微信昵称"
             maxlength="20"
           />
         </view>
@@ -61,7 +68,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue';
+import { ref, reactive } from 'vue';
 import { onShow } from '@dcloudio/uni-app';
 import { userInfo, user_token, updateUserInfo } from '@/store/userStore';
 import { getUser, updateUserProfile } from '@/api/user';
@@ -97,6 +104,29 @@ function goToLogin() {
   uni.navigateTo({ url: '/pages/login/index' });
 }
 
+/** 微信 chooseAvatar 回调：拿到临时路径后上传并设置头像 */
+async function onChooseAvatar(e: any) {
+  const tempPath = e?.detail?.avatarUrl;
+  if (!tempPath) return;
+  try {
+    isUploading.value = true;
+    uploadProgress.value = 0;
+    const url = await uploadFile(tempPath, (p) => {
+      uploadProgress.value = p;
+    }, '.jpg');
+    form.avatar_url = url;
+    uni.showToast({ title: '头像已设置', icon: 'success' });
+  } catch (err: any) {
+    uni.showToast({
+      title: err?.message || '上传失败',
+      icon: 'none',
+    });
+  } finally {
+    isUploading.value = false;
+  }
+}
+
+/** 从相册选择图片上传（非微信或需要从相册选时使用） */
 async function uploadAvatar() {
   try {
     uni.chooseImage({
@@ -164,10 +194,7 @@ async function handleSave() {
   }
 }
 
-onMounted(() => {
-  initForm();
-});
-
+// 仅 onShow 拉数，避免首次与 onMounted 重复请求
 onShow(() => {
   if (user_token.value && userInfo.value?.id) {
     initForm();
@@ -187,8 +214,8 @@ onShow(() => {
 <style scoped>
 .user-profile-page {
   min-height: 100vh;
-  background: #f5f5f5;
-  padding-bottom: 120rpx;
+  background: #f0f2f5;
+  padding-bottom: 140rpx;
 }
 
 .need-login {
@@ -201,16 +228,16 @@ onShow(() => {
 
 .need-login-text {
   font-size: 30rpx;
-  color: #999;
+  color: #6b7280;
 }
 
 .login-btn {
   width: 240rpx;
-  height: 72rpx;
-  line-height: 72rpx;
+  height: 88rpx;
+  line-height: 88rpx;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: #fff;
-  border-radius: 36rpx;
+  border-radius: 44rpx;
   font-size: 28rpx;
   border: none;
 }
@@ -222,13 +249,14 @@ onShow(() => {
 .profile-form {
   margin: 24rpx;
   background: #fff;
-  border-radius: 20rpx;
+  border-radius: 24rpx;
   overflow: hidden;
-  padding: 32rpx;
+  padding: 36rpx 32rpx;
+  box-shadow: 0 2rpx 20rpx rgba(0, 0, 0, 0.04);
 }
 
 .form-item {
-  margin-bottom: 32rpx;
+  margin-bottom: 36rpx;
 }
 
 .form-item:last-child {
@@ -237,45 +265,78 @@ onShow(() => {
 
 .form-label {
   font-size: 28rpx;
-  color: #333;
+  color: #1f2937;
+  font-weight: 500;
   margin-bottom: 16rpx;
+  display: block;
 }
 
-.form-input,
+.form-input {
+  width: 100%;
+  min-height: 96rpx;
+  padding: 0 28rpx;
+  line-height: 96rpx;
+  font-size: 30rpx;
+  color: #1f2937;
+  background: #f8fafc;
+  border-radius: 16rpx;
+  box-sizing: border-box;
+  border: 1rpx solid #e5e7eb;
+}
+
 .form-textarea {
   width: 100%;
-  padding: 24rpx;
+  min-height: 240rpx;
+  padding: 24rpx 28rpx;
   font-size: 30rpx;
-  background: #f8f9fa;
-  border-radius: 12rpx;
+  color: #1f2937;
+  background: #f8fafc;
+  border-radius: 16rpx;
   box-sizing: border-box;
-}
-
-.form-textarea {
-  min-height: 160rpx;
+  border: 1rpx solid #e5e7eb;
+  line-height: 1.5;
 }
 
 .form-value.readonly {
-  padding: 24rpx;
+  min-height: 96rpx;
+  padding: 0 28rpx;
+  display: flex;
+  align-items: center;
   font-size: 30rpx;
-  color: #666;
-  background: #f0f0f0;
-  border-radius: 12rpx;
+  color: #6b7280;
+  background: #f3f4f6;
+  border-radius: 16rpx;
+  border: 1rpx solid #e5e7eb;
 }
 
+/* 头像区域 */
 .avatar-item .form-label {
-  margin-bottom: 16rpx;
+  margin-bottom: 20rpx;
 }
 
-.avatar-upload {
-  width: 160rpx;
-  height: 160rpx;
+.avatar-row {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 16rpx;
+}
+
+.avatar-btn {
+  width: 176rpx;
+  height: 176rpx;
   border-radius: 50%;
   overflow: hidden;
-  background: #f0f0f0;
+  padding: 0;
+  margin: 0;
+  background: #f3f4f6;
+  border: 4rpx solid #e5e7eb;
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.avatar-btn::after {
+  border: none;
 }
 
 .avatar-preview {
@@ -287,16 +348,29 @@ onShow(() => {
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: 8rpx;
 }
 
 .avatar-icon {
-  font-size: 48rpx;
+  font-size: 56rpx;
+  opacity: 0.6;
 }
 
 .avatar-text {
   font-size: 22rpx;
-  color: #999;
+  color: #9ca3af;
+}
+
+.avatar-hint {
+  font-size: 24rpx;
+  color: #9ca3af;
+}
+
+.avatar-fallback {
+  font-size: 26rpx;
+  color: #667eea;
+  padding: 8rpx 0;
 }
 
 .footer-actions {
@@ -307,19 +381,20 @@ onShow(() => {
   padding: 24rpx 32rpx;
   padding-bottom: calc(24rpx + env(safe-area-inset-bottom));
   background: #fff;
-  box-shadow: 0 -2rpx 12rpx rgba(0, 0, 0, 0.06);
+  box-shadow: 0 -4rpx 20rpx rgba(0, 0, 0, 0.06);
 }
 
 .save-btn {
   width: 100%;
-  height: 88rpx;
-  line-height: 88rpx;
+  height: 96rpx;
+  line-height: 96rpx;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: #fff;
   border-radius: 16rpx;
   font-size: 32rpx;
   font-weight: 500;
   border: none;
+  box-shadow: 0 8rpx 24rpx rgba(102, 126, 234, 0.35);
 }
 
 .save-btn::after {
@@ -342,7 +417,7 @@ onShow(() => {
 .upload-progress-box {
   padding: 40rpx;
   background: #fff;
-  border-radius: 16rpx;
+  border-radius: 20rpx;
   min-width: 320rpx;
 }
 
@@ -355,7 +430,7 @@ onShow(() => {
 
 .upload-progress-bar {
   height: 12rpx;
-  background: #eee;
+  background: #e5e7eb;
   border-radius: 6rpx;
   overflow: hidden;
 }

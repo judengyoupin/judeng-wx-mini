@@ -64,12 +64,14 @@ uniapp-ts-template/
       home/
         ...
     subPackages/        # 分包页面及其专属 API
-      user-center/
-        index.vue       # 分包页面
-        api.ts          # 分包专属 API
-      other-package/
-        index.vue
-        api.ts
+      admin/
+        api/            # 管理端分包专属 API（如 user.ts）
+        company-list/
+        ...
+      company/
+        api/            # 公司端分包专属 API（category、product、package、company-user）
+        product-list/
+        ...
     static/             # 静态资源（如图片、icon 等）
       logo.png
     types/              # 全局类型定义

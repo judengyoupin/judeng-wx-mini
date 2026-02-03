@@ -30,10 +30,9 @@
       </scroll-view>
     </view>
 
-    <!-- 加载状态 -->
-    <view v-if="loading" class="loading-container">
-      <view class="loading-spinner"></view>
-      <text>加载中...</text>
+    <!-- 骨架屏（首屏加载） -->
+    <view v-if="loading && packages.length === 0" class="skeleton-area">
+      <SkeletonScreen type="list-grid-3" :count="6" />
     </view>
 
     <!-- 套餐列表：每行 3 个，参考图示卡片样式 -->
@@ -63,7 +62,10 @@
       </view>
 
       <!-- 加载更多（跨整行） -->
-      <view v-if="hasMore && !loading" class="load-more full-row" @click="loadMore">
+      <view v-if="loading && packages.length > 0" class="load-more full-row">
+        <text>加载中...</text>
+      </view>
+      <view v-else-if="hasMore" class="load-more full-row" @click="loadMore">
         <text>加载更多</text>
       </view>
     </view>
@@ -71,13 +73,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
-import { onPullDownRefresh, onReachBottom } from '@dcloudio/uni-app';
+import { ref } from 'vue';
+import { onShow, onPullDownRefresh, onReachBottom } from '@dcloudio/uni-app';
 import { getPackageList } from '@/api/package/index';
 import { getCategoryTree } from '@/api/category/index';
 import { companyInfo } from '@/store/userStore';
 import PageNavBar from '@/components/PageNavBar.vue';
 import SearchBox from '@/components/SearchBox.vue';
+import SkeletonScreen from '@/components/SkeletonScreen.vue';
 
 const packages = ref<any[]>([]);
 const loading = ref(false);
@@ -187,9 +190,12 @@ const goToPackageDetail = (packageId: number) => {
   });
 };
 
-onMounted(() => {
-  loadCategories();
-  loadPackages(true);
+onShow(() => {
+  // 每次进入页面（含从详情返回、切换 tab）都刷新分类和套餐列表，保证数据实时
+  if (companyInfo.value?.id) {
+    loadCategories();
+    loadPackages(true);
+  }
 });
 
 onPullDownRefresh(() => {
@@ -205,6 +211,11 @@ onReachBottom(() => {
 .package-page {
   min-height: 100vh;
   background: #f5f5f5;
+}
+
+.skeleton-area {
+  padding: 24rpx;
+  min-height: 400rpx;
 }
 
 .loading-container {

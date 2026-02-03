@@ -1,3 +1,7 @@
+/**
+ * 管理端分类 API（公司端分类管理、CategoryPicker 等）
+ * 放在主包以便主包组件 CategoryPicker 可引用；分包页面也可从主包 require
+ */
 import client from '@/config-lib/hasura-graphql-client/hasura-graphql-client';
 
 export interface CategoryInput {
@@ -13,8 +17,6 @@ export interface CategoryInput {
 
 /**
  * 获取分类树（一次请求返回三层：根 → 二级 → 三级）
- * @param companyId 公司 ID
- * @param type 可选，仅返回该类型：'product' 商品分类 / 'package' 套餐分类
  */
 export async function getCategoryTree(companyId: number, type?: 'product' | 'package') {
   const typeCondition = type ? ', type: { _eq: $type }' : '';
@@ -78,10 +80,6 @@ export async function getCategoryTree(companyId: number, type?: 'product' | 'pac
   return result?.categories || [];
 }
 
-/**
- * 创建分类
- * 显式传入 type，避免被 schema 或序列化漏掉
- */
 export async function createCategory(category: CategoryInput) {
   const mutation = `
     mutation CreateCategory($category: categories_insert_input!) {
@@ -115,10 +113,6 @@ export async function createCategory(category: CategoryInput) {
   return result?.insert_categories_one;
 }
 
-/**
- * 更新分类
- * 显式传入 type，避免被漏掉
- */
 export async function updateCategory(categoryId: number, category: Partial<CategoryInput>) {
   const mutation = `
     mutation UpdateCategory($categoryId: bigint!, $category: categories_set_input!) {
@@ -153,9 +147,6 @@ export async function updateCategory(categoryId: number, category: Partial<Categ
   return result?.update_categories_by_pk;
 }
 
-/**
- * 获取分类详情
- */
 export async function getCategoryDetail(categoryId: number) {
   const query = `
     query GetCategoryDetail($categoryId: bigint!) {
@@ -180,9 +171,6 @@ export async function getCategoryDetail(categoryId: number) {
   return result?.categories_by_pk;
 }
 
-/**
- * 删除分类（软删除）
- */
 export async function deleteCategory(categoryId: number) {
   const mutation = `
     mutation DeleteCategory($categoryId: bigint!) {
@@ -203,10 +191,6 @@ export async function deleteCategory(categoryId: number) {
   return result?.update_categories_by_pk;
 }
 
-/**
- * 按父级 ID 获取子分类列表（仅当前公司，用于分类选择器按需加载第三层等）
- * @param type 可选，仅返回该类型：'product' / 'package'
- */
 export async function getCategoryChildren(parentId: number, companyId: number, type?: 'product' | 'package') {
   const query = `
     query GetCategoryChildren($parentId: bigint!, $companyId: bigint!${type ? ', $type: String!' : ''}) {

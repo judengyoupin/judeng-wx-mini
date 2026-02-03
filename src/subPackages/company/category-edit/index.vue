@@ -99,7 +99,7 @@
 import { ref, computed } from 'vue';
 import { onLoad } from '@dcloudio/uni-app';
 import { companyInfo } from '@/store/userStore';
-import { getCategoryTree, getCategoryDetail, createCategory, updateCategory } from '@/api/admin/category';
+import { getCategoryTree, getCategoryDetail, createCategory, updateCategory } from '@/api/category-management';
 import CategoryPicker from '@/components/CategoryPicker.vue';
 import { uploadFile } from '@/api/upload';
 

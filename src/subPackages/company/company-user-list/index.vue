@@ -1,14 +1,51 @@
 <template>
   <view class="company-user-list-page">
-    <!-- 顶部操作栏 -->
+    <!-- 顶部：搜索 + 角色筛选 + 数量 -->
     <view class="header-bar">
-      <button class="add-btn" @click="showAddModal = true">+ 添加用户</button>
+      <view class="search-row">
+        <input
+          class="search-input"
+          v-model="listSearchKeyword"
+          placeholder="搜索昵称或手机号"
+          placeholder-class="search-placeholder"
+        />
+      </view>
+      <view class="filter-row">
+        <view
+          class="filter-tab"
+          :class="{ active: roleFilter === '' }"
+          @click="setRoleFilter('')"
+        >
+          全部
+        </view>
+        <view
+          class="filter-tab"
+          :class="{ active: roleFilter === 'user' }"
+          @click="setRoleFilter('user')"
+        >
+          普通用户
+        </view>
+        <view
+          class="filter-tab"
+          :class="{ active: roleFilter === 'admin' }"
+          @click="setRoleFilter('admin')"
+        >
+          管理员
+        </view>
+      </view>
+      <view class="count-row">
+        <text class="count-text">{{ countText }}</text>
+      </view>
+      <view class="header-actions">
+        <button v-if="!isViewOnly" class="add-btn" @click="showAddModal = true">+ 添加用户</button>
+        <text v-else class="view-only-tip">仅查看，不可操作</text>
+      </view>
     </view>
 
     <!-- 用户列表 -->
     <view class="user-list">
       <view 
-        v-for="user in users" 
+        v-for="user in filteredUsers" 
         :key="user.id"
         class="user-item"
       >
@@ -38,16 +75,16 @@
             </view>
           </view>
         </view>
-        <view class="user-actions">
+        <view v-if="!isViewOnly" class="user-actions">
           <view class="action-btn" @click="editUser(user)">编辑</view>
           <view class="action-btn delete" @click="handleDelete(user)">删除</view>
         </view>
       </view>
 
-      <!-- 空状态 -->
-      <view v-if="users.length === 0 && !loading" class="empty-state">
-        <text class="empty-text">暂无用户</text>
-        <button class="empty-btn" @click="showAddModal = true">添加用户</button>
+      <!-- 空状态 / 搜索无结果 -->
+      <view v-if="(users.length === 0 && !loading) || (users.length > 0 && filteredUsers.length === 0 && !loading)" class="empty-state">
+        <text class="empty-text">{{ users.length === 0 ? '暂无用户' : '未找到匹配的用户' }}</text>
+        <button v-if="!isViewOnly && users.length === 0" class="empty-btn" @click="showAddModal = true">添加用户</button>
       </view>
 
       <!-- 加载中 -->
@@ -102,16 +139,22 @@
 
           <view class="form-item">
             <view class="label">用户角色</view>
-            <picker 
-              mode="selector" 
-              :range="userRoles" 
-              :value="userRoleIndex"
-              @change="onRoleChange"
-            >
-              <view class="form-picker">
-                {{ userRoles[userRoleIndex] }}
+            <view class="role-options">
+              <view 
+                class="role-option" 
+                :class="{ active: userForm.role === 'user' }"
+                @click="userForm.role = 'user'"
+              >
+                普通用户
               </view>
-            </picker>
+              <view 
+                class="role-option" 
+                :class="{ active: userForm.role === 'admin' }"
+                @click="userForm.role = 'admin'"
+              >
+                管理员
+              </view>
+            </view>
           </view>
 
           <view class="form-item">
@@ -130,9 +173,9 @@
               class="form-input" 
               type="digit" 
               v-model="userForm.price_factor" 
-              placeholder="0-1之间，默认为1"
+              placeholder="大于0，如 1 或 0.9 表示9折"
             />
-            <view class="form-hint">价格系数范围：0-1，1表示原价，0.9表示9折</view>
+            <view class="form-hint">价格系数需大于0，1表示原价，0.9表示9折</view>
           </view>
         </view>
         <view class="modal-footer">
@@ -145,17 +188,43 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { onLoad, onPullDownRefresh, onReachBottom, onShow } from '@dcloudio/uni-app';
 import { companyInfo } from '@/store/userStore';
-import { getCompanyUserList, searchUserByMobile, addCompanyUser, updateCompanyUser, removeCompanyUser } from '@/api/admin/company-user';
+import { getCompanyUserList, searchUserByMobile, addCompanyUser, updateCompanyUser, removeCompanyUser } from '@/subPackages/company/api/company-user';
 
 const users = ref<any[]>([]);
 const loading = ref(false);
+/** 列表页搜索：昵称或手机号 */
+const listSearchKeyword = ref('');
+/** 角色筛选 */
+const roleFilter = ref<'' | 'user' | 'admin'>('');
+const totalCount = ref(0);
 
-// 超级管理员从公司管理点进来时传入的 companyId
+// 当前筛选下的用户数量文案
+const countText = computed(() => {
+  const n = totalCount.value;
+  if (roleFilter.value === 'user') return `普通用户 共 ${n} 人`;
+  if (roleFilter.value === 'admin') return `管理员 共 ${n} 人`;
+  return `共 ${n} 人`;
+});
+
+// 列表搜索过滤（昵称、手机号）
+const filteredUsers = computed(() => {
+  const kw = (listSearchKeyword.value || '').trim().toLowerCase();
+  if (!kw) return users.value;
+  return users.value.filter((u: any) => {
+    const name = (u.user?.nickname || '').toLowerCase();
+    const mobile = (u.user?.mobile || '').toLowerCase();
+    return name.includes(kw) || mobile.includes(kw);
+  });
+});
+
+// 超级管理员从公司管理点进来时传入的 companyId（核查只读）
 const viewCompanyId = ref<number | null>(null);
 const effectiveCompanyId = () => viewCompanyId.value ?? companyInfo.value?.id ?? null;
+/** 核查入口只读：不显示添加/编辑/删除 */
+const isViewOnly = computed(() => !!viewCompanyId.value);
 const page = ref(1);
 const pageSize = 20;
 const hasMore = ref(true);
@@ -165,8 +234,6 @@ const showAddModal = ref(false);
 const showEditModal = ref(false);
 const editingUserId = ref<number | null>(null);
 const searchedUser = ref<any>(null);
-const userRoles = ['普通用户', '管理员'];
-const userRoleIndex = ref(0);
 const userForm = ref({
   mobile: '',
   role: 'user' as 'admin' | 'user',
@@ -201,6 +268,7 @@ const loadUsers = async (reset = false) => {
       companyId,
       limit: pageSize,
       offset: (page.value - 1) * pageSize,
+      role: roleFilter.value || undefined,
     });
 
     if (reset) {
@@ -208,6 +276,7 @@ const loadUsers = async (reset = false) => {
     }
 
     users.value = [...users.value, ...(result.users || [])];
+    totalCount.value = result.total ?? 0;
 
     if (result.total <= users.value.length) {
       hasMore.value = false;
@@ -223,6 +292,12 @@ const loadUsers = async (reset = false) => {
     loading.value = false;
     uni.stopPullDownRefresh();
   }
+};
+
+// 角色筛选
+const setRoleFilter = (role: '' | 'user' | 'admin') => {
+  roleFilter.value = role;
+  loadUsers(true);
 };
 
 // 搜索用户
@@ -255,13 +330,6 @@ const searchUser = async () => {
   }
 };
 
-// 角色选择（小程序 picker 的 e.detail.value 可能为字符串，需转为数字再比较）
-const onRoleChange = (e: any) => {
-  const index = Number(e.detail.value);
-  userRoleIndex.value = index;
-  userForm.value.role = index === 1 ? 'admin' : 'user';
-};
-
 // 编辑用户
 const editUser = (user: any) => {
   editingUserId.value = user.id;
@@ -272,7 +340,6 @@ const editUser = (user: any) => {
     can_view_price: user.can_view_price,
     price_factor: String(user.price_factor),
   };
-  userRoleIndex.value = user.role === 'admin' ? 1 : 0;
   showEditModal.value = true;
 };
 
@@ -320,9 +387,9 @@ const handleSaveUser = async () => {
   }
 
   const priceFactor = Number(userForm.value.price_factor);
-  if (isNaN(priceFactor) || priceFactor < 0 || priceFactor > 1) {
+  if (isNaN(priceFactor) || priceFactor <= 0) {
     uni.showToast({
-      title: '价格系数必须在0-1之间',
+      title: '价格系数必须大于0',
       icon: 'none',
     });
     return;
@@ -379,7 +446,6 @@ const closeModal = () => {
     can_view_price: true,
     price_factor: '1',
   };
-  userRoleIndex.value = 0;
 };
 
 onLoad((options?: { companyId?: string }) => {
@@ -413,6 +479,58 @@ onReachBottom(() => {
   padding: 20rpx 30rpx;
   border-bottom: 1rpx solid #e0e0e0;
   display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+}
+
+.search-row {
+  width: 100%;
+}
+
+.search-input {
+  width: 100%;
+  height: 64rpx;
+  padding: 0 24rpx;
+  font-size: 28rpx;
+  color: #333;
+  background: #f5f5f5;
+  border-radius: 12rpx;
+  box-sizing: border-box;
+}
+
+.search-placeholder {
+  color: #999;
+}
+
+.filter-row {
+  display: flex;
+  gap: 20rpx;
+}
+
+.filter-tab {
+  padding: 12rpx 24rpx;
+  font-size: 26rpx;
+  color: #666666;
+  background: #f1f5f9;
+  border-radius: 8rpx;
+}
+
+.filter-tab.active {
+  background: #667eea;
+  color: #ffffff;
+}
+
+.count-row {
+  margin-top: 0;
+}
+
+.count-text {
+  font-size: 26rpx;
+  color: #6b7280;
+}
+
+.header-actions {
+  display: flex;
   justify-content: flex-end;
 }
 
@@ -423,6 +541,11 @@ onReachBottom(() => {
   border-radius: 8rpx;
   font-size: 26rpx;
   border: none;
+}
+
+.view-only-tip {
+  font-size: 26rpx;
+  color: #999;
 }
 
 .user-list {
@@ -630,6 +753,26 @@ onReachBottom(() => {
 
 .required {
   color: #ff6b6b;
+}
+
+.role-options {
+  display: flex;
+  gap: 20rpx;
+  margin-top: 12rpx;
+}
+
+.role-option {
+  padding: 16rpx 28rpx;
+  font-size: 28rpx;
+  color: #666;
+  background: #f0f2f5;
+  border-radius: 12rpx;
+  transition: all 0.2s;
+}
+
+.role-option.active {
+  background: #667eea;
+  color: #fff;
 }
 
 .input {

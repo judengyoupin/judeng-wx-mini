@@ -26,7 +26,11 @@
             已下架
           </view>
         </view>
-        <button class="add-btn" @click="goToAddProduct">+ 添加商品</button>
+        <view class="action-group">
+          <button class="export-btn" @click="handleExportExcel">导出</button>
+          <button v-if="!isViewOnly" class="add-btn" @click="goToAddProduct">+ 添加</button>
+        </view>
+        <text v-if="isViewOnly" class="view-only-tip">仅查看，不可操作</text>
       </view>
       <view class="scope-row">
         <view 
@@ -96,7 +100,7 @@
                 <text v-if="isFromDefaultCompany(product) && isProductHidden(product)" class="tag-hidden">已隐藏</text>
               </view>
             </view>
-            <view class="product-actions">
+            <view v-if="!isViewOnly" class="product-actions">
               <template v-if="isFromDefaultCompany(product)">
                 <view v-if="isProductHidden(product)" class="action-btn unhide" @click.stop="handleUnhideProduct(product)">取消隐藏</view>
                 <view v-else class="action-btn hide" @click.stop="handleHideProduct(product)">隐藏</view>
@@ -112,7 +116,7 @@
             </view>
           </view>
           <view class="item-entry-row">
-            <template v-if="!isFromDefaultCompany(product)">
+            <template v-if="!isViewOnly && !isFromDefaultCompany(product)">
               <text class="entry-link" @click.stop="goToEditProduct(product.id)">编辑</text>
               <text class="entry-divider">|</text>
             </template>
@@ -144,9 +148,10 @@
 import { ref, computed, watch } from 'vue';
 import { onLoad, onPullDownRefresh, onReachBottom, onShow } from '@dcloudio/uni-app';
 import { companyInfo } from '@/store/userStore';
-import { getProductList, deleteProduct, updateProduct } from '@/api/admin/product';
-import { getDefaultCompanyId } from '@/api/config/index';
-import { getCompanyDetail, updateCompany } from '@/api/admin/platform';
+import { getProductList, getProductListWithCompanyHidden, deleteProduct, updateProduct } from '@/subPackages/company/api/product';
+import { getDefaultCompanyIdCached } from '@/api/config/index';
+import { getCompanyDetailCached, updateCompany } from '@/subPackages/company/api/platform';
+import { exportProductsToExcel } from '@/utils/exportExcel';
 
 const products = ref<any[]>([]);
 const loading = ref(false);
@@ -163,6 +168,8 @@ const collapsedSections = ref<Set<string>>(new Set());
 // 超级管理员从公司管理点进来时传入的 companyId（仅查看，不编辑时用）
 const viewCompanyId = ref<number | null>(null);
 const effectiveCompanyId = () => viewCompanyId.value ?? companyInfo.value?.id ?? null;
+/** 核查入口只读：不显示添加/编辑/删除/上架下架，仅可预览 */
+const isViewOnly = computed(() => !!viewCompanyId.value);
 
 function isFromDefaultCompany(product: any): boolean {
   const myId = companyInfo.value?.id;
@@ -180,7 +187,7 @@ function selectScope(scope: 'all' | 'mine' | 'headquarters') {
 }
 
 function onProductClick(product: any) {
-  if (isFromDefaultCompany(product)) {
+  if (isViewOnly.value || isFromDefaultCompany(product)) {
     goToPreviewProduct(product.id);
     return;
   }
@@ -254,8 +261,26 @@ const loadProducts = async (reset = false) => {
   if (reset) {
     page.value = 1;
     hasMore.value = true;
-    defaultCompanyId.value = await getDefaultCompanyId();
-    const companyDetail = await getCompanyDetail(myId);
+    defaultCompanyId.value = await getDefaultCompanyIdCached();
+    // 「只看自己公司」时用合并接口一次拿 hidden + 列表，减少请求
+    if (selectedScope.value === 'mine') {
+      const merged = await getProductListWithCompanyHidden({
+        companyId: myId,
+        limit: pageSize,
+        offset: 0,
+      });
+      hiddenProductIds.value = merged.hiddenProductIds;
+      let filtered = (merged.products || []).map((p: any) => ({ ...p, _companyId: myId }));
+      if (currentTab.value === 'shelved') filtered = filtered.filter((p: any) => !p.is_shelved);
+      else if (currentTab.value === 'unshelved') filtered = filtered.filter((p: any) => p.is_shelved);
+      products.value = filtered;
+      hasMore.value = merged.total > filtered.length;
+      if (filtered.length > 0) page.value = 2;
+      loading.value = false;
+      uni.stopPullDownRefresh();
+      return;
+    }
+    const companyDetail = await getCompanyDetailCached(myId);
     const hidden = companyDetail?.hidden_product_ids;
     hiddenProductIds.value = Array.isArray(hidden) ? hidden.map((id: any) => Number(id)) : [];
   }
@@ -325,6 +350,46 @@ const loadProducts = async (reset = false) => {
   }
 };
 
+// 导出 Excel：拉取当前公司 + 系统配置公司全部商品（按当前上架筛选）后导出，核查进入时也包含两家数据
+const handleExportExcel = async () => {
+  const myId = effectiveCompanyId();
+  if (!myId) {
+    uni.showToast({ title: '公司信息不存在', icon: 'none' });
+    return;
+  }
+  uni.showLoading({ title: '准备导出...' });
+  try {
+    const defaultId = await getDefaultCompanyIdCached();
+    const companyIds = defaultId && defaultId !== myId ? [myId, defaultId] : [myId];
+    const limit = 200;
+    const all: any[] = [];
+    for (const cid of companyIds) {
+      let offset = 0;
+      while (true) {
+        const res = await getProductList({ companyId: cid, limit, offset });
+        const list = (res.products || []).map((p: any) => ({ ...p, _companyId: cid }));
+        all.push(...list);
+        if (list.length < limit) break;
+        offset += limit;
+      }
+    }
+    let filtered = all;
+    if (currentTab.value === 'shelved') filtered = all.filter((p: any) => !p.is_shelved);
+    else if (currentTab.value === 'unshelved') filtered = all.filter((p: any) => p.is_shelved);
+    uni.hideLoading();
+    if (filtered.length === 0) {
+      uni.showToast({ title: '暂无数据可导出', icon: 'none' });
+      return;
+    }
+    await exportProductsToExcel(filtered);
+    uni.showToast({ title: '导出成功，请查看文档', icon: 'success' });
+  } catch (e: any) {
+    uni.hideLoading();
+    const msg = e?.errMsg ?? e?.message ?? '导出失败';
+    uni.showToast({ title: msg, icon: 'none', duration: 3000 });
+  }
+};
+
 // 切换上架/下架
 const toggleShelve = async (product: any) => {
   try {
@@ -371,7 +436,7 @@ async function handleHideProduct(product: any) {
   const myId = companyInfo.value?.id;
   if (!myId) return;
   try {
-    const company = await getCompanyDetail(myId);
+    const company = await getCompanyDetailCached(myId);
     const cur = (company?.hidden_product_ids || []).map((id: any) => Number(id));
     if (cur.includes(Number(product.id))) {
       uni.showToast({ title: '已隐藏', icon: 'none' });
@@ -389,9 +454,9 @@ async function handleUnhideProduct(product: any) {
   const myId = companyInfo.value?.id;
   if (!myId) return;
   try {
-    const company = await getCompanyDetail(myId);
+    const company = await getCompanyDetailCached(myId);
     const cur = (company?.hidden_product_ids || []).map((id: any) => Number(id));
-    const next = cur.filter((id) => id !== Number(product.id));
+    const next = cur.filter((id: number) => id !== Number(product.id));
     if (next.length === cur.length) {
       uni.showToast({ title: '未在隐藏名单中', icon: 'none' });
       return;
@@ -456,27 +521,35 @@ onReachBottom(() => {
 
 .header-bar {
   background: #ffffff;
-  padding: 20rpx 30rpx;
-  border-bottom: 1rpx solid #e0e0e0;
+  padding: 14rpx 24rpx 18rpx;
+  border-bottom: 1rpx solid #e8e8e8;
+  display: flex;
+  flex-direction: column;
+  gap: 10rpx;
 }
 
 .header-actions {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  gap: 12rpx;
+  min-height: 56rpx;
 }
 
 .filter-tabs {
   display: flex;
-  gap: 20rpx;
+  gap: 10rpx;
+  flex-wrap: wrap;
+  flex: 1;
+  min-width: 0;
 }
 
 .tab-item {
-  padding: 10rpx 20rpx;
-  font-size: 28rpx;
+  padding: 6rpx 14rpx;
+  font-size: 24rpx;
   color: #666666;
-  border-radius: 8rpx;
-  transition: all 0.3s;
+  border-radius: 20rpx;
+  transition: all 0.2s;
+  flex-shrink: 0;
 }
 
 .tab-item.active {
@@ -484,27 +557,59 @@ onReachBottom(() => {
   color: #ffffff;
 }
 
+.action-group {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  flex-shrink: 0;
+}
+
+.export-btn {
+  padding: 6rpx 14rpx;
+  font-size: 24rpx;
+  color: #667eea;
+  background: transparent;
+  border: 1rpx solid #667eea;
+  border-radius: 20rpx;
+  line-height: 1.4;
+}
+
+.export-btn::after {
+  border: none;
+}
+
 .add-btn {
-  padding: 10rpx 20rpx;
+  padding: 6rpx 14rpx;
+  font-size: 24rpx;
   background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
   color: #ffffff;
-  border-radius: 8rpx;
-  font-size: 26rpx;
+  border-radius: 20rpx;
   border: none;
+  line-height: 1.4;
+}
+
+.add-btn::after {
+  border: none;
+}
+
+.view-only-tip {
+  font-size: 24rpx;
+  color: #999;
 }
 
 .scope-row {
   display: flex;
-  gap: 12rpx;
-  margin-top: 12rpx;
+  gap: 8rpx;
+  flex-wrap: wrap;
+  margin-top: 0;
 }
 
 .scope-tab {
-  padding: 8rpx 16rpx;
-  font-size: 24rpx;
+  padding: 4rpx 12rpx;
+  font-size: 22rpx;
   color: #666;
-  background: #f0f2f5;
-  border-radius: 8rpx;
+  background: #f5f5f5;
+  border-radius: 16rpx;
 }
 
 .scope-tab.active {
@@ -514,16 +619,16 @@ onReachBottom(() => {
 }
 
 .search-row {
-  margin-top: 16rpx;
+  margin-top: 4rpx;
 }
 
 .search-input {
   width: 100%;
-  height: 64rpx;
-  padding: 0 24rpx;
+  height: 56rpx;
+  padding: 0 20rpx;
   background: #f5f5f5;
-  border-radius: 12rpx;
-  font-size: 28rpx;
+  border-radius: 28rpx;
+  font-size: 26rpx;
   color: #333;
   box-sizing: border-box;
 }

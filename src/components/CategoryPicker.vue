@@ -161,9 +161,9 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue';
 import { companyInfo } from '@/store/userStore';
-import { getCategoryTree as getAdminCategoryTree, getCategoryChildren as getAdminCategoryChildren } from '@/api/admin/category';
+import { getCategoryTree as getAdminCategoryTree, getCategoryChildren as getAdminCategoryChildren } from '@/api/category-management';
 import { getCategoryTree as getFrontendCategoryTree } from '@/api/category/index';
-import { getDefaultCompanyId } from '@/api/config/index';
+import { getDefaultCompanyIdCached } from '@/api/config/index';
 
 interface Props {
   show: boolean;
@@ -212,7 +212,7 @@ const loadCategories = async () => {
     return;
   }
   if (selectedScope.value === 'headquarters') {
-    const defaultId = await getDefaultCompanyId();
+    const defaultId = await getDefaultCompanyIdCached();
     if (!defaultId) {
       categories.value = [];
       return;

@@ -24,7 +24,8 @@
 				"navigationBarTitleText": "购物车",
 				"navigationBarBackgroundColor": "#ffffff",
 				"navigationBarTextStyle": "black",
-				"navigationStyle": "custom"
+				"navigationStyle": "custom",
+				"disableScroll": true
 			}
 		},
 		{
@@ -92,12 +93,8 @@
 		{
 			"path": "pages/order/index",
 			"style": {
-				"navigationBarTitleText": "订单提交",
-				"app-plus": {
-					"titleNView": {
-						"autoBackButton": false
-					}
-				}
+				"navigationStyle": "custom",
+				"navigationBarTitleText": "确认订单"
 			}
 		},
 		{
@@ -145,9 +142,34 @@
 			}
 		},
 		{
+			"path": "pages/address-list/index",
+			"style": {
+				"navigationBarTitleText": "地址管理",
+				"navigationBarBackgroundColor": "#ffffff",
+				"navigationBarTextStyle": "black",
+				"enablePullDownRefresh": true
+			}
+		},
+		{
+			"path": "pages/address-edit/index",
+			"style": {
+				"navigationBarTitleText": "编辑地址",
+				"navigationBarBackgroundColor": "#ffffff",
+				"navigationBarTextStyle": "black"
+			}
+		},
+		{
 			"path": "pages/upload/index",
 			"style": {
 				"navigationBarTitleText": "文件上传"
+			}
+		},
+		{
+			"path": "pages/contact/index",
+			"style": {
+				"navigationBarTitleText": "联系客服",
+				"navigationBarBackgroundColor": "#ffffff",
+				"navigationBarTextStyle": "black"
 			}
 		}
 	],
@@ -187,23 +209,6 @@
 						"navigationBarBackgroundColor": "#ffffff",
 						"navigationBarTextStyle": "black",
 						"enablePullDownRefresh": true
-					}
-				},
-				{
-					"path": "order-list/index",
-					"style": {
-						"navigationBarTitleText": "订单管理",
-						"navigationBarBackgroundColor": "#ffffff",
-						"navigationBarTextStyle": "black",
-						"enablePullDownRefresh": true
-					}
-				},
-				{
-					"path": "order-detail/index",
-					"style": {
-						"navigationBarTitleText": "订单详情",
-						"navigationBarBackgroundColor": "#ffffff",
-						"navigationBarTextStyle": "black"
 					}
 				}
 			]

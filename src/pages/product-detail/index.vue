@@ -155,12 +155,13 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
-import { onLoad, onShow } from '@dcloudio/uni-app';
+import { onLoad, onShow, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app';
 import { getProductDetail } from '@/api/product/index';
 import { addToCart, getCartList } from '@/api/cart/index';
 import { user_token, userInfo, companyInfo } from '@/store/userStore';
 import { getCompanyUserRole } from '@/utils/auth';
 import PageNavBar from '@/components/PageNavBar.vue';
+import SkeletonScreen from '@/components/SkeletonScreen.vue';
 import DetailFooterBar from '@/components/DetailFooterBar.vue';
 
 const productId = ref<number | null>(null);
@@ -434,6 +435,16 @@ onLoad((options?: { id?: string }) => {
 onShow(() => {
   loadCartCount();
 });
+
+onShareAppMessage(() => ({
+  title: productDetail.value?.name || '商品详情',
+  path: `/pages/product-detail/index?id=${productId.value}`,
+}));
+
+onShareTimeline(() => ({
+  title: productDetail.value?.name || '商品详情',
+  query: `id=${productId.value}`,
+}));
 </script>
 
 <style scoped>
@@ -442,6 +453,11 @@ onShow(() => {
   min-height: 100vh;
   background: #f5f5f5;
   padding-bottom: 120rpx;
+}
+
+.skeleton-area {
+  min-height: 60vh;
+  padding: 0;
 }
 
 .scroll-content {

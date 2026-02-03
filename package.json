@@ -55,7 +55,8 @@
     "graphql-ormify-client": "^1.0.5",
     "pinia": "^2.1.7",
     "vue": "^3.5.16",
-    "vue-i18n": "^9.14.4"
+    "vue-i18n": "^9.14.4",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@dcloudio/types": "^3.4.15",

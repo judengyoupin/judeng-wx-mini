@@ -62,11 +62,17 @@
         </view>
         <text class="action-label">资料库</text>
       </view>
-      <view class="action-item" @click="goToSettings">
+      <view class="action-item" @click="goToAddressList">
         <view class="action-icon-wrapper settings">
           <image class="action-icon" src="../../static/mine/shezhi.png" mode="aspectFit"></image>
         </view>
-        <text class="action-label">设置</text>
+        <text class="action-label">地址管理</text>
+      </view>
+      <view class="action-item" @click="goToContact">
+        <view class="action-icon-wrapper contact">
+          <text class="action-icon-emoji">💬</text>
+        </view>
+        <text class="action-label">联系客服</text>
       </view>
     </view>
 
@@ -144,6 +150,37 @@
         </view>
     </view>
 
+    <!-- C 端：联系我们、关于我们（有公司且配置了联系/介绍时展示） -->
+    <view v-if="user_token && companyInfo?.id && companyPublicInfo && (companyPublicInfo.contact_code || companyPublicInfo.description)" class="more-section">
+      <view class="section-header">
+        <text class="section-title">更多</text>
+      </view>
+      <view class="more-grid">
+        <view v-if="companyPublicInfo.contact_code || companyPublicInfo.description" class="more-item" @click="goToContact">
+          <text class="more-icon">📞</text>
+          <text class="more-label">联系我们</text>
+        </view>
+        <view v-if="companyPublicInfo.description" class="more-item" @click="showAboutModal = true">
+          <text class="more-icon">ℹ️</text>
+          <text class="more-label">关于我们</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 关于我们弹窗 -->
+    <view v-if="showAboutModal" class="modal-overlay" @click="showAboutModal = false">
+      <view class="modal-content about-modal" @click.stop>
+        <view class="modal-header">
+          <text class="modal-title">关于我们</text>
+          <text class="modal-close" @click="showAboutModal = false">×</text>
+        </view>
+        <scroll-view scroll-y class="modal-body">
+          <text v-if="companyPublicInfo?.description" class="about-desc">{{ companyPublicInfo.description }}</text>
+          <view v-else class="empty-tip">暂无介绍</view>
+        </scroll-view>
+      </view>
+    </view>
+
     <!-- 无公司账号提示：进入某公司但该用户未注册为公司用户时显示 -->
     <view v-if="user_token && companyInfo?.id && !isCompanyUser" class="register-tip">
       <view class="tip-icon">⚠️</view>
@@ -161,13 +198,17 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed } from 'vue';
 import { onShow } from '@dcloudio/uni-app';
 import { userInfo, user_token, companyInfo, clearUserContext } from '@/store/userStore';
 import client from '@/config-lib/hasura-graphql-client/hasura-graphql-client';
 import { isPlatformAdmin, isCompanyAdmin } from '@/utils/auth';
+import { getCompanyPublicInfo } from '@/api/company/index';
+import type { CompanyPublicInfo } from '@/api/company/index';
 
 const isCompanyUser = ref(false);
+const companyPublicInfo = ref<CompanyPublicInfo | null>(null);
+const showAboutModal = ref(false);
 const isAdmin = ref(false);
 const isCompanyAdminUser = ref(false);
 
@@ -260,9 +301,32 @@ const goToFiles = () => {
 };
 
 // 跳转到设置
-const goToSettings = () => {
+const goToAddressList = () => {
+  if (!user_token.value) {
+    goToLogin();
+    return;
+  }
   uni.navigateTo({
-    url: '/pages/settings/index',
+    url: '/pages/address-list/index',
+  });
+};
+
+// 跳转到联系客服页
+const goToContact = () => {
+  if (!user_token.value) {
+    goToLogin();
+    return;
+  }
+  const companyId = companyInfo.value?.id;
+  if (!companyId) {
+    uni.showToast({
+      title: '请先选择公司',
+      icon: 'none',
+    });
+    return;
+  }
+  uni.navigateTo({
+    url: `/pages/contact/index?companyId=${companyId}`,
   });
 };
 
@@ -427,13 +491,18 @@ const handleLogout = () => {
   });
 };
 
-onMounted(() => {
-  checkUserPermissions();
-});
-
+// 仅 onShow 拉数，避免首次与 onMounted 重复请求
 onShow(() => {
-  // 每次显示页面时检查用户状态和权限
   checkUserPermissions();
+  if (companyInfo.value?.id) {
+    getCompanyPublicInfo(companyInfo.value.id).then((info) => {
+      companyPublicInfo.value = info;
+    }).catch(() => {
+      companyPublicInfo.value = null;
+    });
+  } else {
+    companyPublicInfo.value = null;
+  }
 });
 </script>
 
@@ -657,6 +726,14 @@ onShow(() => {
   background: linear-gradient(135deg, #d299c2 0%, #fef9d7 100%);
 }
 
+.action-icon-wrapper.contact {
+  background: linear-gradient(135deg, #a8c0ff 0%, #c2e9fb 100%);
+}
+
+.action-icon-emoji {
+  font-size: 48rpx;
+}
+
 .action-icon {
   width: 56rpx;
   height: 56rpx;
@@ -786,6 +863,104 @@ onShow(() => {
 }
 
 /* 注册提示 */
+.more-section {
+  margin: 0 30rpx 30rpx;
+  background: #ffffff;
+  border-radius: 24rpx;
+  padding: 24rpx;
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.06);
+}
+
+.more-section .section-header {
+  margin-bottom: 20rpx;
+}
+
+.more-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24rpx;
+}
+
+.more-item {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  padding: 20rpx 28rpx;
+  background: #f8f9fa;
+  border-radius: 16rpx;
+}
+
+.more-icon {
+  font-size: 36rpx;
+}
+
+.more-label {
+  font-size: 28rpx;
+  color: #333;
+}
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40rpx;
+}
+
+.modal-content {
+  width: 100%;
+  max-width: 600rpx;
+  max-height: 80vh;
+  background: #fff;
+  border-radius: 24rpx;
+  overflow: hidden;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 28rpx 24rpx;
+  border-bottom: 1rpx solid #f0f0f0;
+}
+
+.modal-title {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #333;
+}
+
+.modal-close {
+  font-size: 44rpx;
+  color: #999;
+  padding: 0 8rpx;
+}
+
+.about-modal .modal-body {
+  padding: 24rpx;
+  max-height: 60vh;
+}
+
+.about-desc {
+  font-size: 28rpx;
+  color: #666;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.empty-tip {
+  font-size: 28rpx;
+  color: #999;
+  text-align: center;
+  padding: 40rpx;
+}
+
 .register-tip {
   margin: 0 30rpx 30rpx;
   padding: 24rpx;

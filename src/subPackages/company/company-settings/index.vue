@@ -1,5 +1,6 @@
 <template>
   <view class="company-settings-page">
+    <view v-if="isAuditMode" class="audit-tip">仅查看，不可操作</view>
     <scroll-view scroll-y class="scroll-content">
       <view class="form-section">
         <view class="form-item">
@@ -9,12 +10,13 @@
             v-model="form.name" 
             placeholder="请输入公司名称"
             maxlength="50"
+            :disabled="isAuditMode"
           />
         </view>
 
         <view class="form-item">
           <view class="form-label">公司Logo</view>
-          <view class="form-upload square" @click="uploadLogo">
+          <view class="form-upload square" :class="{ disabled: isAuditMode }" @click="!isAuditMode && uploadLogo()">
             <image 
               v-if="form.logo_url" 
               :src="form.logo_url" 
@@ -66,20 +68,59 @@
                 class="banner-image"
                 mode="aspectFill"
               />
-              <view class="banner-actions">
+              <view v-if="!isAuditMode" class="banner-actions">
                 <text class="banner-action-btn" @click="editBottomBanner(index)">编辑</text>
                 <text class="banner-action-btn delete" @click="removeBottomBanner(index)">删除</text>
               </view>
             </view>
-            <view class="add-banner-btn" @click="addBottomBanner">
+            <view v-if="!isAuditMode" class="add-banner-btn" @click="addBottomBanner">
               <text class="add-icon">+</text>
               <text class="add-text">添加轮播图</text>
             </view>
           </view>
         </view>
+
+        <view class="form-item">
+          <view class="form-label">公司介绍</view>
+          <textarea class="form-textarea" v-model="form.description" placeholder="用于关于我们、联系我们展示" maxlength="500" :disabled="isAuditMode" />
+        </view>
+        <view class="form-item">
+          <view class="form-label">联系我们二维码</view>
+          <view class="form-upload square" :class="{ disabled: isAuditMode }" @click="!isAuditMode && uploadContactCode()">
+            <image v-if="form.contact_code" :src="form.contact_code" class="uploaded-image" mode="aspectFill" />
+            <view v-else class="upload-placeholder">
+              <text class="upload-icon">📷</text>
+              <text class="upload-text">点击上传</text>
+            </view>
+          </view>
+        </view>
+        <view class="form-item">
+          <view class="form-label">微信二维码</view>
+          <view class="form-upload square" :class="{ disabled: isAuditMode }" @click="!isAuditMode && uploadWechatCode()">
+            <image v-if="form.wechat_code" :src="form.wechat_code" class="uploaded-image" mode="aspectFill" />
+            <view v-else class="upload-placeholder">
+              <text class="upload-icon">📷</text>
+              <text class="upload-text">点击上传（订单详情等展示）</text>
+            </view>
+          </view>
+        </view>
+        <view class="form-item">
+          <view class="form-label">资源库文件</view>
+          <view class="resource-file-upload" @click="uploadResourceFile">
+            <view v-if="form.resource_file_url" class="resource-file-has">
+              <text class="resource-file-icon">📄</text>
+              <text class="resource-file-name">{{ resourceFileName }}</text>
+              <text class="resource-file-remove" @click.stop="clearResourceFile">删除</text>
+            </view>
+            <view v-else class="resource-file-placeholder">
+              <text class="upload-icon">📤</text>
+              <text class="upload-text">点击上传资料文件（PDF、Word等）</text>
+            </view>
+          </view>
+        </view>
       </view>
 
-      <view class="footer-actions">
+      <view v-if="!isAuditMode" class="footer-actions">
         <button class="save-btn" @click="handleSave" :loading="loading">
           {{ loading ? '保存中...' : '保存' }}
         </button>
@@ -151,17 +192,23 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { onLoad } from '@dcloudio/uni-app';
-import { getCompanyDetail, updateCompany } from '@/api/admin/platform';
-import { getTopBanners, getBottomBanners } from '@/api/banner/index';
+import { getCompanyDetailCached, updateCompany } from '@/subPackages/company/api/platform';
+import { getBanners } from '@/api/banner/index';
 import { uploadFile } from '@/api/upload';
 import type { BannerItem } from '@/types/companies';
 
 const companyId = ref<number | null>(null);
+/** 核查入口只读：不可编辑、保存 */
+const isAuditMode = ref(false);
 const form = ref({
   name: '',
   logo_url: '',
+  description: '',
+  contact_code: '',
+  wechat_code: '',
+  resource_file_url: '',
 });
 const topBanners = ref<BannerItem[]>([]);
 const bottomBanners = ref<BannerItem[]>([]);
@@ -207,6 +254,88 @@ const uploadLogo = async () => {
   } catch (error) {
     console.error('选择图片失败:', error);
   }
+};
+
+const uploadContactCode = async () => {
+  try {
+    uni.chooseImage({
+      count: 1,
+      success: async (res) => {
+        try {
+          const url = await uploadFile(res.tempFilePaths[0], undefined, '.jpg');
+          form.value.contact_code = url;
+        } catch (error: any) {
+          uni.showToast({ title: error.message || '上传失败', icon: 'none' });
+        }
+      },
+    });
+  } catch (error) {
+    console.error('选择图片失败:', error);
+  }
+};
+
+const uploadWechatCode = async () => {
+  try {
+    uni.chooseImage({
+      count: 1,
+      success: async (res) => {
+        try {
+          const url = await uploadFile(res.tempFilePaths[0], undefined, '.jpg');
+          form.value.wechat_code = url;
+        } catch (error: any) {
+          uni.showToast({ title: error.message || '上传失败', icon: 'none' });
+        }
+      },
+    });
+  } catch (error) {
+    console.error('选择图片失败:', error);
+  }
+};
+
+// 资源库文件名展示（从 URL 取最后一段或显示“已上传文件”）
+const resourceFileName = computed(() => {
+  const url = form.value.resource_file_url;
+  if (!url) return '';
+  try {
+    const path = url.split('?')[0];
+    const name = path.split('/').pop() || '';
+    return decodeURIComponent(name) || '已上传文件';
+  } catch {
+    return '已上传文件';
+  }
+});
+
+// 上传资源库文件（PDF、Word 等）
+const uploadResourceFile = () => {
+  // #ifdef MP-WEIXIN
+  uni.chooseMessageFile({
+    count: 1,
+    type: 'file',
+    extensionFilter: ['.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx'],
+    success: async (res) => {
+      const file = res.tempFiles[0];
+      if (!file?.path) return;
+      const ext = file.name ? (file.name.includes('.') ? '.' + file.name.split('.').pop() : '') : '';
+      try {
+        uni.showLoading({ title: '上传中...' });
+        const url = await uploadFile(file.path, undefined, ext || '.pdf');
+        form.value.resource_file_url = url;
+        uni.hideLoading();
+        uni.showToast({ title: '上传成功', icon: 'success' });
+      } catch (error: any) {
+        uni.hideLoading();
+        uni.showToast({ title: error.message || '上传失败', icon: 'none' });
+      }
+    },
+  });
+  // #endif
+  // #ifndef MP-WEIXIN
+  uni.showToast({ title: '请在微信小程序中上传资料文件', icon: 'none' });
+  // #endif
+};
+
+const clearResourceFile = () => {
+  form.value.resource_file_url = '';
 };
 
 // 上传轮播图
@@ -351,33 +480,25 @@ const loadCompanyDetail = async () => {
   if (!companyId.value) return;
   loading.value = true;
   try {
-    const company = await getCompanyDetail(companyId.value);
+    const company = await getCompanyDetailCached(companyId.value!);
     if (company) {
       form.value = {
         name: company.name,
         logo_url: company.logo_url || '',
+        description: (company as any).description || '',
+        contact_code: (company as any).contact_code || '',
+        wechat_code: (company as any).wechat_code || '',
+        resource_file_url: (company as any).resource_file_url || '',
       };
     }
 
-    // 加载轮播图
-    const topRes = await getTopBanners(companyId.value);
-    if (topRes && topRes.code === 0 && topRes.data) {
-      topBanners.value = topRes.data.map((banner: any) => {
-        if (typeof banner === 'string') {
-          return { file_url: banner, file_type: 'image', sort: 0 };
-        }
-        return banner;
-      });
-    }
-
-    const bottomRes = await getBottomBanners(companyId.value);
-    if (bottomRes && bottomRes.code === 0 && bottomRes.data) {
-      bottomBanners.value = bottomRes.data.map((banner: any) => {
-        if (typeof banner === 'string') {
-          return { file_url: banner, file_type: 'image', sort: 0 };
-        }
-        return banner;
-      });
+    // 一次请求加载顶部+底部轮播图
+    const bannerRes = await getBanners(companyId.value);
+    const mapBanner = (banner: any) =>
+      typeof banner === 'string' ? { file_url: banner, file_type: 'image', sort: 0 } : banner;
+    if (bannerRes?.code === 0 && bannerRes.data) {
+      topBanners.value = bannerRes.data.top.map(mapBanner);
+      bottomBanners.value = bannerRes.data.bottom.map(mapBanner);
     }
   } catch (error: any) {
     uni.showToast({
@@ -415,6 +536,10 @@ const handleSave = async () => {
       logo_url: form.value.logo_url,
       banner_top: topBanners.value,
       banner_bottom: bottomBanners.value,
+      description: form.value.description || undefined,
+      contact_code: form.value.contact_code || undefined,
+      wechat_code: form.value.wechat_code || undefined,
+      resource_file_url: form.value.resource_file_url || undefined,
     });
 
     uni.showToast({
@@ -439,11 +564,14 @@ const handleCancel = () => {
   uni.navigateBack();
 };
 
-onLoad((options?: { id?: string; companyId?: string }) => {
+onLoad((options?: { id?: string; companyId?: string; audit?: string }) => {
   const id = options?.id ?? options?.companyId;
   if (id) {
     companyId.value = Number(id);
     loadCompanyDetail();
+  }
+  if (options?.audit === '1') {
+    isAuditMode.value = true;
   }
 });
 </script>
@@ -454,6 +582,19 @@ onLoad((options?: { id?: string; companyId?: string }) => {
 .company-settings-page {
   height: 100vh;
   background: #f5f5f5;
+}
+
+.audit-tip {
+  padding: 16rpx 30rpx;
+  font-size: 26rpx;
+  color: #999;
+  background: #f8f8f8;
+}
+
+.form-upload.disabled,
+.resource-file-upload.disabled {
+  pointer-events: none;
+  opacity: 0.8;
 }
 
 .scroll-content {
@@ -493,6 +634,48 @@ onLoad((options?: { id?: string; companyId?: string }) => {
 .upload-text {
   font-size: 24rpx;
   color: #999999;
+}
+
+.resource-file-upload {
+  min-height: 120rpx;
+  padding: 24rpx;
+  background: #f8fafc;
+  border: 2rpx dashed #e2e8f0;
+  border-radius: 12rpx;
+}
+
+.resource-file-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12rpx;
+  min-height: 80rpx;
+}
+
+.resource-file-has {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+}
+
+.resource-file-icon {
+  font-size: 40rpx;
+}
+
+.resource-file-name {
+  flex: 1;
+  font-size: 28rpx;
+  color: #1e293b;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.resource-file-remove {
+  font-size: 26rpx;
+  color: #ef4444;
+  padding: 8rpx 16rpx;
 }
 
 .banner-section {

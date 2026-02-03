@@ -353,8 +353,8 @@
 import { ref, onMounted, computed } from 'vue';
 import { onLoad } from '@dcloudio/uni-app';
 import { companyInfo } from '@/store/userStore';
-import { getProductDetail, createProduct, updateProduct, createProductSku, updateProductSku, deleteProductSku } from '@/api/admin/product';
-import { getCategoryTree } from '@/api/admin/category';
+import { getProductDetail, createProduct, updateProduct, createProductSku, updateProductSku, deleteProductSku } from '@/subPackages/company/api/product';
+import { getCategoryTree } from '@/api/category-management';
 import { uploadFile } from '@/api/upload';
 import CategoryPicker from '@/components/CategoryPicker.vue';
 

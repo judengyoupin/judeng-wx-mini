@@ -1,5 +1,5 @@
 import client from "@/config-lib/hasura-graphql-client/hasura-graphql-client";
-import { getDefaultCompanyId } from "@/api/config/index";
+import { getDefaultCompanyIdCached } from "@/api/config/index";
 
 /**
  * 单节点转为前端树节点格式（含 children），并过滤隐藏分类
@@ -34,7 +34,7 @@ function mapCategoryNode(c: any, hiddenCategoryIds: number[]): any | null {
 export async function getCategoryTree(companyId?: number | null, type?: 'product' | 'package' | null) {
   try {
     const categoryType: 'product' | 'package' | null | undefined = type;
-    const defaultCompanyId = await getDefaultCompanyId();
+    const defaultCompanyId = await getDefaultCompanyIdCached();
 
     const companyIds: number[] = [];
     if (companyId) companyIds.push(companyId);
@@ -45,20 +45,6 @@ export async function getCategoryTree(companyId?: number | null, type?: 'product
 
     let hiddenCategoryIds: number[] = [];
     const currentCompanyId = companyId ?? null;
-    if (currentCompanyId) {
-      try {
-        const hideRes = await client.execute<{ companies_by_pk: { hidden_category_ids: (string | number)[] | null } | null }>({
-          query: `query GetCompanyHiddenCategories($id: bigint!) {
-            companies_by_pk(id: $id) { hidden_category_ids }
-          }`,
-          variables: { id: currentCompanyId },
-        });
-        const arr = hideRes?.companies_by_pk?.hidden_category_ids;
-        hiddenCategoryIds = Array.isArray(arr) ? arr.map((id) => Number(id)) : [];
-      } catch (_) {}
-    }
-
-    // 一次请求：根分类 + 二层、三层通过嵌套 relation 拉取
     const whereConditions = [
       '{ parent_categories: { _is_null: true } }',
       '{ is_deleted: { _eq: false } }',
@@ -66,13 +52,64 @@ export async function getCategoryTree(companyId?: number | null, type?: 'product
     if (categoryType) whereConditions.push('{ type: { _eq: $type } }');
     if (companyIds.length === 1) whereConditions.push('{ company_companies: { _eq: $companyId } }');
     else whereConditions.push('{ company_companies: { _in: $companyIds } }');
+    const nestedWhere = categoryType ? '{ is_deleted: { _eq: false }, type: { _eq: $type } }' : '{ is_deleted: { _eq: false } }';
+
+    // 合并请求：有当前公司时一次查询同时拉取 hidden_category_ids + 分类树
+    const variables: any = companyIds.length === 1 ? { companyId: companyIds[0] } : { companyIds };
+    if (categoryType) variables.type = categoryType;
+    if (currentCompanyId) variables.currentCompanyId = currentCompanyId;
 
     const variableDeclarations = companyIds.length === 1 ? ['$companyId: bigint!'] : ['$companyIds: [bigint!]!'];
     if (categoryType) variableDeclarations.push('$type: String!');
+    if (currentCompanyId) variableDeclarations.push('$currentCompanyId: bigint!');
     const varStr = `(${variableDeclarations.join(', ')})`;
-    const nestedWhere = categoryType ? '{ is_deleted: { _eq: false }, type: { _eq: $type } }' : '{ is_deleted: { _eq: false } }';
 
-    const treeQuery = `
+    const treeQuery = currentCompanyId
+      ? `
+      query GetCategoryTreeWithHidden${varStr} {
+        company: companies_by_pk(id: $currentCompanyId) { hidden_category_ids }
+        categories(
+          where: { _and: [ ${whereConditions.join(', ')} ] }
+          order_by: { sort_order: asc }
+        ) {
+          id
+          name
+          sort_order
+          route_ui_style
+          icon_url
+          parent_categories
+          level
+          type
+          categories(
+            where: ${nestedWhere}
+            order_by: { sort_order: asc }
+          ) {
+            id
+            name
+            sort_order
+            route_ui_style
+            icon_url
+            parent_categories
+            level
+            type
+            categories(
+              where: ${nestedWhere}
+              order_by: { sort_order: asc }
+            ) {
+              id
+              name
+              sort_order
+              route_ui_style
+              icon_url
+              parent_categories
+              level
+              type
+            }
+          }
+        }
+      }
+    `
+      : `
       query GetCategoryTreeFull${varStr} {
         categories(
           where: { _and: [ ${whereConditions.join(', ')} ] }
@@ -116,13 +153,17 @@ export async function getCategoryTree(companyId?: number | null, type?: 'product
       }
     `;
 
-    const variables: any = companyIds.length === 1 ? { companyId: companyIds[0] } : { companyIds };
-    if (categoryType) variables.type = categoryType;
-
-    const result = await client.execute<{ categories: any[] }>({
+    const result = await client.execute<{
+      company?: { hidden_category_ids: (string | number)[] | null } | null;
+      categories: any[];
+    }>({
       query: treeQuery,
       variables,
     });
+    if (currentCompanyId && result?.company?.hidden_category_ids) {
+      const arr = result.company.hidden_category_ids;
+      hiddenCategoryIds = Array.isArray(arr) ? arr.map((id) => Number(id)) : [];
+    }
 
     const rawList = result?.categories || [];
     const categoryList = rawList.map((c) => mapCategoryNode(c, hiddenCategoryIds)).filter(Boolean);
@@ -147,27 +188,13 @@ export async function getCategoryTree(companyId?: number | null, type?: 'product
  */
 export async function getCategoryChildren(parentId: number, companyId?: number | null) {
   try {
-    const defaultCompanyId = await getDefaultCompanyId();
+    const defaultCompanyId = await getDefaultCompanyIdCached();
     const companyIds: number[] = [];
     if (companyId) companyIds.push(companyId);
     if (defaultCompanyId && defaultCompanyId !== companyId) companyIds.push(defaultCompanyId);
 
-    // 当前用户所属公司的隐藏分类 id，子分类列表需过滤（仅当传入 companyId 时）
     let hiddenCategoryIds: number[] = [];
     const currentCompanyIdForHide = companyId ?? null;
-    if (currentCompanyIdForHide) {
-      try {
-        const hideRes = await client.execute<{ companies_by_pk: { hidden_category_ids: (string | number)[] | null } | null }>({
-          query: `query GetCompanyHiddenCategories($id: bigint!) {
-            companies_by_pk(id: $id) { hidden_category_ids }
-          }`,
-          variables: { id: currentCompanyIdForHide },
-        });
-        const arr = hideRes?.companies_by_pk?.hidden_category_ids;
-        hiddenCategoryIds = Array.isArray(arr) ? arr.map((id) => Number(id)) : [];
-      } catch (_) {}
-    }
-
     const whereConditions = [
       '{ parent_categories: { _eq: $parentId } }',
       '{ is_deleted: { _eq: false } }',
@@ -177,13 +204,32 @@ export async function getCategoryChildren(parentId: number, companyId?: number |
     } else if (companyIds.length > 1) {
       whereConditions.push('{ company_companies: { _in: $companyIds } }');
     }
-
     const variableDeclarations = ['$parentId: bigint!'];
     if (companyIds.length === 1) variableDeclarations.push('$companyId: bigint!');
     else if (companyIds.length > 1) variableDeclarations.push('$companyIds: [bigint!]!');
+    if (currentCompanyIdForHide) variableDeclarations.push('$currentCompanyId: bigint!');
     const varStr = `(${variableDeclarations.join(', ')})`;
 
-    const query = `
+    const query = currentCompanyIdForHide
+      ? `
+      query GetCategoryChildrenWithHidden${varStr} {
+        company: companies_by_pk(id: $currentCompanyId) { hidden_category_ids }
+        categories(
+          where: { _and: [ ${whereConditions.join(', ')} ] }
+          order_by: { sort_order: asc }
+        ) {
+          id
+          name
+          sort_order
+          route_ui_style
+          icon_url
+          parent_categories
+          level
+          type
+        }
+      }
+    `
+      : `
       query GetCategoryChildren${varStr} {
         categories(
           where: { _and: [ ${whereConditions.join(', ')} ] }
@@ -203,11 +249,19 @@ export async function getCategoryChildren(parentId: number, companyId?: number |
     const variables: any = { parentId };
     if (companyIds.length === 1) variables.companyId = companyIds[0];
     else if (companyIds.length > 1) variables.companyIds = companyIds;
+    if (currentCompanyIdForHide) variables.currentCompanyId = currentCompanyIdForHide;
 
-    const result = await client.execute<{ categories: any[] }>({
+    const result = await client.execute<{
+      company?: { hidden_category_ids: (string | number)[] | null } | null;
+      categories: any[];
+    }>({
       query,
       variables,
     });
+    if (currentCompanyIdForHide && result?.company?.hidden_category_ids) {
+      const arr = result.company.hidden_category_ids;
+      hiddenCategoryIds = Array.isArray(arr) ? arr.map((id) => Number(id)) : [];
+    }
 
     const list = result?.categories || [];
     const filtered = list.filter(

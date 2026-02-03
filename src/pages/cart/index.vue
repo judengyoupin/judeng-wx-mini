@@ -14,21 +14,24 @@
       </text>
     </view>
 
-    <!-- 加载状态 -->
-    <view v-if="loading" class="loading-container">
-      <view class="loading-spinner"></view>
-      <text>加载中...</text>
+    <!-- 骨架屏（首屏加载） -->
+    <view v-if="loading && user_token" class="skeleton-area">
+      <SkeletonScreen type="list-row" :count="4" />
     </view>
 
     <!-- 未登录提示 -->
-    <view v-else-if="!user_token" class="empty-state">
+    <view v-else-if="!loading && !user_token" class="empty-state">
       <text class="empty-text">请先登录</text>
       <button class="login-btn" @click="goToLogin">去登录</button>
     </view>
 
-    <!-- 购物车列表 -->
-    <view v-else-if="cartItems.length > 0" class="cart-content">
-      <scroll-view scroll-y class="cart-list">
+    <!-- 购物车列表：高度由 scrollListHeight 计算，仅此区域可滚动 -->
+    <view v-else-if="user_token && cartItems.length > 0" class="cart-content">
+      <scroll-view
+        scroll-y
+        class="cart-list"
+        :style="{ height: scrollListHeight + 'px' }"
+      >
         <view
           v-for="(item, index) in cartItems"
           :key="item.id"
@@ -133,6 +136,7 @@ import { onShow, onPullDownRefresh } from '@dcloudio/uni-app';
 import { user_token, userInfo, companyInfo } from '@/store/userStore';
 import { getCompanyUserRole } from '@/utils/auth';
 import PageNavBar from '@/components/PageNavBar.vue';
+import SkeletonScreen from '@/components/SkeletonScreen.vue';
 import {
   getCartList,
   updateCartQuantity,
@@ -374,12 +378,32 @@ const formatPrice = (price: number) => {
   return Number(price).toFixed(2);
 };
 
+// 计算列表可滚动区域高度（px），避免外层页面滚动
+const scrollListHeight = ref(400);
+function calcScrollListHeight() {
+  try {
+    const sys = uni.getSystemInfoSync();
+    const windowHeight = sys.windowHeight ?? 0;
+    const statusBarHeight = sys.statusBarHeight ?? 20;
+    const navBarHeight = 44; // 与 PageNavBar 一致 (px)
+    const companyBarHeight = 36; // 公司栏 padding 32rpx + 内容约 28rpx，约 36px
+    const footerHeight = 50; // 底部栏 100rpx 约 50px
+    const safeBottom = sys.safeAreaInsets?.bottom ?? 0;
+    const h =
+      windowHeight - statusBarHeight - navBarHeight - companyBarHeight - footerHeight - safeBottom;
+    scrollListHeight.value = Math.max(200, h);
+  } catch {
+    scrollListHeight.value = 400;
+  }
+}
+
 onMounted(() => {
-  loadCart();
+  calcScrollListHeight();
 });
 
 onShow(() => {
   loadCart();
+  calcScrollListHeight();
 });
 
 onPullDownRefresh(() => {
@@ -389,9 +413,13 @@ onPullDownRefresh(() => {
 
 <style scoped>
 .cart-page {
+  height: 100vh;
   min-height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
   background: #f5f5f5;
-  padding-bottom: calc(100rpx + env(safe-area-inset-bottom));
+  box-sizing: border-box;
 }
 
 .company-bar {
@@ -434,6 +462,11 @@ onPullDownRefresh(() => {
   padding: 8rpx 0;
 }
 
+.skeleton-area {
+  padding: 24rpx;
+  min-height: 400rpx;
+}
+
 .loading-container {
   padding: 200rpx 0;
   text-align: center;
@@ -456,14 +489,19 @@ onPullDownRefresh(() => {
 }
 
 .cart-content {
-  height: calc(100vh - 100rpx - env(safe-area-inset-bottom));
+  flex: 1;
+  min-height: 0;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
+/* 高度由 :style 动态计算，仅此区域可滚动 */
 .cart-list {
   flex: 1;
-  overflow-y: auto;
+  min-height: 0;
+  width: 100%;
+  overflow-anchor: auto;
 }
 
 .cart-item {

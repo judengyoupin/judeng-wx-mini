@@ -1,21 +1,24 @@
 import client from '@/config-lib/hasura-graphql-client/hasura-graphql-client';
+import {
+  getCompanyDetailFromCache,
+  setCompanyDetailCache,
+  invalidateCompanyDetailCache,
+} from '@/store/userStore';
 
 export interface CompanyInput {
   name: string;
   logo_url?: string;
   banner_top?: any[];
   banner_bottom?: any[];
-  /** 隐藏的分类 id 列表（系统默认公司展示时过滤） */
   hidden_category_ids?: number[];
-  /** 隐藏的商品 id 列表（系统默认公司展示时过滤） */
   hidden_product_ids?: number[];
-  /** 隐藏的套餐 id 列表（系统默认公司展示时过滤） */
   hidden_package_ids?: number[];
+  description?: string;
+  contact_code?: string;
+  wechat_code?: string;
+  resource_file_url?: string;
 }
 
-/**
- * 获取所有公司列表
- */
 export async function getCompanyList(params: {
   limit?: number;
   offset?: number;
@@ -68,9 +71,6 @@ export async function getCompanyList(params: {
   };
 }
 
-/**
- * 获取公司详情
- */
 export async function getCompanyDetail(companyId: number) {
   const query = `
     query GetCompanyDetail($companyId: bigint!) {
@@ -83,6 +83,10 @@ export async function getCompanyDetail(companyId: number) {
         hidden_category_ids
         hidden_product_ids
         hidden_package_ids
+        description
+        contact_code
+        wechat_code
+        resource_file_url
         created_at
         updated_at
         company_users(
@@ -108,9 +112,16 @@ export async function getCompanyDetail(companyId: number) {
   return result?.companies_by_pk;
 }
 
-/**
- * 创建公司
- */
+export async function getCompanyDetailCached(companyId: number, forceRefresh = false) {
+  if (!forceRefresh) {
+    const cached = getCompanyDetailFromCache(companyId);
+    if (cached) return cached;
+  }
+  const data = await getCompanyDetail(companyId);
+  if (data) setCompanyDetailCache(companyId, data);
+  return data;
+}
+
 export async function createCompany(company: CompanyInput) {
   const mutation = `
     mutation CreateCompany($company: companies_insert_input!) {
@@ -123,7 +134,6 @@ export async function createCompany(company: CompanyInput) {
     }
   `;
 
-  // 确保 banner_top、banner_bottom 至少是空数组；hidden_* 传数组
   const companyData = {
     ...company,
     banner_top: company.banner_top ?? [],
@@ -141,9 +151,6 @@ export async function createCompany(company: CompanyInput) {
   return result?.insert_companies_one;
 }
 
-/**
- * 更新公司
- */
 export async function updateCompany(companyId: number, company: Partial<CompanyInput>) {
   const mutation = `
     mutation UpdateCompany($companyId: bigint!, $company: companies_set_input!) {
@@ -162,13 +169,10 @@ export async function updateCompany(companyId: number, company: Partial<CompanyI
       company,
     },
   });
-
+  if (result?.update_companies_by_pk) invalidateCompanyDetailCache(companyId);
   return result?.update_companies_by_pk;
 }
 
-/**
- * 删除公司
- */
 export async function deleteCompany(companyId: number) {
   const mutation = `
     mutation DeleteCompany($companyId: bigint!) {
@@ -186,9 +190,6 @@ export async function deleteCompany(companyId: number) {
   return result?.delete_companies_by_pk;
 }
 
-/**
- * 授权用户为公司管理员
- */
 export async function authorizeCompanyAdmin(params: {
   userId: number;
   companyId: number;
@@ -233,9 +234,6 @@ export async function authorizeCompanyAdmin(params: {
   return result?.insert_company_users_one;
 }
 
-/**
- * 获取默认展示公司ID
- */
 export async function getDefaultDisplayCompanyId(): Promise<number | null> {
   try {
     const query = `
@@ -256,17 +254,16 @@ export async function getDefaultDisplayCompanyId(): Promise<number | null> {
     }
 
     const value = result.configs[0].value;
-    
-    // jsonb 可能是数字或对象
+
     if (typeof value === 'number') {
       return value;
     }
-    
+
     if (typeof value === 'string') {
       const parsed = parseInt(value, 10);
       return isNaN(parsed) ? null : parsed;
     }
-    
+
     if (typeof value === 'object' && value !== null) {
       if (typeof value.content === 'number') {
         return value.content;
@@ -278,7 +275,7 @@ export async function getDefaultDisplayCompanyId(): Promise<number | null> {
         return value.id;
       }
     }
-    
+
     return null;
   } catch (error) {
     console.error('获取默认展示公司ID失败:', error);
@@ -286,9 +283,6 @@ export async function getDefaultDisplayCompanyId(): Promise<number | null> {
   }
 }
 
-/**
- * 设置默认展示公司ID
- */
 export async function setDefaultDisplayCompanyId(companyId: number) {
   const mutation = `
     mutation SetDefaultDisplayCompanyId($companyId: jsonb!) {
@@ -319,9 +313,6 @@ export async function setDefaultDisplayCompanyId(companyId: number) {
   return result?.insert_configs_one;
 }
 
-/**
- * 搜索用户（用于授权）
- */
 export async function searchUserByMobileForPlatform(mobile: string) {
   const query = `
     query SearchUserByMobile($mobile: String!) {

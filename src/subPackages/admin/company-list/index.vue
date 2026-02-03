@@ -45,11 +45,12 @@
         <view class="company-audit-row">
           <text class="audit-label">核查：</text>
           <view class="audit-btns">
-            <view class="audit-btn" @click.stop="goToCompanyOrders(company)">订单</view>
+            <view class="audit-btn" @click.stop="goToCompanySettings(company)">设置</view>
+            <view class="audit-btn" @click.stop="goToCompanyCategories(company)">分类</view>
             <view class="audit-btn" @click.stop="goToCompanyProducts(company)">商品</view>
             <view class="audit-btn" @click.stop="goToCompanyPackages(company)">套餐</view>
             <view class="audit-btn" @click.stop="goToCompanyUsers(company)">用户</view>
-            <view class="audit-btn" @click.stop="goToCompanySettings(company)">设置</view>
+            <view class="audit-btn" @click.stop="goToCompanyOrders(company)">订单</view>
           </view>
         </view>
         <view class="company-actions">
@@ -151,7 +152,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { onPullDownRefresh, onReachBottom, onShow } from '@dcloudio/uni-app';
-import { getCompanyList, deleteCompany, authorizeCompanyAdmin, searchUserByMobileForPlatform } from '@/api/admin/platform';
+import { getCompanyList, deleteCompany, authorizeCompanyAdmin, searchUserByMobileForPlatform } from '@/subPackages/admin/api/platform';
 import { syncCompanyInfo } from '@/api/company/index';
 
 const companies = ref<any[]>([]);
@@ -363,35 +364,41 @@ const goToEditCompany = (companyId: number) => {
   });
 };
 
-// 超级管理员核查：按公司查看订单、商品、套餐、设置（带 companyId 参数）
+// 超级管理员核查：按公司查看（只读，不可操作），带 companyId 与 audit=1
 const goToCompanyOrders = (company: any) => {
   if (!company?.id) return;
   uni.navigateTo({
-    url: `/subPackages/company/order-list/index?companyId=${company.id}`,
+    url: `/subPackages/company/order-list/index?companyId=${company.id}&audit=1`,
   });
 };
 const goToCompanyProducts = (company: any) => {
   if (!company?.id) return;
   uni.navigateTo({
-    url: `/subPackages/company/product-list/index?companyId=${company.id}`,
+    url: `/subPackages/company/product-list/index?companyId=${company.id}&audit=1`,
   });
 };
 const goToCompanyPackages = (company: any) => {
   if (!company?.id) return;
   uni.navigateTo({
-    url: `/subPackages/company/package-list/index?companyId=${company.id}`,
+    url: `/subPackages/company/package-list/index?companyId=${company.id}&audit=1`,
+  });
+};
+const goToCompanyCategories = (company: any) => {
+  if (!company?.id) return;
+  uni.navigateTo({
+    url: `/subPackages/company/category-list/index?companyId=${company.id}&audit=1`,
   });
 };
 const goToCompanySettings = (company: any) => {
   if (!company?.id) return;
   uni.navigateTo({
-    url: `/subPackages/company/company-settings/index?companyId=${company.id}`,
+    url: `/subPackages/company/company-settings/index?companyId=${company.id}&audit=1`,
   });
 };
 const goToCompanyUsers = (company: any) => {
   if (!company?.id) return;
   uni.navigateTo({
-    url: `/subPackages/company/company-user-list/index?companyId=${company.id}`,
+    url: `/subPackages/company/company-user-list/index?companyId=${company.id}&audit=1`,
   });
 };
 

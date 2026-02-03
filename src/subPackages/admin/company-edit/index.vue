@@ -29,22 +29,47 @@
         </view>
 
         <view class="form-item">
-          <view class="form-label">隐藏分类 ID（逗号分隔）</view>
-          <input 
-            class="form-input" 
-            v-model="form.hiddenCategoryIdsStr" 
-            placeholder="如：1,2,3，展示时隐藏这些分类"
+          <view class="form-label">公司介绍</view>
+          <textarea 
+            class="form-textarea" 
+            v-model="form.description" 
+            placeholder="用于关于我们、联系我们展示" 
+            maxlength="500" 
           />
-          <view class="form-hint">系统默认公司展示时，这些分类将不显示</view>
         </view>
         <view class="form-item">
-          <view class="form-label">隐藏商品 ID（逗号分隔）</view>
-          <input 
-            class="form-input" 
-            v-model="form.hiddenProductIdsStr" 
-            placeholder="如：10,20，展示时隐藏这些商品"
-          />
-          <view class="form-hint">系统默认公司展示时，这些商品将不显示</view>
+          <view class="form-label">联系我们二维码</view>
+          <view class="form-upload square" @click="uploadContactCode">
+            <image v-if="form.contact_code" :src="form.contact_code" class="uploaded-image" mode="aspectFill" />
+            <view v-else class="upload-placeholder">
+              <text class="upload-icon">📷</text>
+              <text class="upload-text">点击上传</text>
+            </view>
+          </view>
+        </view>
+        <view class="form-item">
+          <view class="form-label">微信二维码</view>
+          <view class="form-upload square" @click="uploadWechatCode">
+            <image v-if="form.wechat_code" :src="form.wechat_code" class="uploaded-image" mode="aspectFill" />
+            <view v-else class="upload-placeholder">
+              <text class="upload-icon">📷</text>
+              <text class="upload-text">点击上传（订单详情等展示）</text>
+            </view>
+          </view>
+        </view>
+        <view class="form-item">
+          <view class="form-label">资源库文件</view>
+          <view class="resource-file-upload" @click="uploadResourceFile">
+            <view v-if="form.resource_file_url" class="resource-file-has">
+              <text class="resource-file-icon">📄</text>
+              <text class="resource-file-name">{{ resourceFileName }}</text>
+              <text class="resource-file-remove" @click.stop="clearResourceFile">删除</text>
+            </view>
+            <view v-else class="resource-file-placeholder">
+              <text class="upload-icon">📤</text>
+              <text class="upload-text">点击上传资料文件（PDF、Word等）</text>
+            </view>
+          </view>
         </view>
       </view>
 
@@ -135,17 +160,19 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { onLoad } from '@dcloudio/uni-app';
-import { getCompanyDetail, createCompany, updateCompany, authorizeCompanyAdmin, searchUserByMobileForPlatform } from '@/api/admin/platform';
+import { getCompanyDetailCached, createCompany, updateCompany, authorizeCompanyAdmin, searchUserByMobileForPlatform } from '@/subPackages/admin/api/platform';
 import { uploadFile } from '@/api/upload';
 
 const companyId = ref<number | null>(null);
 const form = ref({
   name: '',
   logo_url: '',
-  hiddenCategoryIdsStr: '',
-  hiddenProductIdsStr: '',
+  description: '',
+  contact_code: '',
+  wechat_code: '',
+  resource_file_url: '',
 });
 const loading = ref(false);
 
@@ -158,15 +185,6 @@ const authorizeForm = ref({
 const authorizing = ref(false);
 const createdCompanyId = ref<number | null>(null);
 
-/** 将逗号分隔的 ID 字符串解析为数字数组 */
-function parseIdsStr(s: string): number[] {
-  if (!s || typeof s !== 'string') return [];
-  return s
-    .split(/[,，\s]+/)
-    .map((x) => parseInt(x.trim(), 10))
-    .filter((n) => !isNaN(n) && n > 0);
-}
-
 // 上传Logo
 const uploadLogo = async () => {
   try {
@@ -178,10 +196,7 @@ const uploadLogo = async () => {
           const url = await uploadFile(tempFilePath, undefined, '.jpg');
           form.value.logo_url = url;
         } catch (error: any) {
-          uni.showToast({
-            title: error.message || '上传失败',
-            icon: 'none',
-          });
+          uni.showToast({ title: (error as any)?.message || '上传失败', icon: 'none' });
         }
       },
     });
@@ -190,20 +205,94 @@ const uploadLogo = async () => {
   }
 };
 
+const uploadContactCode = () => {
+  uni.chooseImage({
+    count: 1,
+    success: async (res) => {
+      try {
+        const url = await uploadFile(res.tempFilePaths[0], undefined, '.jpg');
+        form.value.contact_code = url;
+      } catch (error: any) {
+        uni.showToast({ title: (error as any)?.message || '上传失败', icon: 'none' });
+      }
+    },
+  });
+};
+
+const uploadWechatCode = () => {
+  uni.chooseImage({
+    count: 1,
+    success: async (res) => {
+      try {
+        const url = await uploadFile(res.tempFilePaths[0], undefined, '.jpg');
+        form.value.wechat_code = url;
+      } catch (error: any) {
+        uni.showToast({ title: (error as any)?.message || '上传失败', icon: 'none' });
+      }
+    },
+  });
+};
+
+// 资源库文件名展示
+const resourceFileName = computed(() => {
+  const url = form.value.resource_file_url;
+  if (!url) return '';
+  try {
+    const path = url.split('?')[0];
+    const name = path.split('/').pop() || '';
+    return decodeURIComponent(name) || '已上传文件';
+  } catch {
+    return '已上传文件';
+  }
+});
+
+// 上传资源库文件（PDF、Word 等）
+const uploadResourceFile = () => {
+  // #ifdef MP-WEIXIN
+  uni.chooseMessageFile({
+    count: 1,
+    type: 'file',
+    extensionFilter: ['.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx'],
+    success: async (res) => {
+      const file = res.tempFiles[0];
+      if (!file?.path) return;
+      const ext = file.name ? (file.name.includes('.') ? '.' + file.name.split('.').pop() : '') : '';
+      try {
+        uni.showLoading({ title: '上传中...' });
+        const url = await uploadFile(file.path, undefined, ext || '.pdf');
+        form.value.resource_file_url = url;
+        uni.hideLoading();
+        uni.showToast({ title: '上传成功', icon: 'success' });
+      } catch (error: any) {
+        uni.hideLoading();
+        uni.showToast({ title: (error as any)?.message || '上传失败', icon: 'none' });
+      }
+    },
+  });
+  // #endif
+  // #ifndef MP-WEIXIN
+  uni.showToast({ title: '请在微信小程序中上传资料文件', icon: 'none' });
+  // #endif
+};
+
+const clearResourceFile = () => {
+  form.value.resource_file_url = '';
+};
+
 // 加载公司详情
 const loadCompanyDetail = async () => {
   if (!companyId.value) return;
   loading.value = true;
   try {
-    const company = await getCompanyDetail(companyId.value);
+    const company = await getCompanyDetailCached(companyId.value);
     if (company) {
-      const hiddenCat = company.hidden_category_ids;
-      const hiddenProd = company.hidden_product_ids;
       form.value = {
         name: company.name,
         logo_url: company.logo_url || '',
-        hiddenCategoryIdsStr: Array.isArray(hiddenCat) ? hiddenCat.join(',') : '',
-        hiddenProductIdsStr: Array.isArray(hiddenProd) ? hiddenProd.join(',') : '',
+        description: company.description || '',
+        contact_code: company.contact_code || '',
+        wechat_code: company.wechat_code || '',
+        resource_file_url: company.resource_file_url || '',
       };
     }
   } catch (error: any) {
@@ -314,12 +403,14 @@ const handleSave = async () => {
 
   loading.value = true;
 
-  const payload = {
+  const payload: Record<string, any> = {
     name: form.value.name,
-    logo_url: form.value.logo_url || undefined,
-    hidden_category_ids: parseIdsStr(form.value.hiddenCategoryIdsStr),
-    hidden_product_ids: parseIdsStr(form.value.hiddenProductIdsStr),
   };
+  if (form.value.logo_url) payload.logo_url = form.value.logo_url;
+  if (form.value.description) payload.description = form.value.description;
+  if (form.value.contact_code) payload.contact_code = form.value.contact_code;
+  if (form.value.wechat_code) payload.wechat_code = form.value.wechat_code;
+  if (form.value.resource_file_url) payload.resource_file_url = form.value.resource_file_url;
 
   try {
     if (companyId.value) {
@@ -415,6 +506,48 @@ onLoad((options) => {
 .upload-text {
   font-size: 24rpx;
   color: #999999;
+}
+
+.resource-file-upload {
+  min-height: 120rpx;
+  padding: 24rpx;
+  background: #f8fafc;
+  border: 2rpx dashed #e2e8f0;
+  border-radius: 12rpx;
+}
+
+.resource-file-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12rpx;
+  min-height: 80rpx;
+}
+
+.resource-file-has {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+}
+
+.resource-file-icon {
+  font-size: 40rpx;
+}
+
+.resource-file-name {
+  flex: 1;
+  font-size: 28rpx;
+  color: #1e293b;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.resource-file-remove {
+  font-size: 26rpx;
+  color: #ef4444;
+  padding: 8rpx 16rpx;
 }
 
 .footer-actions {

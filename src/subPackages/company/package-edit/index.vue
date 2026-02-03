@@ -175,10 +175,10 @@
 import { ref, computed, onMounted } from 'vue';
 import { onLoad } from '@dcloudio/uni-app';
 import { companyInfo } from '@/store/userStore';
-import { getPackageDetail, createPackage, updatePackage, addPackageSku, updatePackageSku, deletePackageSku } from '@/api/admin/package';
-import { getProductList } from '@/api/admin/product';
-import { getCompanyDetail } from '@/api/admin/platform';
-import { getDefaultCompanyId } from '@/api/config/index';
+import { getPackageDetail, createPackage, updatePackage, addPackageSku, updatePackageSku, deletePackageSku } from '@/subPackages/company/api/package';
+import { getProductList } from '@/subPackages/company/api/product';
+import { getCompanyDetailCached } from '@/subPackages/company/api/platform';
+import { getDefaultCompanyIdCached } from '@/api/config/index';
 import CategoryPicker from '@/components/CategoryPicker.vue';
 import { uploadFile } from '@/api/upload';
 
@@ -212,7 +212,7 @@ const loadAllSkus = async () => {
   const currentCompanyId = companyInfo.value?.id;
   if (!currentCompanyId) return;
   try {
-    const defaultCompanyId = await getDefaultCompanyId();
+    const defaultCompanyId = await getDefaultCompanyIdCached();
     const productIds = new Set<number>();
     const products: any[] = [];
 
@@ -236,7 +236,7 @@ const loadAllSkus = async () => {
 
     let hiddenIds: number[] = [];
     try {
-      const company = await getCompanyDetail(currentCompanyId);
+      const company = await getCompanyDetailCached(currentCompanyId);
       const raw = company?.hidden_product_ids;
       hiddenIds = Array.isArray(raw) ? raw.map((id: any) => Number(id)) : [];
     } catch (_) {}

@@ -1,4 +1,9 @@
 import client from "@/config-lib/hasura-graphql-client/hasura-graphql-client";
+import {
+  defaultCompanyIdCache,
+  isDefaultCompanyIdCacheValid,
+  setDefaultCompanyIdCache,
+} from "@/store/userStore";
 
 /**
  * 获取配置值
@@ -34,47 +39,45 @@ export async function getConfig(configName: string): Promise<any> {
   }
 }
 
+/** 从 value 中解析出公司 ID */
+function parseCompanyIdFromConfigValue(value: any): number | null {
+  if (value === null || value === undefined) return null;
+  if (typeof value === "number") return value;
+  if (typeof value === "string") {
+    const parsed = parseInt(value, 10);
+    return isNaN(parsed) ? null : parsed;
+  }
+  if (typeof value === "object" && value !== null) {
+    if (typeof value.content === "number") return value.content;
+    if (typeof value.companyId === "number") return value.companyId;
+    if (typeof value.id === "number") return value.id;
+  }
+  return null;
+}
+
 /**
- * 获取默认公司ID
+ * 获取默认公司ID（带全局缓存，优先读缓存，减少重复请求）
+ * @param forceRefresh 为 true 时跳过缓存强制拉取
+ */
+export async function getDefaultCompanyIdCached(forceRefresh = false): Promise<number | null> {
+  if (!forceRefresh && isDefaultCompanyIdCacheValid() && defaultCompanyIdCache.value != null) {
+    return defaultCompanyIdCache.value;
+  }
+  const id = await getDefaultCompanyId();
+  if (id != null) setDefaultCompanyIdCache(id);
+  return id;
+}
+
+/**
+ * 获取默认公司ID（成功后会更新全局缓存，供 getDefaultCompanyIdCached 使用）
  * @returns 默认公司ID（number），如果配置不存在则返回 null
  */
 export async function getDefaultCompanyId(): Promise<number | null> {
   try {
     const value = await getConfig("default_company_id");
-    
-    if (value === null || value === undefined) {
-      return null;
-    }
-
-    // value 可能是 JSON 对象，需要提取实际的值
-    // 根据 configs 表的说明，value 是 jsonb，可能的结构：
-    // - 直接是数字: 545
-    // - 对象: { type: "number", content: 545 }
-    // - 对象: { companyId: 545 }
-    
-    if (typeof value === "number") {
-      return value;
-    }
-    
-    if (typeof value === "string") {
-      const parsed = parseInt(value, 10);
-      return isNaN(parsed) ? null : parsed;
-    }
-    
-    if (typeof value === "object" && value !== null) {
-      // 尝试从对象中提取值
-      if (typeof value.content === "number") {
-        return value.content;
-      }
-      if (typeof value.companyId === "number") {
-        return value.companyId;
-      }
-      if (typeof value.id === "number") {
-        return value.id;
-      }
-    }
-    
-    return null;
+    const id = parseCompanyIdFromConfigValue(value);
+    if (id != null) setDefaultCompanyIdCache(id);
+    return id;
   } catch (error) {
     console.error("获取默认公司ID失败:", error);
     return null;

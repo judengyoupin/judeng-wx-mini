@@ -1,4 +1,9 @@
-import { ref } from 'vue'
+import { ref, reactive } from 'vue'
+
+/** 配置/公司缓存 TTL：5 分钟 */
+const CONFIG_CACHE_TTL_MS = 5 * 60 * 1000
+/** 公司详情缓存 TTL：2 分钟 */
+const COMPANY_DETAIL_CACHE_TTL_MS = 2 * 60 * 1000
 
 // 用户信息
 export const userInfo = ref<any>({})
@@ -8,6 +13,41 @@ export const user_token = ref<string>('')
 
 // 公司信息
 export const companyInfo = ref<any>({})
+
+// 默认公司 ID 缓存（全局获取一次，定期刷新）
+export const defaultCompanyIdCache = ref<number | null>(null)
+export const defaultCompanyIdCacheTime = ref<number>(0)
+
+export function setDefaultCompanyIdCache(companyId: number | null) {
+  defaultCompanyIdCache.value = companyId
+  defaultCompanyIdCacheTime.value = Date.now()
+}
+
+export function isDefaultCompanyIdCacheValid(): boolean {
+  return defaultCompanyIdCacheTime.value > 0 && Date.now() - defaultCompanyIdCacheTime.value < CONFIG_CACHE_TTL_MS
+}
+
+// 公司详情缓存（按 companyId，用于 hidden_*_ids 等，减少重复请求）
+interface CompanyDetailCacheItem {
+  data: any
+  ts: number
+}
+export const companyDetailCache = reactive<Record<number, CompanyDetailCacheItem>>({})
+
+export function setCompanyDetailCache(companyId: number, data: any) {
+  companyDetailCache[companyId] = { data, ts: Date.now() }
+}
+
+export function getCompanyDetailFromCache(companyId: number): any | null {
+  const item = companyDetailCache[companyId]
+  if (!item || Date.now() - item.ts > COMPANY_DETAIL_CACHE_TTL_MS) return null
+  return item.data
+}
+
+export function invalidateCompanyDetailCache(companyId?: number) {
+  if (companyId != null) delete companyDetailCache[companyId]
+  else Object.keys(companyDetailCache).forEach((k) => delete companyDetailCache[Number(k)])
+}
 
 // 设置用户上下文
 export function setUserContext(info: any) {

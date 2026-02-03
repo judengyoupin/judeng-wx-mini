@@ -18,8 +18,14 @@
       </view>
     </view>
 
+    <!-- 骨架屏 -->
+    <view v-if="loading && products.length === 0" class="skeleton-area">
+      <SkeletonScreen type="list-grid-2" :count="6" />
+    </view>
+
     <!-- 商品列表 -->
     <scroll-view
+      v-else
       scroll-y
       class="scroll-content"
       @scrolltolower="loadMore"
@@ -60,12 +66,12 @@
       </view>
 
       <!-- 空状态 -->
-      <view v-else-if="!loading" class="empty-state">
+      <view v-else class="empty-state">
         <text class="empty-text">暂无商品</text>
       </view>
 
-      <!-- 加载更多 -->
-      <view v-if="loading" class="loading-more">
+      <!-- 加载更多（非首屏） -->
+      <view v-if="loading && products.length > 0" class="loading-more">
         <view class="loading-spinner"></view>
         <text>加载中...</text>
       </view>
@@ -83,6 +89,7 @@ import { getProductList } from '@/api/product/index';
 import { userInfo, user_token, companyInfo } from '@/store/userStore';
 import { getCompanyUserRole } from '@/utils/auth';
 import PageNavBar from '@/components/PageNavBar.vue';
+import SkeletonScreen from '@/components/SkeletonScreen.vue';
 
 const keyword = ref('');
 const products = ref<any[]>([]);
@@ -267,6 +274,12 @@ onLoad(async (options) => {
   font-size: 32rpx;
   color: #999;
   padding: 10rpx;
+}
+
+.skeleton-area {
+  flex: 1;
+  overflow: hidden;
+  padding: 0;
 }
 
 .scroll-content {

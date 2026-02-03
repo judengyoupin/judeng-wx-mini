@@ -1,7 +1,7 @@
 <template>
   <view class="order-list-page">
-    <!-- 统一导航栏 -->
-    <PageNavBar title="我的订单" />
+    <!-- 统一导航栏（带返回） -->
+    <PageNavBar title="我的订单" :show-back="true" @back="goBack" />
 
     <!-- 未登录 -->
     <view v-if="!user_token" class="need-login">
@@ -10,35 +10,78 @@
     </view>
 
     <template v-else>
-      <!-- 状态筛选 -->
+      <!-- 订单状态 + 支付状态筛选 -->
       <view class="header-bar">
-        <view class="filter-tabs">
-          <view
-            class="tab-item"
-            :class="{ active: currentStatus === '' }"
-            @click="currentStatus = ''"
-          >
-            全部
+        <view class="filter-row">
+          <text class="filter-label">订单状态</text>
+          <view class="filter-tabs">
+            <view
+              class="tab-item"
+              :class="{ active: orderStatusFilter === '' }"
+              @click="orderStatusFilter = ''"
+            >
+              全部
+            </view>
+            <view
+              class="tab-item"
+              :class="{ active: orderStatusFilter === 'pending' }"
+              @click="orderStatusFilter = 'pending'"
+            >
+              待确认
+            </view>
+            <view
+              class="tab-item"
+              :class="{ active: orderStatusFilter === 'confirmed' }"
+              @click="orderStatusFilter = 'confirmed'"
+            >
+              已确认
+            </view>
+            <view
+              class="tab-item"
+              :class="{ active: orderStatusFilter === 'completed' }"
+              @click="orderStatusFilter = 'completed'"
+            >
+              已完成
+            </view>
           </view>
-          <view
-            class="tab-item"
-            :class="{ active: currentStatus === 'pending' }"
-            @click="currentStatus = 'pending'"
-          >
-            待确认
-          </view>
-          <view
-            class="tab-item"
-            :class="{ active: currentStatus === 'submitted' }"
-            @click="currentStatus = 'submitted'"
-          >
-            已提交
+        </view>
+        <!-- 已完成时不展示支付状态筛选（已完成即已支付） -->
+        <view v-if="orderStatusFilter !== 'completed'" class="filter-row">
+          <text class="filter-label">支付状态</text>
+          <view class="filter-tabs">
+            <view
+              class="tab-item"
+              :class="{ active: paymentStatusFilter === '' }"
+              @click="paymentStatusFilter = ''"
+            >
+              全部
+            </view>
+            <view
+              class="tab-item"
+              :class="{ active: paymentStatusFilter === 'pending' }"
+              @click="paymentStatusFilter = 'pending'"
+            >
+              待支付
+            </view>
+            <view
+              class="tab-item"
+              :class="{ active: paymentStatusFilter === 'approved' }"
+              @click="paymentStatusFilter = 'approved'"
+            >
+              已支付
+            </view>
           </view>
         </view>
       </view>
 
+      <!-- 骨架屏（首屏加载） -->
+      <view v-if="loading && orders.length === 0" class="skeleton-area">
+        <SkeletonScreen type="list-row" :count="4" />
+      </view>
+
       <!-- 订单列表 -->
       <scroll-view
+        v-else
         scroll-y
         class="order-scroll"
         @scrolltolower="loadMore"
@@ -55,8 +98,8 @@
           <view class="order-header">
             <view class="order-info">
               <text class="order-id">订单号: {{ order.id }}</text>
-              <text class="order-status" :class="`status-${order.status}`">
-                {{ order.status === 'pending' ? '待确认' : '已提交' }}
+              <text class="order-status" :class="statusClass(order)">
+                {{ orderStatusText(order.order_status) }} / {{ paymentStatusText(order.payment_status) }}
               </text>
             </view>
             <text class="order-time">{{ formatTime(order.created_at) }}</text>
@@ -81,8 +124,8 @@
           <text class="empty-text">暂无订单</text>
         </view>
 
-        <!-- 加载中 -->
-        <view v-if="loading" class="loading-state">
+        <!-- 加载更多中 -->
+        <view v-if="loading && orders.length > 0" class="loading-state">
           <text>加载中...</text>
         </view>
         <view v-else-if="orders.length > 0 && !hasMore" class="no-more">
@@ -99,14 +142,36 @@ import { onLoad, onShow, onPullDownRefresh, onReachBottom } from '@dcloudio/uni-
 import { user_token, userInfo } from '@/store/userStore';
 import { getMyOrderList } from '@/api/order/index';
 import PageNavBar from '@/components/PageNavBar.vue';
+import SkeletonScreen from '@/components/SkeletonScreen.vue';
 
 const orders = ref<any[]>([]);
 const loading = ref(false);
 const isRefreshing = ref(false);
-const currentStatus = ref('');
+const searchKeyword = ref('');
+const orderStatusFilter = ref('');
+const paymentStatusFilter = ref('');
 const page = ref(1);
 const pageSize = 20;
 const hasMore = ref(true);
+
+function orderStatusText(s: string) {
+  if (s === 'pending') return '待确认';
+  if (s === 'confirmed') return '已确认';
+  if (s === 'completed') return '已完成';
+  return s || '--';
+}
+function paymentStatusText(s: string) {
+  if (s === 'pending') return '待支付';
+  if (s === 'approved') return '已支付';
+  return s || '--';
+}
+function statusClass(order: any) {
+  const o = order?.order_status;
+  const p = order?.payment_status;
+  if (o === 'completed' || p === 'approved') return 'status-done';
+  if (o === 'pending') return 'status-pending';
+  return 'status-confirmed';
+}
 
 function formatTime(time: string) {
   if (!time) return '';
@@ -138,7 +203,9 @@ async function loadOrders(reset = false) {
   try {
     const result = await getMyOrderList({
       userId: Number(userId),
-      status: currentStatus.value || undefined,
+      orderStatus: orderStatusFilter.value || undefined,
+      paymentStatus: paymentStatusFilter.value || undefined,
+      keyword: searchKeyword.value.trim() || undefined,
       limit: pageSize,
       offset: (page.value - 1) * pageSize,
     });
@@ -164,6 +231,10 @@ async function loadOrders(reset = false) {
   }
 }
 
+function goBack() {
+  uni.navigateBack();
+}
+
 function goToLogin() {
   uni.navigateTo({ url: '/pages/login/index' });
 }
@@ -182,7 +253,15 @@ function onRefresh() {
   loadOrders(true);
 }
 
-watch(currentStatus, () => {
+function onSearch() {
+  loadOrders(true);
+}
+
+watch(orderStatusFilter, (v) => {
+  if (v === 'completed') paymentStatusFilter.value = '';
+  loadOrders(true);
+});
+watch(paymentStatusFilter, () => {
   loadOrders(true);
 });
 
@@ -246,6 +325,42 @@ onReachBottom(() => {
   flex-shrink: 0;
 }
 
+.search-row {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  margin-bottom: 20rpx;
+}
+.search-input {
+  flex: 1;
+  height: 64rpx;
+  padding: 0 24rpx;
+  font-size: 28rpx;
+  background: #f5f5f5;
+  border-radius: 32rpx;
+}
+.search-placeholder {
+  color: #999;
+}
+.search-btn {
+  flex-shrink: 0;
+  height: 64rpx;
+  padding: 0 28rpx;
+  line-height: 64rpx;
+  font-size: 28rpx;
+  color: #fff;
+  background: #667eea;
+  border-radius: 32rpx;
+  border: none;
+}
+.search-btn::after {
+  border: none;
+}
+
+.filter-tabs {
+  flex-wrap: wrap;
+}
+
 .filter-tabs {
   display: flex;
   gap: 20rpx;
@@ -261,6 +376,11 @@ onReachBottom(() => {
 .tab-item.active {
   background: #667eea;
   color: #fff;
+}
+
+.skeleton-area {
+  flex: 1;
+  min-height: 400rpx;
 }
 
 .order-scroll {
@@ -311,9 +431,27 @@ onReachBottom(() => {
   color: #fa8c16;
 }
 
-.status-submitted {
+.status-confirmed {
+  background: #e6f7ff;
+  color: #1890ff;
+}
+
+.status-done {
   background: #f6ffed;
   color: #52c41a;
+}
+
+.filter-row {
+  margin-bottom: 16rpx;
+}
+.filter-row:last-child {
+  margin-bottom: 0;
+}
+.filter-label {
+  font-size: 24rpx;
+  color: #999;
+  margin-bottom: 8rpx;
+  display: block;
 }
 
 .order-time {

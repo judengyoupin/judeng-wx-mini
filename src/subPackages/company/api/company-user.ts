@@ -9,21 +9,26 @@ export interface CompanyUserInput {
 }
 
 /**
- * 获取公司用户列表
+ * 获取公司用户列表，支持按角色筛选
  */
 export async function getCompanyUserList(params: {
   companyId: number;
   limit?: number;
   offset?: number;
+  role?: 'admin' | 'user';
 }) {
+  const role = params.role === 'admin' || params.role === 'user' ? params.role : undefined;
+  const hasRole = !!role;
+  const whereBody = hasRole
+    ? `{ _and: [ { company_companies: { _eq: $companyId } }, { role: { _eq: $role } } ] }`
+    : '{ company_companies: { _eq: $companyId } }';
+  const varDecls = ['$companyId: bigint!', '$limit: Int', '$offset: Int'];
+  if (hasRole) varDecls.push('$role: String!');
+
   const query = `
-    query GetCompanyUserList(
-      $companyId: bigint!
-      $limit: Int
-      $offset: Int
-    ) {
+    query GetCompanyUserList(${varDecls.join(', ')}) {
       company_users(
-        where: { company_companies: { _eq: $companyId } }
+        where: ${whereBody}
         limit: $limit
         offset: $offset
         order_by: { created_at: desc }
@@ -40,9 +45,7 @@ export async function getCompanyUserList(params: {
           avatar_url
         }
       }
-      company_users_aggregate(
-        where: { company_companies: { _eq: $companyId } }
-      ) {
+      company_users_aggregate(where: ${whereBody}) {
         aggregate {
           count
         }
@@ -50,13 +53,16 @@ export async function getCompanyUserList(params: {
     }
   `;
 
+  const variables: any = {
+    companyId: params.companyId,
+    limit: params.limit || 20,
+    offset: params.offset || 0,
+  };
+  if (hasRole) variables.role = role;
+
   const result = await client.execute({
     query,
-    variables: {
-      companyId: params.companyId,
-      limit: params.limit || 20,
-      offset: params.offset || 0,
-    },
+    variables,
   });
 
   return {

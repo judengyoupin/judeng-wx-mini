@@ -143,19 +143,14 @@
       </view>
     </view>
 
-    <!-- 中央加载指示器 -->
-    <view v-if="loading" class="center-loading">
-      <view class="center-loading-icon"></view>
-      <text class="center-loading-text">加载中...</text>
-    </view>
   </view>
 </template>
 
 <script lang="ts">
 import { defineComponent } from "vue";
-import { ref, onMounted } from "vue";
+import { ref } from "vue";
 import { getCategoryTree } from "@/api/category/index";
-import { getTopBanners, getBottomBanners } from "@/api/banner/index";
+import { getBanners } from "@/api/banner/index";
 import { userInfo, user_token, companyInfo } from "@/store/userStore";
 import { onLoad, onShow, onShareAppMessage } from "@dcloudio/uni-app";
 import type { BannerArray } from "@/types/companies";
@@ -217,39 +212,22 @@ export default defineComponent({
       }
     };
 
-    // 获取顶部轮播图
-    const fetchTopBanners = async () => {
+    // 一次请求获取顶部+底部轮播图
+    const fetchBanners = async () => {
       try {
-        const res = await getTopBanners(companyInfo?.value?.id || null);
+        const res = await getBanners(companyInfo?.value?.id || null);
         if (res && res.code === 0 && res.data) {
-          // 对轮播图进行排序
-          const sortedBanners = [...res.data].sort((a, b) => {
-            const sortA = typeof a === "object" ? a.sort ?? 999 : 999;
-            const sortB = typeof b === "object" ? b.sort ?? 999 : 999;
-            return sortA - sortB;
-          });
-          topBanners.value = sortedBanners;
+          const sortBanners = (arr: any[]) =>
+            [...arr].sort((a, b) => {
+              const sortA = typeof a === "object" ? a.sort ?? 999 : 999;
+              const sortB = typeof b === "object" ? b.sort ?? 999 : 999;
+              return sortA - sortB;
+            });
+          topBanners.value = sortBanners(res.data.top);
+          bottomBanners.value = sortBanners(res.data.bottom);
         }
       } catch (error) {
-        console.error("获取顶部轮播图失败:", error);
-      }
-    };
-
-    // 获取底部轮播图
-    const fetchBottomBanners = async () => {
-      try {
-        const res = await getBottomBanners(companyInfo?.value?.id || null);
-        if (res && res.code === 0 && res.data) {
-          // 对轮播图进行排序
-          const sortedBanners = [...res.data].sort((a, b) => {
-            const sortA = typeof a === "object" ? a.sort ?? 999 : 999;
-            const sortB = typeof b === "object" ? b.sort ?? 999 : 999;
-            return sortA - sortB;
-          });
-          bottomBanners.value = sortedBanners;
-        }
-      } catch (error) {
-        console.error("获取底部轮播图失败:", error);
+        console.error("获取轮播图失败:", error);
       }
     };
 
@@ -437,8 +415,7 @@ export default defineComponent({
         import("@/api/company/index").then(({ syncCompanyInfo }) => {
           syncCompanyInfo(options.companyId).then(() => {
             fetchCategories();
-            fetchTopBanners();
-            fetchBottomBanners();
+            fetchBanners();
           }).catch((err) => {
             console.error("同步公司信息失败:", err);
           });
@@ -446,26 +423,12 @@ export default defineComponent({
       }
     });
 
-    // 修改 onMounted 逻辑
-    onMounted(async () => {
-      // 等待一下确保 companyInfo 已初始化
-      await new Promise((resolve) => setTimeout(resolve, 100));
-      
-      await Promise.all([
-        fetchCategories(),
-        fetchTopBanners(),
-        fetchBottomBanners(),
-      ]);
-    });
-
-    // 页面显示时刷新数据
+    // 仅 onShow 拉数，避免与 onLoad/onMounted 重复请求
     onShow(async () => {
-      // 等待一下确保 companyInfo 已初始化
       await new Promise((resolve) => setTimeout(resolve, 100));
       await Promise.all([
         fetchCategories(),
-        fetchTopBanners(),
-        fetchBottomBanners(),
+        fetchBanners(),
       ]);
     });
 
@@ -697,43 +660,4 @@ export default defineComponent({
   }
 }
 
-/* 中央加载指示器 */
-.center-loading {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background-color: rgba(0, 0, 0, 0.6);
-  padding: 30rpx;
-  border-radius: 10rpx;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  z-index: 999;
-}
-
-.center-loading-icon {
-  width: 60rpx;
-  height: 60rpx;
-  border: 3rpx solid rgba(255, 255, 255, 0.3);
-  border-top: 3rpx solid #ffffff;
-  border-radius: 50%;
-  animation: loading-rotate 1s linear infinite;
-  margin-bottom: 15rpx;
-}
-
-.center-loading-text {
-  color: #ffffff;
-  font-size: 28rpx;
-}
-
-@keyframes loading-rotate {
-  0% {
-    transform: rotate(0deg);
-  }
-
-  100% {
-    transform: rotate(360deg);
-  }
-}
 </style>

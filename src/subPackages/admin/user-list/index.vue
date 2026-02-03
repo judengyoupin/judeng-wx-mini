@@ -1,17 +1,42 @@
 <template>
   <view class="user-list-page">
-    <!-- 顶部操作栏 -->
+    <!-- 顶部：搜索 + 角色筛选 + 数量 -->
     <view class="header-bar">
       <view class="search-box">
         <input 
           class="search-input" 
           v-model="keyword" 
           placeholder="搜索手机号或昵称"
-          @input="onSearchInput"
           confirm-type="search"
           @confirm="handleSearch"
         />
         <text v-if="keyword" class="clear-btn" @click="clearSearch">×</text>
+      </view>
+      <view class="filter-row">
+        <view
+          class="filter-tab"
+          :class="{ active: roleFilter === '' }"
+          @click="setRoleFilter('')"
+        >
+          全部
+        </view>
+        <view
+          class="filter-tab"
+          :class="{ active: roleFilter === 'user' }"
+          @click="setRoleFilter('user')"
+        >
+          普通用户
+        </view>
+        <view
+          class="filter-tab"
+          :class="{ active: roleFilter === 'admin' }"
+          @click="setRoleFilter('admin')"
+        >
+          管理员
+        </view>
+      </view>
+      <view class="count-row">
+        <text class="count-text">{{ countText }}</text>
       </view>
     </view>
 
@@ -104,16 +129,22 @@
 
           <view class="form-item">
             <view class="form-label">用户角色</view>
-            <picker 
-              mode="selector" 
-              :range="userRoles" 
-              :value="selectedRoleIndex"
-              @change="onRoleChange"
-            >
-              <view class="form-picker">
-                {{ userRoles[selectedRoleIndex] }}
+            <view class="role-options">
+              <view
+                class="role-option"
+                :class="{ active: selectedRoleIndex === 0 }"
+                @click="selectedRoleIndex = 0"
+              >
+                普通用户
               </view>
-            </picker>
+              <view
+                class="role-option"
+                :class="{ active: selectedRoleIndex === 1 }"
+                @click="selectedRoleIndex = 1"
+              >
+                管理员
+              </view>
+            </view>
           </view>
         </view>
         <view class="modal-footer">
@@ -126,9 +157,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { onPullDownRefresh, onReachBottom, onShow } from '@dcloudio/uni-app';
-import { getUserList, updateUserRole } from '@/api/admin/user';
+import { getUserList, updateUserRole } from '@/subPackages/admin/api/user';
 
 const users = ref<any[]>([]);
 const loading = ref(false);
@@ -137,6 +168,16 @@ const page = ref(1);
 const pageSize = 20;
 const hasMore = ref(true);
 const keyword = ref('');
+const roleFilter = ref<'' | 'user' | 'admin'>('');
+const totalCount = ref(0);
+
+// 当前筛选下的用户数量文案
+const countText = computed(() => {
+  const n = totalCount.value;
+  if (roleFilter.value === 'user') return `普通用户 共 ${n} 人`;
+  if (roleFilter.value === 'admin') return `管理员 共 ${n} 人`;
+  return `共 ${n} 人`;
+});
 
 // 弹窗相关
 const showEditModal = ref(false);
@@ -162,7 +203,8 @@ const loadUsers = async (reset = false) => {
     const result = await getUserList({
       limit: pageSize,
       offset: (page.value - 1) * pageSize,
-      keyword: keyword.value || undefined,
+      keyword: keyword.value?.trim() || undefined,
+      role: roleFilter.value || undefined,
     });
 
     if (reset) {
@@ -170,6 +212,7 @@ const loadUsers = async (reset = false) => {
     }
 
     users.value = [...users.value, ...(result.users || [])];
+    totalCount.value = result.total ?? 0;
 
     if (result.total <= users.value.length) {
       hasMore.value = false;
@@ -188,9 +231,10 @@ const loadUsers = async (reset = false) => {
   }
 };
 
-// 搜索输入
-const onSearchInput = () => {
-  // 可以添加防抖逻辑
+// 角色筛选
+const setRoleFilter = (role: '' | 'user' | 'admin') => {
+  roleFilter.value = role;
+  loadUsers(true);
 };
 
 // 搜索
@@ -222,12 +266,6 @@ const editUser = (user: any) => {
   editingUser.value = user;
   selectedRoleIndex.value = user.role === 'admin' ? 1 : 0;
   showEditModal.value = true;
-};
-
-// 角色选择（小程序 picker 的 detail.value 可能是字符串，需转为数字）
-const onRoleChange = (e: any) => {
-  const v = e.detail.value;
-  selectedRoleIndex.value = typeof v === 'number' ? v : Number(v) || 0;
 };
 
 // 保存用户
@@ -295,6 +333,34 @@ onShow(() => {
   background: #ffffff;
   padding: 20rpx 30rpx;
   border-bottom: 1rpx solid #e0e0e0;
+}
+
+.filter-row {
+  display: flex;
+  gap: 20rpx;
+  margin-top: 20rpx;
+}
+
+.filter-tab {
+  padding: 12rpx 24rpx;
+  font-size: 26rpx;
+  color: #666666;
+  background: #f1f5f9;
+  border-radius: 8rpx;
+}
+
+.filter-tab.active {
+  background: #667eea;
+  color: #ffffff;
+}
+
+.count-row {
+  margin-top: 16rpx;
+}
+
+.count-text {
+  font-size: 26rpx;
+  color: #6b7280;
 }
 
 .search-box {
@@ -541,12 +607,26 @@ onShow(() => {
   color: #999999;
 }
 
-.form-picker {
-  padding: 20rpx;
-  background: #f8f8f8;
-  border-radius: 8rpx;
+.role-options {
+  display: flex;
+  gap: 20rpx;
+}
+
+.role-option {
+  flex: 1;
+  padding: 24rpx;
+  text-align: center;
   font-size: 28rpx;
-  color: #333333;
+  color: #666666;
+  background: #f1f5f9;
+  border-radius: 12rpx;
+  transition: all 0.2s;
+}
+
+.role-option.active {
+  background: #667eea;
+  color: #ffffff;
+  font-weight: 500;
 }
 
 .modal-footer {

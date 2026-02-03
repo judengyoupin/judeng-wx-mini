@@ -2,8 +2,21 @@
 import { onLaunch, onShow, onHide } from "@dcloudio/uni-app";
 import { syncCompanyInfo } from "@/api/company/index";
 import { getDefaultCompanyId } from "@/api/config/index";
-import { companyInfo, restoreUserFromStorage, user_token } from "@/store/userStore";
+import {
+  companyInfo,
+  restoreUserFromStorage,
+  user_token,
+  setDefaultCompanyIdCache,
+} from "@/store/userStore";
 import { getUserManagedCompanyId } from "@/utils/company";
+
+/** 定期刷新：重新拉取默认公司 ID 并更新缓存 */
+async function refreshDefaultCompanyIdCache() {
+  try {
+    const id = await getDefaultCompanyId();
+    setDefaultCompanyIdCache(id);
+  } catch (_) {}
+}
 
 onLaunch(async (options) => {
   console.log("App Launch", options);
@@ -38,23 +51,22 @@ onLaunch(async (options) => {
   // 5. 确定最终使用的公司ID：优先使用存储的公司ID，如果没有则使用默认值
   let finalCompanyId: number | null = null;
   if (storageCompanyId) {
-    // 优先使用本地存储的公司ID（记住上次进入的公司）
     finalCompanyId = Number(storageCompanyId);
     console.log("使用本地存储的公司ID:", finalCompanyId);
+    // 同时把配置里的默认公司 ID 拉取并缓存（供各页 getDefaultCompanyIdCached 使用）
+    await refreshDefaultCompanyIdCache();
   } else {
-    // 如果没有存储的公司ID，则从配置表获取默认值
     const configCompanyId = await getDefaultCompanyId();
     if (configCompanyId) {
       finalCompanyId = configCompanyId;
-      // 将配置的默认值保存到存储中（首次使用时）
       uni.setStorageSync("companyId", configCompanyId);
+      setDefaultCompanyIdCache(configCompanyId);
       console.log("使用配置的默认公司ID:", finalCompanyId);
     } else {
       console.warn("未找到默认公司ID配置，无法初始化公司信息");
     }
   }
 
-  // 如果没有有效的公司ID，不进行同步
   if (!finalCompanyId) {
     console.warn("无法确定公司ID，跳过公司信息同步");
     return;
@@ -71,6 +83,8 @@ onLaunch(async (options) => {
 
 onShow(() => {
   console.log("App Show");
+  // 定期重新获取默认公司 ID 缓存（避免配置在后台被改后长期不更新）
+  refreshDefaultCompanyIdCache();
 });
 
 onHide(() => {

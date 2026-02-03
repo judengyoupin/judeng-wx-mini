@@ -1,6 +1,6 @@
 import client from '@/config-lib/hasura-graphql-client/hasura-graphql-client';
 import { companyInfo } from '@/store/userStore';
-import { getDefaultCompanyId } from '@/api/config/index';
+import { getDefaultCompanyIdCached } from '@/api/config/index';
 
 /**
  * 获取商品详情（前端展示）
@@ -60,8 +60,8 @@ export async function getProductList(params: {
 }) {
   const currentCompanyId = params.companyId || companyInfo.value?.id;
   
-  // 获取默认公司ID
-  const defaultCompanyId = await getDefaultCompanyId();
+  // 获取默认公司ID（优先读缓存）
+  const defaultCompanyId = await getDefaultCompanyIdCached();
   
   // 确定要查询的公司ID列表（去重）
   const companyIds: number[] = [];

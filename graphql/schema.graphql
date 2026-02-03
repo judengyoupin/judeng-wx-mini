@@ -5143,6 +5143,10 @@ type order_items {
   created_at: timestamptz!
   id: bigint!
 
+  """An object relationship"""
+  order: orders!
+  order_orders: bigint!
+
   """商品图片快照"""
   product_image_url: String
 
@@ -5232,6 +5236,7 @@ input order_items_arr_rel_insert_input {
 """aggregate avg on columns"""
 type order_items_avg_fields {
   id: Float
+  order_orders: Float
 
   """单价，记录product_sku的价格，防止价格变动"""
   product_price: Float
@@ -5248,6 +5253,7 @@ order by avg() on columns of table "order_items"
 """
 input order_items_avg_order_by {
   id: order_by
+  order_orders: order_by
 
   """单价，记录product_sku的价格，防止价格变动"""
   product_price: order_by
@@ -5268,6 +5274,8 @@ input order_items_bool_exp {
   _or: [order_items_bool_exp!]
   created_at: timestamptz_comparison_exp
   id: bigint_comparison_exp
+  order: orders_bool_exp
+  order_orders: bigint_comparison_exp
   product_image_url: String_comparison_exp
   product_name: String_comparison_exp
   product_price: numeric_comparison_exp
@@ -5283,6 +5291,11 @@ unique or primary key constraints on table "order_items"
 """
 enum order_items_constraint {
   """
+  unique or primary key constraint on columns "product_sku_product_skus", "order_orders"
+  """
+  order_items_order_orders_product_sku_product_skus_key
+
+  """
   unique or primary key constraint on columns "id"
   """
   order_items_pkey
@@ -5293,6 +5306,7 @@ input type for incrementing numeric columns in table "order_items"
 """
 input order_items_inc_input {
   id: bigint
+  order_orders: bigint
 
   """单价，记录product_sku的价格，防止价格变动"""
   product_price: numeric
@@ -5310,6 +5324,8 @@ input type for inserting data into table "order_items"
 input order_items_insert_input {
   created_at: timestamptz
   id: bigint
+  order: orders_obj_rel_insert_input
+  order_orders: bigint
 
   """商品图片快照"""
   product_image_url: String
@@ -5336,6 +5352,7 @@ input order_items_insert_input {
 type order_items_max_fields {
   created_at: timestamptz
   id: bigint
+  order_orders: bigint
 
   """商品图片快照"""
   product_image_url: String
@@ -5363,6 +5380,7 @@ order by max() on columns of table "order_items"
 input order_items_max_order_by {
   created_at: order_by
   id: order_by
+  order_orders: order_by
 
   """商品图片快照"""
   product_image_url: order_by
@@ -5388,6 +5406,7 @@ input order_items_max_order_by {
 type order_items_min_fields {
   created_at: timestamptz
   id: bigint
+  order_orders: bigint
 
   """商品图片快照"""
   product_image_url: String
@@ -5415,6 +5434,7 @@ order by min() on columns of table "order_items"
 input order_items_min_order_by {
   created_at: order_by
   id: order_by
+  order_orders: order_by
 
   """商品图片快照"""
   product_image_url: order_by
@@ -5460,6 +5480,8 @@ input order_items_on_conflict {
 input order_items_order_by {
   created_at: order_by
   id: order_by
+  order: orders_order_by
+  order_orders: order_by
   product_image_url: order_by
   product_name: order_by
   product_price: order_by
@@ -5484,6 +5506,9 @@ enum order_items_select_column {
 
   """column name"""
   id
+
+  """column name"""
+  order_orders
 
   """column name"""
   product_image_url
@@ -5513,6 +5538,7 @@ input type for updating data in table "order_items"
 input order_items_set_input {
   created_at: timestamptz
   id: bigint
+  order_orders: bigint
 
   """商品图片快照"""
   product_image_url: String
@@ -5537,6 +5563,7 @@ input order_items_set_input {
 """aggregate stddev on columns"""
 type order_items_stddev_fields {
   id: Float
+  order_orders: Float
 
   """单价，记录product_sku的价格，防止价格变动"""
   product_price: Float
@@ -5553,6 +5580,7 @@ order by stddev() on columns of table "order_items"
 """
 input order_items_stddev_order_by {
   id: order_by
+  order_orders: order_by
 
   """单价，记录product_sku的价格，防止价格变动"""
   product_price: order_by
@@ -5567,6 +5595,7 @@ input order_items_stddev_order_by {
 """aggregate stddev_pop on columns"""
 type order_items_stddev_pop_fields {
   id: Float
+  order_orders: Float
 
   """单价，记录product_sku的价格，防止价格变动"""
   product_price: Float
@@ -5583,6 +5612,7 @@ order by stddev_pop() on columns of table "order_items"
 """
 input order_items_stddev_pop_order_by {
   id: order_by
+  order_orders: order_by
 
   """单价，记录product_sku的价格，防止价格变动"""
   product_price: order_by
@@ -5597,6 +5627,7 @@ input order_items_stddev_pop_order_by {
 """aggregate stddev_samp on columns"""
 type order_items_stddev_samp_fields {
   id: Float
+  order_orders: Float
 
   """单价，记录product_sku的价格，防止价格变动"""
   product_price: Float
@@ -5613,6 +5644,7 @@ order by stddev_samp() on columns of table "order_items"
 """
 input order_items_stddev_samp_order_by {
   id: order_by
+  order_orders: order_by
 
   """单价，记录product_sku的价格，防止价格变动"""
   product_price: order_by
@@ -5639,6 +5671,7 @@ input order_items_stream_cursor_input {
 input order_items_stream_cursor_value_input {
   created_at: timestamptz
   id: bigint
+  order_orders: bigint
 
   """商品图片快照"""
   product_image_url: String
@@ -5663,6 +5696,7 @@ input order_items_stream_cursor_value_input {
 """aggregate sum on columns"""
 type order_items_sum_fields {
   id: bigint
+  order_orders: bigint
 
   """单价，记录product_sku的价格，防止价格变动"""
   product_price: numeric
@@ -5679,6 +5713,7 @@ order by sum() on columns of table "order_items"
 """
 input order_items_sum_order_by {
   id: order_by
+  order_orders: order_by
 
   """单价，记录product_sku的价格，防止价格变动"""
   product_price: order_by
@@ -5699,6 +5734,9 @@ enum order_items_update_column {
 
   """column name"""
   id
+
+  """column name"""
+  order_orders
 
   """column name"""
   product_image_url
@@ -5736,6 +5774,7 @@ input order_items_updates {
 """aggregate var_pop on columns"""
 type order_items_var_pop_fields {
   id: Float
+  order_orders: Float
 
   """单价，记录product_sku的价格，防止价格变动"""
   product_price: Float
@@ -5752,6 +5791,7 @@ order by var_pop() on columns of table "order_items"
 """
 input order_items_var_pop_order_by {
   id: order_by
+  order_orders: order_by
 
   """单价，记录product_sku的价格，防止价格变动"""
   product_price: order_by
@@ -5766,6 +5806,7 @@ input order_items_var_pop_order_by {
 """aggregate var_samp on columns"""
 type order_items_var_samp_fields {
   id: Float
+  order_orders: Float
 
   """单价，记录product_sku的价格，防止价格变动"""
   product_price: Float
@@ -5782,6 +5823,7 @@ order by var_samp() on columns of table "order_items"
 """
 input order_items_var_samp_order_by {
   id: order_by
+  order_orders: order_by
 
   """单价，记录product_sku的价格，防止价格变动"""
   product_price: order_by
@@ -5796,6 +5838,7 @@ input order_items_var_samp_order_by {
 """aggregate variance on columns"""
 type order_items_variance_fields {
   id: Float
+  order_orders: Float
 
   """单价，记录product_sku的价格，防止价格变动"""
   product_price: Float
@@ -5812,6 +5855,7 @@ order by variance() on columns of table "order_items"
 """
 input order_items_variance_order_by {
   id: order_by
+  order_orders: order_by
 
   """单价，记录product_sku的价格，防止价格变动"""
   product_price: order_by
@@ -5838,6 +5882,42 @@ type orders {
 
   """是否删除"""
   is_deleted: Boolean!
+
+  """An array relationship"""
+  order_items(
+    """distinct select on columns"""
+    distinct_on: [order_items_select_column!]
+
+    """limit the number of rows returned"""
+    limit: Int
+
+    """skip the first n rows. Use only with order_by"""
+    offset: Int
+
+    """sort the rows by one or more columns"""
+    order_by: [order_items_order_by!]
+
+    """filter the rows returned"""
+    where: order_items_bool_exp
+  ): [order_items!]!
+
+  """An aggregate relationship"""
+  order_items_aggregate(
+    """distinct select on columns"""
+    distinct_on: [order_items_select_column!]
+
+    """limit the number of rows returned"""
+    limit: Int
+
+    """skip the first n rows. Use only with order_by"""
+    offset: Int
+
+    """sort the rows by one or more columns"""
+    order_by: [order_items_order_by!]
+
+    """filter the rows returned"""
+    where: order_items_bool_exp
+  ): order_items_aggregate!
 
   """
   -- 状态值： -- pending: 等待确认（用户提交了订单，管理员没有确认，用户可能已经付款了，也可能没有） -- confirmed: 已确认（管理员完成确认了订单可以发货，此时会锁库存，但用户不一定付款了）-- completed: 已完成（订单完成结束，对应的payment_status是approved）
@@ -6025,6 +6105,8 @@ input orders_bool_exp {
   created_at: timestamptz_comparison_exp
   id: bigint_comparison_exp
   is_deleted: Boolean_comparison_exp
+  order_items: order_items_bool_exp
+  order_items_aggregate: order_items_aggregate_bool_exp
   order_status: String_comparison_exp
   payment_status: String_comparison_exp
   price_factor: numeric_comparison_exp
@@ -6091,6 +6173,7 @@ input orders_insert_input {
 
   """是否删除"""
   is_deleted: Boolean
+  order_items: order_items_arr_rel_insert_input
 
   """
   -- 状态值： -- pending: 等待确认（用户提交了订单，管理员没有确认，用户可能已经付款了，也可能没有） -- confirmed: 已确认（管理员完成确认了订单可以发货，此时会锁库存，但用户不一定付款了）-- completed: 已完成（订单完成结束，对应的payment_status是approved）
@@ -6374,6 +6457,16 @@ type orders_mutation_response {
 }
 
 """
+input type for inserting object relation for remote table "orders"
+"""
+input orders_obj_rel_insert_input {
+  data: orders_insert_input!
+
+  """upsert condition"""
+  on_conflict: orders_on_conflict
+}
+
+"""
 on_conflict condition type for table "orders"
 """
 input orders_on_conflict {
@@ -6390,6 +6483,7 @@ input orders_order_by {
   created_at: order_by
   id: order_by
   is_deleted: order_by
+  order_items_aggregate: order_items_aggregate_order_by
   order_status: order_by
   payment_status: order_by
   price_factor: order_by

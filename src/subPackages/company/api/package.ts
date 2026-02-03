@@ -18,6 +18,79 @@ export interface PackageProductSkuInput {
   quantity: number;
 }
 
+const PACKAGE_LIST_FIELDS = `
+  id
+  name
+  cover_image_url
+  description
+  category_categories
+  is_shelved
+  category {
+    id
+    name
+    category {
+      id
+      name
+      category { id name }
+    }
+  }
+  created_at
+  updated_at
+  package_product_skus {
+    id
+    quantity
+    product_sku {
+      id
+      name
+      price
+      product { name }
+    }
+  }
+`;
+
+/**
+ * 一次请求获取公司 hidden_package_ids + 套餐列表（合并请求，减少往返）
+ */
+export async function getPackageListWithCompanyHidden(params: {
+  companyId: number;
+  limit?: number;
+  offset?: number;
+}) {
+  const limit = params.limit ?? 20;
+  const offset = params.offset ?? 0;
+  const query = `
+    query GetPackageListWithCompany($companyId: bigint!, $limit: Int!, $offset: Int!) {
+      company: companies_by_pk(id: $companyId) { hidden_package_ids }
+      packages(
+        where: { company_companies: { _eq: $companyId } }
+        limit: $limit
+        offset: $offset
+        order_by: { created_at: desc }
+      ) {
+        ${PACKAGE_LIST_FIELDS}
+      }
+      packages_aggregate(where: { company_companies: { _eq: $companyId } }) {
+        aggregate { count }
+      }
+    }
+  `;
+  const result = await client.execute<{
+    company: { hidden_package_ids: (string | number)[] | null } | null;
+    packages: any[];
+    packages_aggregate: { aggregate: { count: number } };
+  }>({
+    query,
+    variables: { companyId: params.companyId, limit, offset },
+  });
+  const hidden = result?.company?.hidden_package_ids;
+  const hiddenPackageIds = Array.isArray(hidden) ? hidden.map((id) => Number(id)) : [];
+  return {
+    hiddenPackageIds,
+    packages: result?.packages ?? [],
+    total: result?.packages_aggregate?.aggregate?.count ?? 0,
+  };
+}
+
 /**
  * 获取套餐列表（可选按公司筛选）
  */

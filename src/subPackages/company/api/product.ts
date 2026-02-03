@@ -22,6 +22,93 @@ export interface ProductSkuInput {
   is_shelved?: boolean;
 }
 
+/** 一次请求返回公司 hidden_product_ids + 商品列表（用于商品列表页合并请求） */
+const PRODUCT_LIST_FIELDS = `
+  id
+  name
+  cover_image_url
+  description
+  tags
+  detail_medias
+  scene_medias
+  category_categories
+  is_shelved
+  created_at
+  updated_at
+  category {
+    id
+    name
+    category {
+      id
+      name
+      category { id name }
+    }
+  }
+  product_skus(where: { is_deleted: { _eq: false } }) {
+    id
+    name
+    image_url
+    price
+    stock
+    is_shelved
+  }
+`;
+
+/**
+ * 一次请求获取公司 hidden_product_ids + 商品列表（合并请求，减少往返）
+ */
+export async function getProductListWithCompanyHidden(params: {
+  companyId: number;
+  limit?: number;
+  offset?: number;
+}) {
+  const limit = params.limit ?? 20;
+  const offset = params.offset ?? 0;
+  const query = `
+    query GetProductListWithCompany($companyId: bigint!, $limit: Int!, $offset: Int!) {
+      company: companies_by_pk(id: $companyId) { hidden_product_ids }
+      products(
+        where: {
+          _and: [
+            { company_companies: { _eq: $companyId } }
+            { is_deleted: { _eq: false } }
+          ]
+        }
+        limit: $limit
+        offset: $offset
+        order_by: { created_at: desc }
+      ) {
+        ${PRODUCT_LIST_FIELDS}
+      }
+      products_aggregate(
+        where: {
+          _and: [
+            { company_companies: { _eq: $companyId } }
+            { is_deleted: { _eq: false } }
+          ]
+        }
+      ) {
+        aggregate { count }
+      }
+    }
+  `;
+  const result = await client.execute<{
+    company: { hidden_product_ids: (string | number)[] | null } | null;
+    products: any[];
+    products_aggregate: { aggregate: { count: number } };
+  }>({
+    query,
+    variables: { companyId: params.companyId, limit, offset },
+  });
+  const hidden = result?.company?.hidden_product_ids;
+  const hiddenProductIds = Array.isArray(hidden) ? hidden.map((id) => Number(id)) : [];
+  return {
+    hiddenProductIds,
+    products: result?.products ?? [],
+    total: result?.products_aggregate?.aggregate?.count ?? 0,
+  };
+}
+
 /**
  * 获取商品列表
  */
@@ -88,6 +175,7 @@ export async function getProductList(params: {
           ) {
             id
             name
+            image_url
             price
             stock
             is_shelved
@@ -150,6 +238,7 @@ export async function getProductList(params: {
           ) {
             id
             name
+            image_url
             price
             stock
             is_shelved

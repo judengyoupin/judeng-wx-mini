@@ -50,7 +50,8 @@
           </view>
         </view>
       </view>
-      <button class="add-btn" @click="goToAddCategory">+ 添加分类</button>
+      <button v-if="!isViewOnly" class="add-btn" @click="goToAddCategory">+ 添加</button>
+      <text v-else class="view-only-tip">仅查看，不可操作</text>
     </view>
 
     <!-- 分类树：按层级逐层展开 -->
@@ -96,7 +97,7 @@
               <text v-if="isFromDefaultCompany(item.node) && isCategoryHidden(item.node)" class="row-tag-hidden">已隐藏</text>
             </view>
           </view>
-          <view class="row-actions" @click.stop>
+          <view v-if="!isViewOnly" class="row-actions" @click.stop>
             <template v-if="isFromDefaultCompany(item.node)">
               <view v-if="isCategoryHidden(item.node)" class="action-btn unhide" @click="handleUnhideCategory(item.node)">取消隐藏</view>
               <view v-else class="action-btn hide" @click="handleHideCategory(item.node)">隐藏</view>
@@ -113,8 +114,8 @@
       <view v-if="flatList.length === 0 && !loading" class="empty-state">
         <text class="empty-icon">📁</text>
         <text class="empty-text">暂无分类</text>
-        <text class="empty-hint">点击右上角添加分类</text>
-        <button class="empty-btn" @click="goToAddCategory">添加分类</button>
+        <text class="empty-hint">{{ isViewOnly ? '当前为查看模式' : '点击右上角添加分类' }}</text>
+        <button v-if="!isViewOnly" class="empty-btn" @click="goToAddCategory">添加分类</button>
       </view>
 
       <!-- 加载中 -->
@@ -128,11 +129,17 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue';
-import { onPullDownRefresh, onShow } from '@dcloudio/uni-app';
+import { onLoad, onPullDownRefresh, onShow } from '@dcloudio/uni-app';
 import { companyInfo } from '@/store/userStore';
-import { getCategoryTree, deleteCategory } from '@/api/admin/category';
-import { getDefaultCompanyId } from '@/api/config/index';
-import { getCompanyDetail, updateCompany } from '@/api/admin/platform';
+import { getCategoryTree, deleteCategory } from '@/api/category-management';
+import { getDefaultCompanyIdCached } from '@/api/config/index';
+import { getCompanyDetailCached, updateCompany } from '@/subPackages/company/api/platform';
+
+/** 超级管理员从公司列表点进来时传入的 companyId（查看指定公司的分类，仅查看不可操作） */
+const viewCompanyId = ref<number | null>(null);
+const effectiveCompanyId = () => viewCompanyId.value ?? companyInfo.value?.id ?? null;
+/** 是否为核查入口进入的仅查看模式 */
+const isViewOnly = computed(() => !!viewCompanyId.value);
 
 const categories = ref<any[]>([]);
 const allCategories = ref<any[]>([]);
@@ -154,7 +161,7 @@ function tagTree(nodes: any[], companyId: number): any[] {
 
 /** 是否来自系统配置公司（且当前不是自己公司） */
 function isFromDefaultCompany(node: any): boolean {
-  const myId = companyInfo.value?.id;
+  const myId = effectiveCompanyId();
   const defaultId = defaultCompanyId.value;
   return !!(defaultId && myId && defaultId !== myId && node._companyId === defaultId);
 }
@@ -220,7 +227,7 @@ function filterByScope(cats: any[], companyId: number): any[] {
 // 筛选分类（类型 + 范围）
 function filterCategories() {
   let list = allCategories.value;
-  const myId = companyInfo.value?.id;
+  const myId = effectiveCompanyId();
   if (selectedScope.value === 'mine' && myId) {
     list = filterByScope(list, myId);
   } else if (selectedScope.value === 'headquarters' && defaultCompanyId.value) {
@@ -253,16 +260,16 @@ function selectScope(scope: 'all' | 'mine' | 'headquarters') {
 
 // 加载分类树（当前公司 + 系统配置公司，并打上 _companyId）
 async function loadCategories() {
-  const myId = companyInfo.value?.id;
+  const myId = effectiveCompanyId();
   if (!myId) {
     uni.showToast({ title: '公司信息不存在', icon: 'none' });
     return;
   }
   loading.value = true;
   try {
-    defaultCompanyId.value = await getDefaultCompanyId();
+    defaultCompanyId.value = await getDefaultCompanyIdCached();
     const [companyDetail, myTree] = await Promise.all([
-      getCompanyDetail(myId),
+      getCompanyDetailCached(myId),
       getCategoryTree(myId),
     ]);
     const hidden = companyDetail?.hidden_category_ids;
@@ -319,10 +326,10 @@ function handleDelete(category: any) {
 
 // 隐藏系统配置公司的分类（写入当前公司的 hidden_category_ids）
 async function handleHideCategory(category: any) {
-  const myId = companyInfo.value?.id;
+  const myId = effectiveCompanyId();
   if (!myId) return;
   try {
-    const company = await getCompanyDetail(myId);
+    const company = await getCompanyDetailCached(myId);
     const cur = (company?.hidden_category_ids || []).map((id: any) => Number(id));
     if (cur.includes(Number(category.id))) {
       uni.showToast({ title: '已隐藏', icon: 'none' });
@@ -338,10 +345,10 @@ async function handleHideCategory(category: any) {
 
 // 取消隐藏系统配置公司的分类
 async function handleUnhideCategory(category: any) {
-  const myId = companyInfo.value?.id;
+  const myId = effectiveCompanyId();
   if (!myId) return;
   try {
-    const company = await getCompanyDetail(myId);
+    const company = await getCompanyDetailCached(myId);
     const cur = (company?.hidden_category_ids || []).map((id: any) => Number(id));
     const next = cur.filter((id: number) => id !== Number(category.id));
     if (next.length === cur.length) {
@@ -355,6 +362,12 @@ async function handleUnhideCategory(category: any) {
     uni.showToast({ title: (error as any)?.message || '操作失败', icon: 'none' });
   }
 }
+
+onLoad((options?: { companyId?: string }) => {
+  if (options?.companyId) {
+    viewCompanyId.value = Number(options.companyId);
+  }
+});
 
 onShow(() => {
   loadCategories();
@@ -371,56 +384,39 @@ onPullDownRefresh(() => {
   background: linear-gradient(180deg, #f8f9fc 0%, #eef0f5 100%);
 }
 
-/* 顶部栏 */
+/* 顶部栏：紧凑布局 */
 .header-bar {
   background: #fff;
-  padding: 24rpx 30rpx;
+  padding: 14rpx 24rpx 18rpx;
   border-bottom: 1rpx solid rgba(0, 0, 0, 0.06);
   display: flex;
   align-items: center;
-  gap: 20rpx;
-  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.04);
+  gap: 12rpx;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.04);
 }
 
 .filter-row {
   flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 12rpx;
+  gap: 8rpx;
 }
 
 .filter-tabs {
   display: flex;
-  gap: 12rpx;
-}
-
-.scope-tabs {
-  display: flex;
-  gap: 12rpx;
-}
-
-.scope-tab {
-  padding: 8rpx 16rpx;
-  font-size: 24rpx;
-  color: #666;
-  background: #f0f2f5;
-  border-radius: 8rpx;
-}
-
-.scope-tab.active {
-  background: #e8ebf7;
-  color: #667eea;
-  font-weight: 500;
+  gap: 8rpx;
 }
 
 .filter-tab {
   flex: 1;
+  min-width: 0;
   text-align: center;
-  padding: 16rpx 0;
-  font-size: 26rpx;
+  padding: 8rpx 12rpx;
+  font-size: 24rpx;
   color: #666;
-  background: #f0f2f5;
-  border-radius: 12rpx;
+  background: #f5f5f5;
+  border-radius: 20rpx;
   transition: all 0.2s;
 }
 
@@ -430,14 +426,39 @@ onPullDownRefresh(() => {
   font-weight: 500;
 }
 
+.scope-tabs {
+  display: flex;
+  gap: 8rpx;
+  flex-wrap: wrap;
+}
+
+.scope-tab {
+  padding: 4rpx 12rpx;
+  font-size: 22rpx;
+  color: #666;
+  background: #f5f5f5;
+  border-radius: 16rpx;
+}
+
+.scope-tab.active {
+  background: #e8ebf7;
+  color: #667eea;
+  font-weight: 500;
+}
+
 .add-btn {
-  padding: 16rpx 28rpx;
+  padding: 8rpx 16rpx;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: #fff;
-  border-radius: 12rpx;
-  font-size: 26rpx;
+  border-radius: 20rpx;
+  font-size: 24rpx;
   border: none;
-  box-shadow: 0 4rpx 12rpx rgba(102, 126, 234, 0.35);
+  flex-shrink: 0;
+  line-height: 1.4;
+}
+
+.add-btn::after {
+  border: none;
 }
 
 /* 树形列表 */

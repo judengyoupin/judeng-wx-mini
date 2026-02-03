@@ -50,8 +50,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import { getCompanyList } from '@/api/admin/platform';
-import { getDefaultDisplayCompanyId, setDefaultDisplayCompanyId } from '@/api/admin/platform';
+import { getCompanyList, getDefaultDisplayCompanyId, setDefaultDisplayCompanyId } from '@/subPackages/admin/api/platform';
 
 const defaultCompany = ref<any>(null);
 const companies = ref<any[]>([]);
