@@ -140,33 +140,16 @@
       <view class="footer-placeholder"></view>
     </scroll-view>
 
-    <!-- 底部操作栏：左侧导航 + 右侧主按钮；内层固定高度，外层保留安全区 -->
-    <view class="footer-bar">
-      <view class="footer-bar-inner">
-        <view class="footer-nav">
-          <view class="footer-nav-item" @click="goHome">
-            <image class="footer-nav-icon" src="/static/navbar/shouye.png" mode="aspectFit" />
-            <text class="footer-nav-label">首页</text>
-          </view>
-          <view class="footer-nav-item" @click="goCart">
-            <view class="footer-nav-icon-wrap">
-              <image class="footer-nav-icon" src="/static/navbar/gouwuche.png" mode="aspectFit" />
-              <view v-if="cartCount > 0" class="footer-nav-badge">{{ cartCount > 99 ? '99+' : cartCount }}</view>
-            </view>
-            <text class="footer-nav-label">购物车</text>
-          </view>
-        </view>
-        <view class="footer-action">
-          <button
-            class="footer-btn"
-            :class="{ 'footer-btn--disabled': selectedSkuIds.length === 0 || !canAddToCart }"
-            @click="handleAddToCart"
-          >
-            加入购物车
-          </button>
-        </view>
-      </view>
-    </view>
+    <!-- 底部操作栏（封装组件：首页、购物车、主按钮） -->
+    <DetailFooterBar :cart-count="cartCount" @home="goHome" @cart="goCart">
+      <button
+        class="product-detail-footer-btn"
+        :class="{ 'product-detail-footer-btn--disabled': selectedSkuIds.length === 0 || !canAddToCart }"
+        @click="handleAddToCart"
+      >
+        加入购物车
+      </button>
+    </DetailFooterBar>
   </view>
 </template>
 
@@ -178,6 +161,7 @@ import { addToCart, getCartList } from '@/api/cart/index';
 import { user_token, userInfo, companyInfo } from '@/store/userStore';
 import { getCompanyUserRole } from '@/utils/auth';
 import PageNavBar from '@/components/PageNavBar.vue';
+import DetailFooterBar from '@/components/DetailFooterBar.vue';
 
 const productId = ref<number | null>(null);
 const productDetail = ref<any>(null);
@@ -769,89 +753,13 @@ onShow(() => {
 }
 
 
-/* ---------- 底部栏重构：左右分区、统一比例 ---------- */
+/* ---------- 底部栏占位（与 DetailFooterBar 高度一致） ---------- */
 .footer-placeholder {
   height: calc(100rpx + env(safe-area-inset-bottom));
 }
 
-.footer-bar {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  padding-bottom: env(safe-area-inset-bottom);
-  background: #ffffff;
-  border-top: 1rpx solid #e8e8e8;
-  z-index: 1000;
-}
-
-.footer-bar-inner {
-  height: 100rpx;
-  padding: 0 24rpx;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 24rpx;
-  box-sizing: border-box;
-}
-
-.footer-nav {
-  display: flex;
-  align-items: center;
-  gap: 48rpx;
-  flex-shrink: 0;
-}
-
-.footer-nav-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6rpx;
-}
-
-.footer-nav-icon-wrap {
-  position: relative;
-}
-
-.footer-nav-icon {
-  width: 44rpx;
-  height: 44rpx;
-  display: block;
-}
-
-.footer-nav-label {
-  font-size: 24rpx;
-  color: #666666;
-}
-
-.footer-nav-badge {
-  position: absolute;
-  top: -6rpx;
-  right: -10rpx;
-  min-width: 28rpx;
-  height: 28rpx;
-  padding: 0 6rpx;
-  background: #e53935;
-  color: #fff;
-  font-size: 18rpx;
-  font-weight: 600;
-  border-radius: 14rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-sizing: border-box;
-}
-
-.footer-action {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  margin-left: 48rpx;
-}
-
-.footer-btn {
+/* 产品详情页主按钮：略大、靠右（由 DetailFooterBar 的 margin-left 控制） */
+.product-detail-footer-btn {
   height: 72rpx;
   padding: 0 48rpx;
   background: #0d9488;
@@ -866,7 +774,7 @@ onShow(() => {
   line-height: 1;
 }
 
-.footer-btn--disabled {
+.product-detail-footer-btn--disabled {
   background: #f0f0f0;
   color: #aaa;
   font-weight: 500;

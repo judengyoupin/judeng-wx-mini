@@ -79,40 +79,42 @@
         </view>
       </scroll-view>
 
-      <!-- 底部栏：管理模式显示「删除选中」，否则显示「结算」 -->
+      <!-- 底部栏：管理模式显示「删除选中」，否则显示「结算」；内层固定高度保证垂直居中 -->
       <view class="cart-footer">
-        <view class="footer-left">
-          <view class="checkbox-wrapper" @click="toggleSelectAll">
-            <view class="checkbox" :class="{ checked: isAllSelected }">
-              <text v-if="isAllSelected">✓</text>
+        <view class="cart-footer-inner">
+          <view class="footer-left">
+            <view class="checkbox-wrapper" @click="toggleSelectAll">
+              <view class="checkbox" :class="{ checked: isAllSelected }">
+                <text v-if="isAllSelected">✓</text>
+              </view>
+              <text class="select-all-text">全选</text>
+              <text class="no-pay-hint">（无需支付）</text>
             </view>
-            <text class="select-all-text">全选</text>
-            <text class="no-pay-hint">（无需支付）</text>
+            <template v-if="!isManageMode">
+              <view class="total-info">
+                <text class="total-label">合计：</text>
+                <text class="total-price">¥{{ formatPrice(totalPrice) }}</text>
+              </view>
+            </template>
           </view>
-          <template v-if="!isManageMode">
-            <view class="total-info">
-              <text class="total-label">合计：</text>
-              <text class="total-price">¥{{ formatPrice(totalPrice) }}</text>
-            </view>
+          <template v-if="isManageMode">
+            <button
+              class="delete-selected-btn"
+              :class="{ disabled: selectedCount === 0 }"
+              @click="deleteSelectedItems"
+            >
+              删除选中({{ selectedCount }})
+            </button>
           </template>
-        </view>
-        <template v-if="isManageMode">
           <button
-            class="delete-selected-btn"
+            v-else
+            class="checkout-btn"
             :class="{ disabled: selectedCount === 0 }"
-            @click="deleteSelectedItems"
+            @click="handleCheckout"
           >
-            删除选中({{ selectedCount }})
+            结算({{ selectedCount }})
           </button>
-        </template>
-        <button
-          v-else
-          class="checkout-btn"
-          :class="{ disabled: selectedCount === 0 }"
-          @click="handleCheckout"
-        >
-          结算({{ selectedCount }})
-        </button>
+        </view>
       </view>
     </view>
 
@@ -389,7 +391,7 @@ onPullDownRefresh(() => {
 .cart-page {
   min-height: 100vh;
   background: #f5f5f5;
-  padding-bottom: 100rpx;
+  padding-bottom: calc(100rpx + env(safe-area-inset-bottom));
 }
 
 .company-bar {
@@ -454,7 +456,7 @@ onPullDownRefresh(() => {
 }
 
 .cart-content {
-  height: calc(100vh - 100rpx);
+  height: calc(100vh - 100rpx - env(safe-area-inset-bottom));
   display: flex;
   flex-direction: column;
 }
@@ -578,13 +580,18 @@ onPullDownRefresh(() => {
 }
 
 .delete-selected-btn {
-  padding: 16rpx 28rpx;
+  height: 64rpx;
+  padding: 0 32rpx;
   background: #ef4444;
   color: #ffffff;
-  border-radius: 999rpx;
+  border-radius: 32rpx;
   font-size: 26rpx;
   font-weight: 500;
   border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
 }
 
 .delete-selected-btn.disabled {
@@ -597,15 +604,19 @@ onPullDownRefresh(() => {
   bottom: 0;
   left: 0;
   right: 0;
-  height: 100rpx;
+  padding-bottom: env(safe-area-inset-bottom);
   background: #ffffff;
   border-top: 1rpx solid #e8e8e8;
+  z-index: 1000;
+}
+
+.cart-footer-inner {
+  height: 100rpx;
+  padding: 0 24rpx;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 24rpx;
-  padding-bottom: env(safe-area-inset-bottom);
-  z-index: 1000;
+  box-sizing: border-box;
 }
 
 .footer-left {
@@ -642,15 +653,20 @@ onPullDownRefresh(() => {
   color: #f97316;
 }
 
-/* 结算按钮：参考图 圆角矩形、绿色底、白字 */
+/* 结算按钮：修长圆角、绿色底、白字 */
 .checkout-btn {
-  padding: 18rpx 36rpx;
+  height: 64rpx;
+  padding: 0 36rpx;
   background: #22c55e;
   color: #ffffff;
-  border-radius: 999rpx;
+  border-radius: 32rpx;
   font-size: 28rpx;
-  font-weight: bold;
+  font-weight: 600;
   border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
 }
 
 .checkout-btn.disabled {

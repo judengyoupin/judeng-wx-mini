@@ -26,6 +26,12 @@
         </view>
       </view>
 
+      <!-- 套餐总价（入口即见） -->
+      <view v-if="packageDetail?.package_product_skus?.length" class="package-total-bar">
+        <text class="total-label">套餐总价：</text>
+        <text class="total-amount">¥{{ formatPrice(totalPackagePrice) }}</text>
+      </view>
+
       <!-- 包含商品 -->
       <view class="products-section">
         <view class="section-title">包含商品</view>
@@ -51,34 +57,32 @@
         </view>
       </view>
 
-      <!-- 底部操作栏 -->
+      <!-- 底部占位 -->
       <view class="footer-placeholder"></view>
     </scroll-view>
 
-    <!-- 底部操作栏 -->
-    <view class="footer-bar">
-      <view class="total-price">
-        <text class="total-label">套餐总价：</text>
-        <text class="total-amount">¥{{ formatPrice(totalPackagePrice) }}</text>
-      </view>
-      <button class="add-to-cart-btn" @click="handleAddToCart">加入购物车</button>
-    </view>
+    <!-- 底部操作栏（与产品详情页一致：首页、购物车、加入购物车） -->
+    <DetailFooterBar :cart-count="cartCount" @home="goHome" @cart="goCart">
+      <button class="package-detail-footer-btn" @click="handleAddToCart">加入购物车</button>
+    </DetailFooterBar>
   </view>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
-import { onLoad } from '@dcloudio/uni-app';
+import { ref, computed } from 'vue';
+import { onLoad, onShow } from '@dcloudio/uni-app';
 import { getPackageDetail } from '@/api/package/index';
-import { addToCart } from '@/api/cart/index';
+import { addToCart, getCartList } from '@/api/cart/index';
 import { user_token, userInfo, companyInfo } from '@/store/userStore';
 import { getCompanyUserRole } from '@/utils/auth';
 import PageNavBar from '@/components/PageNavBar.vue';
+import DetailFooterBar from '@/components/DetailFooterBar.vue';
 
 const packageId = ref<number | null>(null);
 const packageDetail = ref<any>(null);
 const loading = ref(false);
 const priceFactor = ref(1); // 价格系数，默认为1
+const cartCount = ref(0);
 
 // 计算套餐总价（应用价格系数）
 const navTitle = computed(() => {
@@ -176,6 +180,7 @@ const handleAddToCart = async () => {
       title: '已加入购物车',
       icon: 'success',
     });
+    loadCartCount();
   } catch (error: any) {
     uni.showToast({
       title: error.message || '加入购物车失败',
@@ -198,17 +203,50 @@ const goBack = () => {
   uni.navigateBack();
 };
 
+// 去首页
+const goHome = () => {
+  uni.switchTab({
+    url: '/pages/index/index',
+  });
+};
+
+// 去购物车
+const goCart = () => {
+  uni.switchTab({
+    url: '/pages/cart/index',
+  });
+};
+
+// 加载购物车数量（角标）
+const loadCartCount = async () => {
+  if (!user_token.value || !companyInfo.value?.id) {
+    cartCount.value = 0;
+    return;
+  }
+  try {
+    const list = await getCartList();
+    cartCount.value = Array.isArray(list) ? list.length : 0;
+  } catch {
+    cartCount.value = 0;
+  }
+};
+
 // 格式化价格
 // 注意：根据schema，price字段是numeric类型，存储的是实际价格（不是分）
 const formatPrice = (price: number) => {
   return Number(price).toFixed(2);
 };
 
-onLoad((options) => {
-  if (options.id) {
+onLoad((options?: { id?: string }) => {
+  if (options?.id) {
     packageId.value = Number(options.id);
     loadPackageDetail();
   }
+  loadCartCount();
+});
+
+onShow(() => {
+  loadCartCount();
 });
 </script>
 
@@ -216,12 +254,12 @@ onLoad((options) => {
 .package-detail-page {
   min-height: 100vh;
   background: #f5f5f5;
-  padding-bottom: 120rpx;
+  padding-bottom: calc(100rpx + env(safe-area-inset-bottom) + 20rpx);
 }
 
-/* 内容区高度：扣除底部占位，导航栏由 PageNavBar 占位 */
+/* 内容区高度：扣除底部栏与安全区 */
 .scroll-content {
-  height: calc(100vh - 120rpx);
+  height: calc(100vh - 100rpx - env(safe-area-inset-bottom));
   min-height: 0;
 }
 
@@ -339,48 +377,44 @@ onLoad((options) => {
   color: #999999;
 }
 
-.footer-placeholder {
-  height: 120rpx;
-}
-
-.footer-bar {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 120rpx;
-  background: #ffffff;
-  border-top: 1rpx solid #e0e0e0;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 30rpx;
-  z-index: 1000;
-}
-
-.total-price {
+/* 套餐总价条（在内容区底部） */
+.package-total-bar {
   display: flex;
   align-items: baseline;
   gap: 8rpx;
+  padding: 24rpx 30rpx;
+  background: #ffffff;
+  margin-bottom: 20rpx;
 }
 
-.total-label {
+.package-total-bar .total-label {
   font-size: 28rpx;
   color: #666666;
 }
 
-.total-amount {
+.package-total-bar .total-amount {
   font-size: 40rpx;
   font-weight: bold;
   color: #ff6b6b;
 }
 
-.add-to-cart-btn {
-  padding: 20rpx 40rpx;
-  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+.footer-placeholder {
+  height: calc(100rpx + env(safe-area-inset-bottom));
+}
+
+/* 套餐详情页底部主按钮（与产品详情风格统一） */
+.package-detail-footer-btn {
+  height: 72rpx;
+  padding: 0 48rpx;
+  background: #0d9488;
   color: #ffffff;
-  border-radius: 50rpx;
-  font-size: 28rpx;
+  font-size: 30rpx;
+  font-weight: 600;
+  border-radius: 36rpx;
   border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
 }
 </style>
