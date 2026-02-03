@@ -70,6 +70,7 @@ export async function getCategoryTree(companyId?: number | null, type?: 'product
     const variableDeclarations = companyIds.length === 1 ? ['$companyId: bigint!'] : ['$companyIds: [bigint!]!'];
     if (categoryType) variableDeclarations.push('$type: String!');
     const varStr = `(${variableDeclarations.join(', ')})`;
+    const nestedWhere = categoryType ? '{ is_deleted: { _eq: false }, type: { _eq: $type } }' : '{ is_deleted: { _eq: false } }';
 
     const treeQuery = `
       query GetCategoryTreeFull${varStr} {
@@ -86,7 +87,7 @@ export async function getCategoryTree(companyId?: number | null, type?: 'product
           level
           type
           categories(
-            where: { is_deleted: { _eq: false } }
+            where: ${nestedWhere}
             order_by: { sort_order: asc }
           ) {
             id
@@ -98,7 +99,7 @@ export async function getCategoryTree(companyId?: number | null, type?: 'product
             level
             type
             categories(
-              where: { is_deleted: { _eq: false } }
+              where: ${nestedWhere}
               order_by: { sort_order: asc }
             ) {
               id

@@ -8,6 +8,8 @@ export interface PackageInput {
   tags?: string;
   /** 公司 ID，创建套餐时必传 */
   company_companies?: number;
+  /** 是否下架 */
+  is_shelved?: boolean;
 }
 
 export interface PackageProductSkuInput {
@@ -38,9 +40,18 @@ export async function getPackageList(params: {
         cover_image_url
         description
         category_categories
+        is_shelved
         category {
           id
           name
+          category {
+            id
+            name
+            category {
+              id
+              name
+            }
+          }
         }
         created_at
         updated_at

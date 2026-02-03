@@ -9,10 +9,25 @@
       
       <!-- 筛选选项 -->
       <view class="filter-bar">
-        <view class="filter-item" :class="{ active: filterOnlyCurrentCompany }" @click="toggleFilter">
-          <text class="filter-icon">🔍</text>
+        <view class="filter-item" :class="{ active: selectedScope === 'all' }" @click="selectScope('all')">
+          <text class="filter-text">全部</text>
+        </view>
+        <view class="filter-item" :class="{ active: selectedScope === 'mine' }" @click="selectScope('mine')">
           <text class="filter-text">只看当前公司</text>
         </view>
+        <view class="filter-item" :class="{ active: selectedScope === 'headquarters' }" @click="selectScope('headquarters')">
+          <text class="filter-text">只看总部</text>
+        </view>
+      </view>
+
+      <!-- 不选择分类（可选） -->
+      <view
+        v-if="allowClear"
+        class="clear-category-row"
+        :class="{ active: selectedCategoryId == null }"
+        @click="handleClearCategory"
+      >
+        <text class="clear-category-text">不选择分类</text>
       </view>
       
       <!-- 分类树 -->
@@ -148,10 +163,15 @@ import { ref, computed, watch } from 'vue';
 import { companyInfo } from '@/store/userStore';
 import { getCategoryTree as getAdminCategoryTree, getCategoryChildren as getAdminCategoryChildren } from '@/api/admin/category';
 import { getCategoryTree as getFrontendCategoryTree } from '@/api/category/index';
+import { getDefaultCompanyId } from '@/api/config/index';
 
 interface Props {
   show: boolean;
   selectedCategoryId?: number | null;
+  /** 仅展示该类型：'product' 商品分类 / 'package' 套餐分类，不传则展示全部 */
+  categoryType?: 'product' | 'package' | null;
+  /** 为 true 时显示「不选择分类」选项，选择后 emit select(null) */
+  allowClear?: boolean;
 }
 
 interface Emits {
@@ -164,60 +184,64 @@ const emit = defineEmits<Emits>();
 
 const categories = ref<any[]>([]);
 const loading = ref(false);
-const filterOnlyCurrentCompany = ref(false); // 默认不勾选「只看当前公司」
+const selectedScope = ref<'all' | 'mine' | 'headquarters'>('all');
+const defaultCompanyId = ref<number | null>(null);
 
-// 显示的分类（根据筛选条件）
-const displayCategories = computed(() => {
-  if (!filterOnlyCurrentCompany.value) {
-    // 显示所有分类（当前公司 + 默认公司）
-    return categories.value;
-  }
-  
-  // 只显示当前公司的分类
-  // 由于管理端 API 只返回当前公司的分类，所以这里直接返回即可
-  return categories.value;
-});
+// 显示的分类（按筛选条件加载的数据）
+const displayCategories = computed(() => categories.value);
+
+function addExpandState(cats: any[], useChildren = false): any[] {
+  if (!Array.isArray(cats)) return [];
+  return cats.map((cat: any) => {
+    const children = useChildren
+      ? (cat.children || cat.categories || [])
+      : (cat.categories || []);
+    return {
+      ...cat,
+      expanded: !!cat.expanded,
+      categories: addExpandState(children, useChildren),
+    };
+  });
+}
 
 // 加载分类树
 const loadCategories = async () => {
-  if (!companyInfo.value?.id) {
+  const myId = companyInfo.value?.id;
+  if (!myId && selectedScope.value !== 'headquarters') {
     categories.value = [];
     return;
   }
-  
+  if (selectedScope.value === 'headquarters') {
+    const defaultId = await getDefaultCompanyId();
+    if (!defaultId) {
+      categories.value = [];
+      return;
+    }
+    defaultCompanyId.value = defaultId;
+  } else {
+    defaultCompanyId.value = null;
+  }
+
   loading.value = true;
   try {
-    if (filterOnlyCurrentCompany.value) {
-      // 只看当前公司：使用管理端 API（只返回当前公司的分类，含三层）
-      const result = await getAdminCategoryTree(companyInfo.value.id);
-      // 深拷贝并确保每层都有 expanded、categories 数组，保证三层结构可展示
-      const addExpandState = (cats: any[]): any[] => {
-        if (!Array.isArray(cats)) return [];
-        return cats.map((cat: any) => {
-          const children = Array.isArray(cat.categories) ? cat.categories : [];
-          return {
-            ...cat,
-            expanded: !!cat.expanded,
-            categories: addExpandState(children),
-          };
-        });
-      };
+    const categoryType = props.categoryType ?? undefined;
+    if (selectedScope.value === 'mine' && myId) {
+      const result = await getAdminCategoryTree(myId, categoryType);
+      categories.value = addExpandState(Array.isArray(result) ? result : []);
+    } else if (selectedScope.value === 'headquarters' && defaultCompanyId.value) {
+      const result = await getAdminCategoryTree(defaultCompanyId.value, categoryType);
       categories.value = addExpandState(Array.isArray(result) ? result : []);
     } else {
-      // 显示所有：使用前端 API（合并当前公司和默认公司的分类）
-      const result = await getFrontendCategoryTree(companyInfo.value.id);
-      if (result && result.code === 0 && result.data) {
-        // 添加展开状态
-        const addExpandState = (cats: any[]): any[] => {
-          return cats.map((cat: any) => ({
-            ...cat,
-            expanded: false,
-            categories: cat.children ? addExpandState(cat.children) : (cat.categories ? addExpandState(cat.categories) : []),
-          }));
-        };
-        categories.value = addExpandState(result.data);
-      } else {
+      // 全部：使用前端 API（合并当前公司和默认公司的分类）
+      if (!myId) {
         categories.value = [];
+      } else {
+        const result = await getFrontendCategoryTree(myId, categoryType ?? undefined);
+        if (result && result.code === 0 && result.data) {
+          categories.value = addExpandState(result.data, true);
+        } else {
+          categories.value = [];
+        }
       }
     }
   } catch (error: any) {
@@ -231,6 +255,11 @@ const loadCategories = async () => {
     loading.value = false;
   }
 };
+
+function selectScope(scope: 'all' | 'mine' | 'headquarters') {
+  selectedScope.value = scope;
+  loadCategories();
+}
 
 // 切换展开/收起（第一层）
 const toggleExpand = (category: any) => {
@@ -247,15 +276,17 @@ const hasSubChildren = (subCategory: any) => {
 // 切换第二层展开/收起（用于显示第三层）；若无子节点则按需拉取（保证第三层能展示）
 const toggleSubExpand = async (subCategory: any) => {
   subCategory.expanded = !subCategory.expanded;
-  if (subCategory.expanded && (!subCategory.categories || subCategory.categories.length === 0) && companyInfo.value?.id) {
+  const companyId = selectedScope.value === 'headquarters' ? defaultCompanyId.value : companyInfo.value?.id;
+  if (subCategory.expanded && (!subCategory.categories || subCategory.categories.length === 0) && companyId) {
     try {
-      const list = await getAdminCategoryChildren(subCategory.id, companyInfo.value.id);
+      const categoryType = props.categoryType ?? undefined;
+      const list = await getAdminCategoryChildren(subCategory.id, companyId, categoryType);
       subCategory.categories = (Array.isArray(list) ? list : []).map((c: any) => ({
         ...c,
         expanded: false,
         categories: [],
       }));
-      subCategory.childrenLoaded = true; // 标记已加载，若无子节点则不再显示展开箭头
+      subCategory.childrenLoaded = true;
     } catch (e) {
       console.error('加载子分类失败', e);
       subCategory.categories = [];
@@ -264,16 +295,15 @@ const toggleSubExpand = async (subCategory: any) => {
   }
 };
 
-// 切换筛选
-const toggleFilter = () => {
-  filterOnlyCurrentCompany.value = !filterOnlyCurrentCompany.value;
-  // 重新加载分类
-  loadCategories();
-};
-
 // 选择分类
 const selectCategory = (category: any) => {
   emit('select', category);
+  handleClose();
+};
+
+// 不选择分类（allowClear 时）
+const handleClearCategory = () => {
+  emit('select', null);
   handleClose();
 };
 
@@ -346,6 +376,9 @@ watch(() => props.show, (newVal) => {
 }
 
 .filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16rpx;
   padding: 20rpx 40rpx;
   border-bottom: 1rpx solid #f1f5f9;
   background: #ffffff;
@@ -376,6 +409,21 @@ watch(() => props.show, (newVal) => {
 
 .filter-text {
   font-size: 24rpx;
+}
+
+.clear-category-row {
+  padding: 24rpx 40rpx;
+  border-bottom: 1rpx solid #f1f5f9;
+  background: #f8fafc;
+}
+
+.clear-category-row.active {
+  background: #e0e7ff;
+}
+
+.clear-category-text {
+  font-size: 28rpx;
+  color: #667eea;
 }
 
 .category-tree {

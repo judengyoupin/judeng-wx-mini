@@ -12,16 +12,20 @@ export interface CategoryInput {
 }
 
 /**
- * 获取分类树（一次请求返回三层：根 → 二级 → 三级，仅查根节点，子节点通过嵌套 relation 获取）
+ * 获取分类树（一次请求返回三层：根 → 二级 → 三级）
+ * @param companyId 公司 ID
+ * @param type 可选，仅返回该类型：'product' 商品分类 / 'package' 套餐分类
  */
-export async function getCategoryTree(companyId: number) {
+export async function getCategoryTree(companyId: number, type?: 'product' | 'package') {
+  const typeCondition = type ? ', type: { _eq: $type }' : '';
   const query = `
-    query GetCategoryTree($companyId: bigint!) {
+    query GetCategoryTree($companyId: bigint!${type ? ', $type: String!' : ''}) {
       categories(
         where: {
           company_companies: { _eq: $companyId }
           is_deleted: { _eq: false }
           parent_categories: { _is_null: true }
+          ${type ? 'type: { _eq: $type }' : ''}
         }
         order_by: { sort_order: asc }
       ) {
@@ -34,7 +38,7 @@ export async function getCategoryTree(companyId: number) {
         sort_order
         type
         categories(
-          where: { is_deleted: { _eq: false } }
+          where: { is_deleted: { _eq: false }${typeCondition} }
           order_by: { sort_order: asc }
         ) {
           id
@@ -46,7 +50,7 @@ export async function getCategoryTree(companyId: number) {
           sort_order
           type
           categories(
-            where: { is_deleted: { _eq: false } }
+            where: { is_deleted: { _eq: false }${typeCondition} }
             order_by: { sort_order: asc }
           ) {
             id
@@ -63,9 +67,12 @@ export async function getCategoryTree(companyId: number) {
     }
   `;
 
+  const variables: { companyId: number; type?: string } = { companyId };
+  if (type) variables.type = type;
+
   const result = await client.execute({
     query,
-    variables: { companyId },
+    variables,
   });
 
   return result?.categories || [];
@@ -198,15 +205,17 @@ export async function deleteCategory(categoryId: number) {
 
 /**
  * 按父级 ID 获取子分类列表（仅当前公司，用于分类选择器按需加载第三层等）
+ * @param type 可选，仅返回该类型：'product' / 'package'
  */
-export async function getCategoryChildren(parentId: number, companyId: number) {
+export async function getCategoryChildren(parentId: number, companyId: number, type?: 'product' | 'package') {
   const query = `
-    query GetCategoryChildren($parentId: bigint!, $companyId: bigint!) {
+    query GetCategoryChildren($parentId: bigint!, $companyId: bigint!${type ? ', $type: String!' : ''}) {
       categories(
         where: {
           parent_categories: { _eq: $parentId }
           company_companies: { _eq: $companyId }
           is_deleted: { _eq: false }
+          ${type ? 'type: { _eq: $type }' : ''}
         }
         order_by: { sort_order: asc }
       ) {
@@ -221,9 +230,11 @@ export async function getCategoryChildren(parentId: number, companyId: number) {
       }
     }
   `;
+  const variables: { parentId: number; companyId: number; type?: string } = { parentId, companyId };
+  if (type) variables.type = type;
   const result = await client.execute({
     query,
-    variables: { parentId, companyId },
+    variables,
   });
   return result?.categories || [];
 }

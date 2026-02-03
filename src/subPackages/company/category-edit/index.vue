@@ -28,52 +28,52 @@
           </view>
         </view>
 
-        <view class="form-item parent-selector">
-          <view class="form-label">父级分类</view>
-          <view class="parent-current">
-            {{ selectedParentDisplay }}
-          </view>
-          <view class="parent-tree">
-            <view
-              v-for="(opt, idx) in parentCategoryOptions"
-              :key="opt.id ?? 'root'"
-              class="parent-option"
-              :class="{ selected: isParentSelected(opt), 'opt-root': opt.id === null }"
-              :style="{ paddingLeft: (opt._depth ?? 0) * 24 + 24 + 'rpx' }"
-              @click="selectParent(opt)"
-            >
-              <text class="parent-option-icon">{{ isParentSelected(opt) ? '✓' : '' }}</text>
-              <text class="parent-option-name">{{ opt.id === null ? '顶级分类（无父级）' : opt.name }}</text>
-            </view>
-          </view>
-        </view>
-
         <view class="form-item">
           <view class="form-label">分类类型 <text class="required">*</text></view>
-          <picker 
-            mode="selector" 
-            :range="categoryTypes" 
-            :value="categoryTypeIndex"
-            @change="onCategoryTypeChange"
-          >
-            <view class="form-picker">
-              {{ categoryTypes[categoryTypeIndex] }}
+          <view class="option-row">
+            <view
+              v-for="(label, idx) in categoryTypes"
+              :key="label"
+              class="option-chip"
+              :class="{ active: categoryTypeIndex === idx }"
+              @click="onCategoryTypeChange(idx)"
+            >
+              {{ label }}
             </view>
-          </picker>
+          </view>
+          <view v-if="form.type === 'package'" class="form-hint">套餐分类固定为顶级，无需设置父级</view>
         </view>
 
-        <view class="form-item">
+        <view v-show="form.type === 'product'" class="form-item">
+          <view class="form-label">父级分类</view>
+          <view class="parent-selector-tap" @click="showParentPicker = true">
+            <text :class="{ placeholder: !form.parent_categories && !selectedParentInfo }">{{ selectedParentDisplay }}</text>
+            <text class="parent-arrow">›</text>
+          </view>
+        </view>
+
+    <CategoryPicker
+      :show="showParentPicker"
+      :selectedCategoryId="form.parent_categories"
+      categoryType="product"
+      :allowClear="true"
+      @update:show="showParentPicker = $event"
+      @select="onParentSelect"
+    />
+
+        <view v-show="form.type === 'product'" class="form-item">
           <view class="form-label">展示方式</view>
-          <picker 
-            mode="selector" 
-            :range="routeUiStyles" 
-            :value="routeUiStyleIndex"
-            @change="onRouteUiStyleChange"
-          >
-            <view class="form-picker">
-              {{ routeUiStyles[routeUiStyleIndex] }}
+          <view class="option-row">
+            <view
+              v-for="(label, idx) in routeUiStyles"
+              :key="label"
+              class="option-chip"
+              :class="{ active: routeUiStyleIndex === idx }"
+              @click="onRouteUiStyleChange(idx)"
+            >
+              {{ label }}
             </view>
-          </picker>
+          </view>
         </view>
 
         <view class="form-item">
@@ -96,10 +96,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
+import { ref, computed } from 'vue';
 import { onLoad } from '@dcloudio/uni-app';
 import { companyInfo } from '@/store/userStore';
 import { getCategoryTree, getCategoryDetail, createCategory, updateCategory } from '@/api/admin/category';
+import CategoryPicker from '@/components/CategoryPicker.vue';
 import { uploadFile } from '@/api/upload';
 
 const categoryId = ref<number | null>(null);
@@ -117,65 +118,51 @@ const routeUiStyles = ['继续展示分类', '展示产品'];
 const routeUiStyleIndex = ref(0);
 const categoryTypes = ['产品分类', '套餐分类'];
 const categoryTypeIndex = ref(0);
+const showParentPicker = ref(false);
+const selectedParentInfo = ref<{ id: number; name: string } | null>(null);
 
-// 按类型筛选分类树（与当前表单类型一致，避免跨类型选父级）
-const filteredCategoryTree = computed(() => {
-  const type = form.value.type;
-  if (!type) return categories.value;
-  function filterByType(cats: any[]): any[] {
-    return cats
-      .filter((cat: any) => cat.type === type)
-      .map((cat: any) => ({
-        ...cat,
-        categories: cat.categories ? filterByType(cat.categories) : [],
-      }));
+// 在树中根据 id 查找分类名称（用于编辑时展示已选父级）
+function findCategoryNameById(cats: any[], id: number): string | null {
+  if (!cats || !id) return null;
+  for (const c of cats) {
+    if (Number(c.id) === Number(id)) return c.name || null;
+    if (c.categories?.length) {
+      const found = findCategoryNameById(c.categories, id);
+      if (found) return found;
+    }
   }
-  return filterByType(categories.value);
-});
-
-// 父级选项：顶级 + 按层级展开的列表（带 _depth 便于缩进）
-const parentCategoryOptions = computed(() => {
-  const flatten = (cats: any[], excludeId?: number, depth = 0): any[] => {
-    let result: any[] = [];
-    cats.forEach(cat => {
-      if (cat.id !== excludeId) {
-        result.push({ ...cat, _depth: depth });
-        if (cat.categories && cat.categories.length > 0) {
-          result = result.concat(flatten(cat.categories, excludeId, depth + 1));
-        }
-      }
-    });
-    return result;
-  };
-  const list = flatten(filteredCategoryTree.value, categoryId.value || undefined);
-  return [{ id: null, name: '顶级分类（无父级）', _depth: 0 }, ...list];
-});
+  return null;
+}
 
 // 当前选中的父级展示文案
 const selectedParentDisplay = computed(() => {
   if (form.value.parent_categories === undefined || form.value.parent_categories === null) {
     return '顶级分类（无父级）';
   }
-  const opt = parentCategoryOptions.value.find(c => c.id === form.value.parent_categories);
-  return opt ? opt.name : '顶级分类（无父级）';
+  if (selectedParentInfo.value && selectedParentInfo.value.id === form.value.parent_categories) {
+    return selectedParentInfo.value.name;
+  }
+  const name = findCategoryNameById(categories.value, form.value.parent_categories);
+  return name ?? '顶级分类（无父级）';
 });
 
-function isParentSelected(opt: any): boolean {
-  if (opt.id === null) {
-    return form.value.parent_categories === undefined || form.value.parent_categories === null;
+// 父级选择（复用 CategoryPicker）
+const onParentSelect = (category: { id: number; name: string; level?: number } | null) => {
+  if (category && categoryId.value && category.id === categoryId.value) {
+    uni.showToast({ title: '不能选择自身为父级', icon: 'none' });
+    return;
   }
-  return form.value.parent_categories === opt.id;
-}
-
-function selectParent(opt: any) {
-  if (opt.id === null) {
+  if (category == null) {
     form.value.parent_categories = undefined;
     form.value.level = 0;
+    selectedParentInfo.value = null;
   } else {
-    form.value.parent_categories = opt.id;
-    form.value.level = (opt.level ?? 0) + 1;
+    form.value.parent_categories = category.id;
+    form.value.level = (category.level ?? 0) + 1;
+    selectedParentInfo.value = { id: category.id, name: category.name || '' };
   }
-}
+  showParentPicker.value = false;
+};
 
 // 加载分类树
 const loadCategories = async () => {
@@ -204,6 +191,7 @@ const loadCategoryDetail = async () => {
       };
       routeUiStyleIndex.value = category.route_ui_style === 'products' ? 1 : 0;
       categoryTypeIndex.value = category.type === 'package' ? 1 : 0;
+      selectedParentInfo.value = null;
     }
   } catch (error: any) {
     uni.showToast({
@@ -236,18 +224,20 @@ const uploadIcon = async () => {
   }
 };
 
-// 分类类型选择（小程序 picker 的 detail.value 是字符串，需转成数字再比较）；切换类型后父级选项会变，重置为顶级
-const onCategoryTypeChange = (e: any) => {
-  const index = Number(e.detail.value);
+// 分类类型选择：套餐分类固定为顶级、默认展示方式为「展示产品」
+const onCategoryTypeChange = (index: number) => {
   categoryTypeIndex.value = index;
   form.value.type = index === 1 ? 'package' : 'product';
-  form.value.parent_categories = undefined;
-  form.value.level = 0;
+  if (form.value.type === 'package') {
+    form.value.parent_categories = undefined;
+    form.value.level = 0;
+    form.value.route_ui_style = 'products';
+    routeUiStyleIndex.value = 1;
+  }
 };
 
-// 展示方式选择（小程序 picker 的 detail.value 是字符串，需转成数字再比较）
-const onRouteUiStyleChange = (e: any) => {
-  const index = Number(e.detail.value);
+// 展示方式选择
+const onRouteUiStyleChange = (index: number) => {
   routeUiStyleIndex.value = index;
   form.value.route_ui_style = index === 1 ? 'products' : 'categories';
 };
@@ -271,10 +261,13 @@ const handleSave = async () => {
   }
 
   try {
-    const categoryData = {
-      ...form.value,
-      company_companies: companyInfo.value.id,
-    };
+    const payload = { ...form.value, company_companies: companyInfo.value.id };
+    if (payload.type === 'package') {
+      payload.parent_categories = undefined;
+      payload.level = 0;
+      payload.route_ui_style = 'products';
+    }
+    const categoryData = payload;
 
     if (categoryId.value) {
       await updateCategory(categoryId.value, categoryData);
@@ -355,6 +348,34 @@ onLoad((options?: { id?: string }) => {
   color: #999999;
 }
 
+.form-hint {
+  margin-top: 12rpx;
+  font-size: 24rpx;
+  color: #999999;
+}
+
+.option-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20rpx;
+}
+
+.option-chip {
+  padding: 20rpx 32rpx;
+  font-size: 28rpx;
+  color: #666;
+  background: #f5f5f5;
+  border-radius: 12rpx;
+  border: 2rpx solid transparent;
+}
+
+.option-chip.active {
+  background: #e8ebf7;
+  color: #667eea;
+  border-color: #667eea;
+  font-weight: 500;
+}
+
 .footer-actions {
   padding: 30rpx;
   background: #ffffff;
@@ -381,56 +402,24 @@ onLoad((options?: { id?: string }) => {
   color: #666666;
 }
 
-/* 父级分类树形选择 */
-.parent-selector .parent-current {
+/* 父级分类（点击打开 CategoryPicker） */
+.parent-selector-tap {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   padding: 20rpx 24rpx;
   background: #f8f8f8;
   border-radius: 12rpx;
   font-size: 28rpx;
   color: #333;
-  margin-bottom: 20rpx;
 }
 
-.parent-tree {
-  max-height: 400rpx;
-  overflow-y: auto;
-  border: 1rpx solid #eee;
-  border-radius: 12rpx;
-  background: #fff;
+.parent-selector-tap .placeholder {
+  color: #999;
 }
 
-.parent-option {
-  display: flex;
-  align-items: center;
-  padding: 20rpx 24rpx;
-  font-size: 28rpx;
-  color: #333;
-  border-bottom: 1rpx solid #f0f0f0;
-  min-height: 44rpx;
-}
-
-.parent-option:last-child {
-  border-bottom: none;
-}
-
-.parent-option.selected {
-  background: #eef1fc;
-  color: #667eea;
-  font-weight: 500;
-}
-
-.parent-option-icon {
-  width: 40rpx;
-  margin-right: 12rpx;
+.parent-arrow {
+  color: #999;
   font-size: 32rpx;
-  color: #667eea;
-}
-
-.parent-option-name {
-  flex: 1;
-}
-
-.parent-option.opt-root .parent-option-name {
-  color: #666;
 }
 </style>

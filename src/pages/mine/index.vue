@@ -83,13 +83,6 @@
             <text class="admin-label">公司管理</text>
             <text class="admin-desc">管理公司信息</text>
           </view>
-          <view class="admin-item" @click="goToConfigManagement">
-            <view class="admin-icon-wrapper config">
-              <text class="admin-icon">⚙️</text>
-            </view>
-            <text class="admin-label">配置管理</text>
-            <text class="admin-desc">设置默认展示</text>
-          </view>
           <view class="admin-item" @tap="goToUserManagement" @click="goToUserManagement">
             <view class="admin-icon-wrapper user">
               <text class="admin-icon">👥</text>
@@ -103,7 +96,7 @@
     <!-- 我的公司板块：进入某公司且 company_user.role === admin 可见 -->
     <view v-if="isCompanyAdminUser" class="admin-section">
       <view class="section-header">
-        <text class="section-title">我的公司</text>
+        <text class="section-title">我的公司{{ companyInfo?.name ? `（${companyInfo.name}）` : '' }}</text>
       </view>
       <view class="admin-grid">
           <view class="admin-item" @click="goToCompanySettings">
@@ -111,7 +104,7 @@
               <text class="admin-icon">⚙️</text>
             </view>
             <text class="admin-label">公司设置</text>
-            <text class="admin-desc">设置logo、轮播图、名称、密钥</text>
+            <text class="admin-desc">设置logo、轮播图、名称</text>
           </view>
           <view class="admin-item" @click="goToCategoryManagement">
             <view class="admin-icon-wrapper category">
@@ -361,17 +354,6 @@ const goToCompanyManagement = () => {
   }
   uni.navigateTo({
     url: '/subPackages/admin/company-list/index',
-  });
-};
-
-// 跳转到配置管理（平台管理员）
-const goToConfigManagement = () => {
-  if (!user_token.value) {
-    goToLogin();
-    return;
-  }
-  uni.navigateTo({
-    url: '/subPackages/admin/config/index',
   });
 };
 
@@ -754,10 +736,6 @@ onShow(() => {
 
 .admin-icon-wrapper.company {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-}
-
-.admin-icon-wrapper.config {
-  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
 }
 
 .admin-icon-wrapper.user {

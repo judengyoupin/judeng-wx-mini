@@ -96,6 +96,623 @@ input String_comparison_exp {
   _similar: String
 }
 
+"""用户地址表"""
+type addresses {
+  created_at: timestamptz!
+  id: bigint!
+
+  """是否默认"""
+  is_default: Boolean!
+
+  """收货地址，完整省市区和详细地址"""
+  receiver_address: String!
+
+  """可不填，收货人-市"""
+  receiver_city: String
+
+  """可不填，收货人-区"""
+  receiver_district: String
+
+  """收货人"""
+  receiver_name: String!
+
+  """收货电话"""
+  receiver_phone: String!
+
+  """可不填，收货人-省"""
+  receiver_province: String
+  updated_at: timestamptz!
+
+  """An object relationship"""
+  user: users!
+  user_users: bigint!
+}
+
+"""
+aggregated selection of "addresses"
+"""
+type addresses_aggregate {
+  aggregate: addresses_aggregate_fields
+  nodes: [addresses!]!
+}
+
+input addresses_aggregate_bool_exp {
+  bool_and: addresses_aggregate_bool_exp_bool_and
+  bool_or: addresses_aggregate_bool_exp_bool_or
+  count: addresses_aggregate_bool_exp_count
+}
+
+input addresses_aggregate_bool_exp_bool_and {
+  arguments: addresses_select_column_addresses_aggregate_bool_exp_bool_and_arguments_columns!
+  distinct: Boolean
+  filter: addresses_bool_exp
+  predicate: Boolean_comparison_exp!
+}
+
+input addresses_aggregate_bool_exp_bool_or {
+  arguments: addresses_select_column_addresses_aggregate_bool_exp_bool_or_arguments_columns!
+  distinct: Boolean
+  filter: addresses_bool_exp
+  predicate: Boolean_comparison_exp!
+}
+
+input addresses_aggregate_bool_exp_count {
+  arguments: [addresses_select_column!]
+  distinct: Boolean
+  filter: addresses_bool_exp
+  predicate: Int_comparison_exp!
+}
+
+"""
+aggregate fields of "addresses"
+"""
+type addresses_aggregate_fields {
+  avg: addresses_avg_fields
+  count(columns: [addresses_select_column!], distinct: Boolean): Int!
+  max: addresses_max_fields
+  min: addresses_min_fields
+  stddev: addresses_stddev_fields
+  stddev_pop: addresses_stddev_pop_fields
+  stddev_samp: addresses_stddev_samp_fields
+  sum: addresses_sum_fields
+  var_pop: addresses_var_pop_fields
+  var_samp: addresses_var_samp_fields
+  variance: addresses_variance_fields
+}
+
+"""
+order by aggregate values of table "addresses"
+"""
+input addresses_aggregate_order_by {
+  avg: addresses_avg_order_by
+  count: order_by
+  max: addresses_max_order_by
+  min: addresses_min_order_by
+  stddev: addresses_stddev_order_by
+  stddev_pop: addresses_stddev_pop_order_by
+  stddev_samp: addresses_stddev_samp_order_by
+  sum: addresses_sum_order_by
+  var_pop: addresses_var_pop_order_by
+  var_samp: addresses_var_samp_order_by
+  variance: addresses_variance_order_by
+}
+
+"""
+input type for inserting array relation for remote table "addresses"
+"""
+input addresses_arr_rel_insert_input {
+  data: [addresses_insert_input!]!
+
+  """upsert condition"""
+  on_conflict: addresses_on_conflict
+}
+
+"""aggregate avg on columns"""
+type addresses_avg_fields {
+  id: Float
+  user_users: Float
+}
+
+"""
+order by avg() on columns of table "addresses"
+"""
+input addresses_avg_order_by {
+  id: order_by
+  user_users: order_by
+}
+
+"""
+Boolean expression to filter rows from the table "addresses". All fields are combined with a logical 'AND'.
+"""
+input addresses_bool_exp {
+  _and: [addresses_bool_exp!]
+  _not: addresses_bool_exp
+  _or: [addresses_bool_exp!]
+  created_at: timestamptz_comparison_exp
+  id: bigint_comparison_exp
+  is_default: Boolean_comparison_exp
+  receiver_address: String_comparison_exp
+  receiver_city: String_comparison_exp
+  receiver_district: String_comparison_exp
+  receiver_name: String_comparison_exp
+  receiver_phone: String_comparison_exp
+  receiver_province: String_comparison_exp
+  updated_at: timestamptz_comparison_exp
+  user: users_bool_exp
+  user_users: bigint_comparison_exp
+}
+
+"""
+unique or primary key constraints on table "addresses"
+"""
+enum addresses_constraint {
+  """
+  unique or primary key constraint on columns "id"
+  """
+  addresses_pkey
+}
+
+"""
+input type for incrementing numeric columns in table "addresses"
+"""
+input addresses_inc_input {
+  id: bigint
+  user_users: bigint
+}
+
+"""
+input type for inserting data into table "addresses"
+"""
+input addresses_insert_input {
+  created_at: timestamptz
+  id: bigint
+
+  """是否默认"""
+  is_default: Boolean
+
+  """收货地址，完整省市区和详细地址"""
+  receiver_address: String
+
+  """可不填，收货人-市"""
+  receiver_city: String
+
+  """可不填，收货人-区"""
+  receiver_district: String
+
+  """收货人"""
+  receiver_name: String
+
+  """收货电话"""
+  receiver_phone: String
+
+  """可不填，收货人-省"""
+  receiver_province: String
+  updated_at: timestamptz
+  user: users_obj_rel_insert_input
+  user_users: bigint
+}
+
+"""aggregate max on columns"""
+type addresses_max_fields {
+  created_at: timestamptz
+  id: bigint
+
+  """收货地址，完整省市区和详细地址"""
+  receiver_address: String
+
+  """可不填，收货人-市"""
+  receiver_city: String
+
+  """可不填，收货人-区"""
+  receiver_district: String
+
+  """收货人"""
+  receiver_name: String
+
+  """收货电话"""
+  receiver_phone: String
+
+  """可不填，收货人-省"""
+  receiver_province: String
+  updated_at: timestamptz
+  user_users: bigint
+}
+
+"""
+order by max() on columns of table "addresses"
+"""
+input addresses_max_order_by {
+  created_at: order_by
+  id: order_by
+
+  """收货地址，完整省市区和详细地址"""
+  receiver_address: order_by
+
+  """可不填，收货人-市"""
+  receiver_city: order_by
+
+  """可不填，收货人-区"""
+  receiver_district: order_by
+
+  """收货人"""
+  receiver_name: order_by
+
+  """收货电话"""
+  receiver_phone: order_by
+
+  """可不填，收货人-省"""
+  receiver_province: order_by
+  updated_at: order_by
+  user_users: order_by
+}
+
+"""aggregate min on columns"""
+type addresses_min_fields {
+  created_at: timestamptz
+  id: bigint
+
+  """收货地址，完整省市区和详细地址"""
+  receiver_address: String
+
+  """可不填，收货人-市"""
+  receiver_city: String
+
+  """可不填，收货人-区"""
+  receiver_district: String
+
+  """收货人"""
+  receiver_name: String
+
+  """收货电话"""
+  receiver_phone: String
+
+  """可不填，收货人-省"""
+  receiver_province: String
+  updated_at: timestamptz
+  user_users: bigint
+}
+
+"""
+order by min() on columns of table "addresses"
+"""
+input addresses_min_order_by {
+  created_at: order_by
+  id: order_by
+
+  """收货地址，完整省市区和详细地址"""
+  receiver_address: order_by
+
+  """可不填，收货人-市"""
+  receiver_city: order_by
+
+  """可不填，收货人-区"""
+  receiver_district: order_by
+
+  """收货人"""
+  receiver_name: order_by
+
+  """收货电话"""
+  receiver_phone: order_by
+
+  """可不填，收货人-省"""
+  receiver_province: order_by
+  updated_at: order_by
+  user_users: order_by
+}
+
+"""
+response of any mutation on the table "addresses"
+"""
+type addresses_mutation_response {
+  """number of rows affected by the mutation"""
+  affected_rows: Int!
+
+  """data from the rows affected by the mutation"""
+  returning: [addresses!]!
+}
+
+"""
+on_conflict condition type for table "addresses"
+"""
+input addresses_on_conflict {
+  constraint: addresses_constraint!
+  update_columns: [addresses_update_column!]! = []
+  where: addresses_bool_exp
+}
+
+"""Ordering options when selecting data from "addresses"."""
+input addresses_order_by {
+  created_at: order_by
+  id: order_by
+  is_default: order_by
+  receiver_address: order_by
+  receiver_city: order_by
+  receiver_district: order_by
+  receiver_name: order_by
+  receiver_phone: order_by
+  receiver_province: order_by
+  updated_at: order_by
+  user: users_order_by
+  user_users: order_by
+}
+
+"""primary key columns input for table: addresses"""
+input addresses_pk_columns_input {
+  id: bigint!
+}
+
+"""
+select columns of table "addresses"
+"""
+enum addresses_select_column {
+  """column name"""
+  created_at
+
+  """column name"""
+  id
+
+  """column name"""
+  is_default
+
+  """column name"""
+  receiver_address
+
+  """column name"""
+  receiver_city
+
+  """column name"""
+  receiver_district
+
+  """column name"""
+  receiver_name
+
+  """column name"""
+  receiver_phone
+
+  """column name"""
+  receiver_province
+
+  """column name"""
+  updated_at
+
+  """column name"""
+  user_users
+}
+
+"""
+select "addresses_aggregate_bool_exp_bool_and_arguments_columns" columns of table "addresses"
+"""
+enum addresses_select_column_addresses_aggregate_bool_exp_bool_and_arguments_columns {
+  """column name"""
+  is_default
+}
+
+"""
+select "addresses_aggregate_bool_exp_bool_or_arguments_columns" columns of table "addresses"
+"""
+enum addresses_select_column_addresses_aggregate_bool_exp_bool_or_arguments_columns {
+  """column name"""
+  is_default
+}
+
+"""
+input type for updating data in table "addresses"
+"""
+input addresses_set_input {
+  created_at: timestamptz
+  id: bigint
+
+  """是否默认"""
+  is_default: Boolean
+
+  """收货地址，完整省市区和详细地址"""
+  receiver_address: String
+
+  """可不填，收货人-市"""
+  receiver_city: String
+
+  """可不填，收货人-区"""
+  receiver_district: String
+
+  """收货人"""
+  receiver_name: String
+
+  """收货电话"""
+  receiver_phone: String
+
+  """可不填，收货人-省"""
+  receiver_province: String
+  updated_at: timestamptz
+  user_users: bigint
+}
+
+"""aggregate stddev on columns"""
+type addresses_stddev_fields {
+  id: Float
+  user_users: Float
+}
+
+"""
+order by stddev() on columns of table "addresses"
+"""
+input addresses_stddev_order_by {
+  id: order_by
+  user_users: order_by
+}
+
+"""aggregate stddev_pop on columns"""
+type addresses_stddev_pop_fields {
+  id: Float
+  user_users: Float
+}
+
+"""
+order by stddev_pop() on columns of table "addresses"
+"""
+input addresses_stddev_pop_order_by {
+  id: order_by
+  user_users: order_by
+}
+
+"""aggregate stddev_samp on columns"""
+type addresses_stddev_samp_fields {
+  id: Float
+  user_users: Float
+}
+
+"""
+order by stddev_samp() on columns of table "addresses"
+"""
+input addresses_stddev_samp_order_by {
+  id: order_by
+  user_users: order_by
+}
+
+"""
+Streaming cursor of the table "addresses"
+"""
+input addresses_stream_cursor_input {
+  """Stream column input with initial value"""
+  initial_value: addresses_stream_cursor_value_input!
+
+  """cursor ordering"""
+  ordering: cursor_ordering
+}
+
+"""Initial value of the column from where the streaming should start"""
+input addresses_stream_cursor_value_input {
+  created_at: timestamptz
+  id: bigint
+
+  """是否默认"""
+  is_default: Boolean
+
+  """收货地址，完整省市区和详细地址"""
+  receiver_address: String
+
+  """可不填，收货人-市"""
+  receiver_city: String
+
+  """可不填，收货人-区"""
+  receiver_district: String
+
+  """收货人"""
+  receiver_name: String
+
+  """收货电话"""
+  receiver_phone: String
+
+  """可不填，收货人-省"""
+  receiver_province: String
+  updated_at: timestamptz
+  user_users: bigint
+}
+
+"""aggregate sum on columns"""
+type addresses_sum_fields {
+  id: bigint
+  user_users: bigint
+}
+
+"""
+order by sum() on columns of table "addresses"
+"""
+input addresses_sum_order_by {
+  id: order_by
+  user_users: order_by
+}
+
+"""
+update columns of table "addresses"
+"""
+enum addresses_update_column {
+  """column name"""
+  created_at
+
+  """column name"""
+  id
+
+  """column name"""
+  is_default
+
+  """column name"""
+  receiver_address
+
+  """column name"""
+  receiver_city
+
+  """column name"""
+  receiver_district
+
+  """column name"""
+  receiver_name
+
+  """column name"""
+  receiver_phone
+
+  """column name"""
+  receiver_province
+
+  """column name"""
+  updated_at
+
+  """column name"""
+  user_users
+}
+
+input addresses_updates {
+  """increments the numeric columns with given value of the filtered values"""
+  _inc: addresses_inc_input
+
+  """sets the columns of the filtered rows to the given values"""
+  _set: addresses_set_input
+
+  """filter the rows which have to be updated"""
+  where: addresses_bool_exp!
+}
+
+"""aggregate var_pop on columns"""
+type addresses_var_pop_fields {
+  id: Float
+  user_users: Float
+}
+
+"""
+order by var_pop() on columns of table "addresses"
+"""
+input addresses_var_pop_order_by {
+  id: order_by
+  user_users: order_by
+}
+
+"""aggregate var_samp on columns"""
+type addresses_var_samp_fields {
+  id: Float
+  user_users: Float
+}
+
+"""
+order by var_samp() on columns of table "addresses"
+"""
+input addresses_var_samp_order_by {
+  id: order_by
+  user_users: order_by
+}
+
+"""aggregate variance on columns"""
+type addresses_variance_fields {
+  id: Float
+  user_users: Float
+}
+
+"""
+order by variance() on columns of table "addresses"
+"""
+input addresses_variance_order_by {
+  id: order_by
+  user_users: order_by
+}
+
 scalar bigint
 
 """
@@ -1890,7 +2507,13 @@ type companies {
     """filter the rows returned"""
     where: company_users_bool_exp
   ): company_users_aggregate!
+
+  """联系我们 二维码"""
+  contact_code: String
   created_at: timestamptz!
+
+  """富文本，公司介绍"""
+  description: String
 
   """隐藏的分类ids"""
   hidden_category_ids: [bigint!]
@@ -2015,7 +2638,13 @@ type companies {
     """filter the rows returned"""
     where: products_bool_exp
   ): products_aggregate!
+
+  """资源库文件url，一般是pdf文档"""
+  resource_file_url: String
   updated_at: timestamptz!
+
+  """微信加好友二维码"""
+  wechat_code: String
 }
 
 """
@@ -2061,7 +2690,9 @@ input companies_bool_exp {
   categories_aggregate: categories_aggregate_bool_exp
   company_users: company_users_bool_exp
   company_users_aggregate: company_users_aggregate_bool_exp
+  contact_code: String_comparison_exp
   created_at: timestamptz_comparison_exp
+  description: String_comparison_exp
   hidden_category_ids: bigint_array_comparison_exp
   hidden_package_ids: bigint_array_comparison_exp
   hidden_product_ids: bigint_array_comparison_exp
@@ -2074,7 +2705,9 @@ input companies_bool_exp {
   product_skus_aggregate: product_skus_aggregate_bool_exp
   products: products_bool_exp
   products_aggregate: products_aggregate_bool_exp
+  resource_file_url: String_comparison_exp
   updated_at: timestamptz_comparison_exp
+  wechat_code: String_comparison_exp
 }
 
 """
@@ -2114,7 +2747,13 @@ input companies_insert_input {
   banner_top: [json!]
   categories: categories_arr_rel_insert_input
   company_users: company_users_arr_rel_insert_input
+
+  """联系我们 二维码"""
+  contact_code: String
   created_at: timestamptz
+
+  """富文本，公司介绍"""
+  description: String
 
   """隐藏的分类ids"""
   hidden_category_ids: [bigint!]
@@ -2134,7 +2773,13 @@ input companies_insert_input {
   orders: orders_arr_rel_insert_input
   product_skus: product_skus_arr_rel_insert_input
   products: products_arr_rel_insert_input
+
+  """资源库文件url，一般是pdf文档"""
+  resource_file_url: String
   updated_at: timestamptz
+
+  """微信加好友二维码"""
+  wechat_code: String
 }
 
 """aggregate max on columns"""
@@ -2148,7 +2793,13 @@ type companies_max_fields {
   顶部轮播图（json数组）export interface BannerItem { /** 文件类型（如：image、video） */ file_type?: string; /** 文件 URL */ file_url: string; /** 跳转链接（小程序路径或外部链接） */ link?: string; /** 排序索引 */ sort?: number; /** 标题 */ title?: string; }
   """
   banner_top: [json!]
+
+  """联系我们 二维码"""
+  contact_code: String
   created_at: timestamptz
+
+  """富文本，公司介绍"""
+  description: String
 
   """隐藏的分类ids"""
   hidden_category_ids: [bigint!]
@@ -2165,7 +2816,13 @@ type companies_max_fields {
 
   """公司名称"""
   name: String
+
+  """资源库文件url，一般是pdf文档"""
+  resource_file_url: String
   updated_at: timestamptz
+
+  """微信加好友二维码"""
+  wechat_code: String
 }
 
 """aggregate min on columns"""
@@ -2179,7 +2836,13 @@ type companies_min_fields {
   顶部轮播图（json数组）export interface BannerItem { /** 文件类型（如：image、video） */ file_type?: string; /** 文件 URL */ file_url: string; /** 跳转链接（小程序路径或外部链接） */ link?: string; /** 排序索引 */ sort?: number; /** 标题 */ title?: string; }
   """
   banner_top: [json!]
+
+  """联系我们 二维码"""
+  contact_code: String
   created_at: timestamptz
+
+  """富文本，公司介绍"""
+  description: String
 
   """隐藏的分类ids"""
   hidden_category_ids: [bigint!]
@@ -2196,7 +2859,13 @@ type companies_min_fields {
 
   """公司名称"""
   name: String
+
+  """资源库文件url，一般是pdf文档"""
+  resource_file_url: String
   updated_at: timestamptz
+
+  """微信加好友二维码"""
+  wechat_code: String
 }
 
 """
@@ -2235,7 +2904,9 @@ input companies_order_by {
   banner_top: order_by
   categories_aggregate: categories_aggregate_order_by
   company_users_aggregate: company_users_aggregate_order_by
+  contact_code: order_by
   created_at: order_by
+  description: order_by
   hidden_category_ids: order_by
   hidden_package_ids: order_by
   hidden_product_ids: order_by
@@ -2245,7 +2916,9 @@ input companies_order_by {
   orders_aggregate: orders_aggregate_order_by
   product_skus_aggregate: product_skus_aggregate_order_by
   products_aggregate: products_aggregate_order_by
+  resource_file_url: order_by
   updated_at: order_by
+  wechat_code: order_by
 }
 
 """primary key columns input for table: companies"""
@@ -2264,7 +2937,13 @@ enum companies_select_column {
   banner_top
 
   """column name"""
+  contact_code
+
+  """column name"""
   created_at
+
+  """column name"""
+  description
 
   """column name"""
   hidden_category_ids
@@ -2285,7 +2964,13 @@ enum companies_select_column {
   name
 
   """column name"""
+  resource_file_url
+
+  """column name"""
   updated_at
+
+  """column name"""
+  wechat_code
 }
 
 """
@@ -2301,7 +2986,13 @@ input companies_set_input {
   顶部轮播图（json数组）export interface BannerItem { /** 文件类型（如：image、video） */ file_type?: string; /** 文件 URL */ file_url: string; /** 跳转链接（小程序路径或外部链接） */ link?: string; /** 排序索引 */ sort?: number; /** 标题 */ title?: string; }
   """
   banner_top: [json!]
+
+  """联系我们 二维码"""
+  contact_code: String
   created_at: timestamptz
+
+  """富文本，公司介绍"""
+  description: String
 
   """隐藏的分类ids"""
   hidden_category_ids: [bigint!]
@@ -2318,7 +3009,13 @@ input companies_set_input {
 
   """公司名称"""
   name: String
+
+  """资源库文件url，一般是pdf文档"""
+  resource_file_url: String
   updated_at: timestamptz
+
+  """微信加好友二维码"""
+  wechat_code: String
 }
 
 """aggregate stddev on columns"""
@@ -2358,7 +3055,13 @@ input companies_stream_cursor_value_input {
   顶部轮播图（json数组）export interface BannerItem { /** 文件类型（如：image、video） */ file_type?: string; /** 文件 URL */ file_url: string; /** 跳转链接（小程序路径或外部链接） */ link?: string; /** 排序索引 */ sort?: number; /** 标题 */ title?: string; }
   """
   banner_top: [json!]
+
+  """联系我们 二维码"""
+  contact_code: String
   created_at: timestamptz
+
+  """富文本，公司介绍"""
+  description: String
 
   """隐藏的分类ids"""
   hidden_category_ids: [bigint!]
@@ -2375,7 +3078,13 @@ input companies_stream_cursor_value_input {
 
   """公司名称"""
   name: String
+
+  """资源库文件url，一般是pdf文档"""
+  resource_file_url: String
   updated_at: timestamptz
+
+  """微信加好友二维码"""
+  wechat_code: String
 }
 
 """aggregate sum on columns"""
@@ -2394,7 +3103,13 @@ enum companies_update_column {
   banner_top
 
   """column name"""
+  contact_code
+
+  """column name"""
   created_at
+
+  """column name"""
+  description
 
   """column name"""
   hidden_category_ids
@@ -2415,7 +3130,13 @@ enum companies_update_column {
   name
 
   """column name"""
+  resource_file_url
+
+  """column name"""
   updated_at
+
+  """column name"""
+  wechat_code
 }
 
 input companies_updates {
@@ -2457,7 +3178,7 @@ type company_users {
   created_at: timestamptz!
   id: bigint!
 
-  """该用户在公司下看到的价格系数（0-·1的数值），默认为1表示和产品价格一致"""
+  """该用户在公司下看到的价格系数（大于0数值），默认为1表示和产品价格一致"""
   price_factor: numeric!
 
   """用户在公司下的角色： 1.admin（可以管理公司的分类、公司的产品及套餐、授权公司用户）、2.user（普通用户）"""
@@ -2556,7 +3277,7 @@ type company_users_avg_fields {
   company_companies: Float
   id: Float
 
-  """该用户在公司下看到的价格系数（0-·1的数值），默认为1表示和产品价格一致"""
+  """该用户在公司下看到的价格系数（大于0数值），默认为1表示和产品价格一致"""
   price_factor: Float
 
   """用户id"""
@@ -2571,7 +3292,7 @@ input company_users_avg_order_by {
   company_companies: order_by
   id: order_by
 
-  """该用户在公司下看到的价格系数（0-·1的数值），默认为1表示和产品价格一致"""
+  """该用户在公司下看到的价格系数（大于0数值），默认为1表示和产品价格一致"""
   price_factor: order_by
 
   """用户id"""
@@ -2620,7 +3341,7 @@ input company_users_inc_input {
   company_companies: bigint
   id: bigint
 
-  """该用户在公司下看到的价格系数（0-·1的数值），默认为1表示和产品价格一致"""
+  """该用户在公司下看到的价格系数（大于0数值），默认为1表示和产品价格一致"""
   price_factor: numeric
 
   """用户id"""
@@ -2640,7 +3361,7 @@ input company_users_insert_input {
   created_at: timestamptz
   id: bigint
 
-  """该用户在公司下看到的价格系数（0-·1的数值），默认为1表示和产品价格一致"""
+  """该用户在公司下看到的价格系数（大于0数值），默认为1表示和产品价格一致"""
   price_factor: numeric
 
   """用户在公司下的角色： 1.admin（可以管理公司的分类、公司的产品及套餐、授权公司用户）、2.user（普通用户）"""
@@ -2659,7 +3380,7 @@ type company_users_max_fields {
   created_at: timestamptz
   id: bigint
 
-  """该用户在公司下看到的价格系数（0-·1的数值），默认为1表示和产品价格一致"""
+  """该用户在公司下看到的价格系数（大于0数值），默认为1表示和产品价格一致"""
   price_factor: numeric
 
   """用户在公司下的角色： 1.admin（可以管理公司的分类、公司的产品及套餐、授权公司用户）、2.user（普通用户）"""
@@ -2679,7 +3400,7 @@ input company_users_max_order_by {
   created_at: order_by
   id: order_by
 
-  """该用户在公司下看到的价格系数（0-·1的数值），默认为1表示和产品价格一致"""
+  """该用户在公司下看到的价格系数（大于0数值），默认为1表示和产品价格一致"""
   price_factor: order_by
 
   """用户在公司下的角色： 1.admin（可以管理公司的分类、公司的产品及套餐、授权公司用户）、2.user（普通用户）"""
@@ -2697,7 +3418,7 @@ type company_users_min_fields {
   created_at: timestamptz
   id: bigint
 
-  """该用户在公司下看到的价格系数（0-·1的数值），默认为1表示和产品价格一致"""
+  """该用户在公司下看到的价格系数（大于0数值），默认为1表示和产品价格一致"""
   price_factor: numeric
 
   """用户在公司下的角色： 1.admin（可以管理公司的分类、公司的产品及套餐、授权公司用户）、2.user（普通用户）"""
@@ -2717,7 +3438,7 @@ input company_users_min_order_by {
   created_at: order_by
   id: order_by
 
-  """该用户在公司下看到的价格系数（0-·1的数值），默认为1表示和产品价格一致"""
+  """该用户在公司下看到的价格系数（大于0数值），默认为1表示和产品价格一致"""
   price_factor: order_by
 
   """用户在公司下的角色： 1.admin（可以管理公司的分类、公司的产品及套餐、授权公司用户）、2.user（普通用户）"""
@@ -2824,7 +3545,7 @@ input company_users_set_input {
   created_at: timestamptz
   id: bigint
 
-  """该用户在公司下看到的价格系数（0-·1的数值），默认为1表示和产品价格一致"""
+  """该用户在公司下看到的价格系数（大于0数值），默认为1表示和产品价格一致"""
   price_factor: numeric
 
   """用户在公司下的角色： 1.admin（可以管理公司的分类、公司的产品及套餐、授权公司用户）、2.user（普通用户）"""
@@ -2841,7 +3562,7 @@ type company_users_stddev_fields {
   company_companies: Float
   id: Float
 
-  """该用户在公司下看到的价格系数（0-·1的数值），默认为1表示和产品价格一致"""
+  """该用户在公司下看到的价格系数（大于0数值），默认为1表示和产品价格一致"""
   price_factor: Float
 
   """用户id"""
@@ -2856,7 +3577,7 @@ input company_users_stddev_order_by {
   company_companies: order_by
   id: order_by
 
-  """该用户在公司下看到的价格系数（0-·1的数值），默认为1表示和产品价格一致"""
+  """该用户在公司下看到的价格系数（大于0数值），默认为1表示和产品价格一致"""
   price_factor: order_by
 
   """用户id"""
@@ -2869,7 +3590,7 @@ type company_users_stddev_pop_fields {
   company_companies: Float
   id: Float
 
-  """该用户在公司下看到的价格系数（0-·1的数值），默认为1表示和产品价格一致"""
+  """该用户在公司下看到的价格系数（大于0数值），默认为1表示和产品价格一致"""
   price_factor: Float
 
   """用户id"""
@@ -2884,7 +3605,7 @@ input company_users_stddev_pop_order_by {
   company_companies: order_by
   id: order_by
 
-  """该用户在公司下看到的价格系数（0-·1的数值），默认为1表示和产品价格一致"""
+  """该用户在公司下看到的价格系数（大于0数值），默认为1表示和产品价格一致"""
   price_factor: order_by
 
   """用户id"""
@@ -2897,7 +3618,7 @@ type company_users_stddev_samp_fields {
   company_companies: Float
   id: Float
 
-  """该用户在公司下看到的价格系数（0-·1的数值），默认为1表示和产品价格一致"""
+  """该用户在公司下看到的价格系数（大于0数值），默认为1表示和产品价格一致"""
   price_factor: Float
 
   """用户id"""
@@ -2912,7 +3633,7 @@ input company_users_stddev_samp_order_by {
   company_companies: order_by
   id: order_by
 
-  """该用户在公司下看到的价格系数（0-·1的数值），默认为1表示和产品价格一致"""
+  """该用户在公司下看到的价格系数（大于0数值），默认为1表示和产品价格一致"""
   price_factor: order_by
 
   """用户id"""
@@ -2940,7 +3661,7 @@ input company_users_stream_cursor_value_input {
   created_at: timestamptz
   id: bigint
 
-  """该用户在公司下看到的价格系数（0-·1的数值），默认为1表示和产品价格一致"""
+  """该用户在公司下看到的价格系数（大于0数值），默认为1表示和产品价格一致"""
   price_factor: numeric
 
   """用户在公司下的角色： 1.admin（可以管理公司的分类、公司的产品及套餐、授权公司用户）、2.user（普通用户）"""
@@ -2957,7 +3678,7 @@ type company_users_sum_fields {
   company_companies: bigint
   id: bigint
 
-  """该用户在公司下看到的价格系数（0-·1的数值），默认为1表示和产品价格一致"""
+  """该用户在公司下看到的价格系数（大于0数值），默认为1表示和产品价格一致"""
   price_factor: numeric
 
   """用户id"""
@@ -2972,7 +3693,7 @@ input company_users_sum_order_by {
   company_companies: order_by
   id: order_by
 
-  """该用户在公司下看到的价格系数（0-·1的数值），默认为1表示和产品价格一致"""
+  """该用户在公司下看到的价格系数（大于0数值），默认为1表示和产品价格一致"""
   price_factor: order_by
 
   """用户id"""
@@ -3025,7 +3746,7 @@ type company_users_var_pop_fields {
   company_companies: Float
   id: Float
 
-  """该用户在公司下看到的价格系数（0-·1的数值），默认为1表示和产品价格一致"""
+  """该用户在公司下看到的价格系数（大于0数值），默认为1表示和产品价格一致"""
   price_factor: Float
 
   """用户id"""
@@ -3040,7 +3761,7 @@ input company_users_var_pop_order_by {
   company_companies: order_by
   id: order_by
 
-  """该用户在公司下看到的价格系数（0-·1的数值），默认为1表示和产品价格一致"""
+  """该用户在公司下看到的价格系数（大于0数值），默认为1表示和产品价格一致"""
   price_factor: order_by
 
   """用户id"""
@@ -3053,7 +3774,7 @@ type company_users_var_samp_fields {
   company_companies: Float
   id: Float
 
-  """该用户在公司下看到的价格系数（0-·1的数值），默认为1表示和产品价格一致"""
+  """该用户在公司下看到的价格系数（大于0数值），默认为1表示和产品价格一致"""
   price_factor: Float
 
   """用户id"""
@@ -3068,7 +3789,7 @@ input company_users_var_samp_order_by {
   company_companies: order_by
   id: order_by
 
-  """该用户在公司下看到的价格系数（0-·1的数值），默认为1表示和产品价格一致"""
+  """该用户在公司下看到的价格系数（大于0数值），默认为1表示和产品价格一致"""
   price_factor: order_by
 
   """用户id"""
@@ -3081,7 +3802,7 @@ type company_users_variance_fields {
   company_companies: Float
   id: Float
 
-  """该用户在公司下看到的价格系数（0-·1的数值），默认为1表示和产品价格一致"""
+  """该用户在公司下看到的价格系数（大于0数值），默认为1表示和产品价格一致"""
   price_factor: Float
 
   """用户id"""
@@ -3096,7 +3817,7 @@ input company_users_variance_order_by {
   company_companies: order_by
   id: order_by
 
-  """该用户在公司下看到的价格系数（0-·1的数值），默认为1表示和产品价格一致"""
+  """该用户在公司下看到的价格系数（大于0数值），默认为1表示和产品价格一致"""
   price_factor: order_by
 
   """用户id"""
@@ -3482,6 +4203,19 @@ input json_comparison_exp {
 """mutation root"""
 type mutation_root {
   """
+  delete data from the table: "addresses"
+  """
+  delete_addresses(
+    """filter the rows which have to be deleted"""
+    where: addresses_bool_exp!
+  ): addresses_mutation_response
+
+  """
+  delete single row from the table: "addresses"
+  """
+  delete_addresses_by_pk(id: bigint!): addresses
+
+  """
   delete data from the table: "carts"
   """
   delete_carts(
@@ -3636,6 +4370,28 @@ type mutation_root {
   delete single row from the table: "users"
   """
   delete_users_by_pk(id: bigint!): users
+
+  """
+  insert data into the table: "addresses"
+  """
+  insert_addresses(
+    """the rows to be inserted"""
+    objects: [addresses_insert_input!]!
+
+    """upsert condition"""
+    on_conflict: addresses_on_conflict
+  ): addresses_mutation_response
+
+  """
+  insert a single row into the table: "addresses"
+  """
+  insert_addresses_one(
+    """the row to be inserted"""
+    object: addresses_insert_input!
+
+    """upsert condition"""
+    on_conflict: addresses_on_conflict
+  ): addresses
 
   """
   insert data into the table: "carts"
@@ -3900,6 +4656,40 @@ type mutation_root {
     """upsert condition"""
     on_conflict: users_on_conflict
   ): users
+
+  """
+  update data of the table: "addresses"
+  """
+  update_addresses(
+    """increments the numeric columns with given value of the filtered values"""
+    _inc: addresses_inc_input
+
+    """sets the columns of the filtered rows to the given values"""
+    _set: addresses_set_input
+
+    """filter the rows which have to be updated"""
+    where: addresses_bool_exp!
+  ): addresses_mutation_response
+
+  """
+  update single row of the table: "addresses"
+  """
+  update_addresses_by_pk(
+    """increments the numeric columns with given value of the filtered values"""
+    _inc: addresses_inc_input
+
+    """sets the columns of the filtered rows to the given values"""
+    _set: addresses_set_input
+    pk_columns: addresses_pk_columns_input!
+  ): addresses
+
+  """
+  update multiples rows of table: "addresses"
+  """
+  update_addresses_many(
+    """updates to execute, in order"""
+    updates: [addresses_updates!]!
+  ): [addresses_mutation_response]
 
   """
   update data of the table: "carts"
@@ -4353,8 +5143,14 @@ type order_items {
   created_at: timestamptz!
   id: bigint!
 
+  """商品图片快照"""
+  product_image_url: String
+
+  """商品名称快照"""
+  product_name: String
+
   """单价，记录product_sku的价格，防止价格变动"""
-  price: numeric!
+  product_price: numeric!
 
   """An object relationship"""
   product_sku: product_skus!
@@ -4438,7 +5234,7 @@ type order_items_avg_fields {
   id: Float
 
   """单价，记录product_sku的价格，防止价格变动"""
-  price: Float
+  product_price: Float
 
   """关联产品id"""
   product_sku_product_skus: Float
@@ -4454,7 +5250,7 @@ input order_items_avg_order_by {
   id: order_by
 
   """单价，记录product_sku的价格，防止价格变动"""
-  price: order_by
+  product_price: order_by
 
   """关联产品id"""
   product_sku_product_skus: order_by
@@ -4472,7 +5268,9 @@ input order_items_bool_exp {
   _or: [order_items_bool_exp!]
   created_at: timestamptz_comparison_exp
   id: bigint_comparison_exp
-  price: numeric_comparison_exp
+  product_image_url: String_comparison_exp
+  product_name: String_comparison_exp
+  product_price: numeric_comparison_exp
   product_sku: product_skus_bool_exp
   product_sku_product_skus: bigint_comparison_exp
   quantity: bigint_comparison_exp
@@ -4497,7 +5295,7 @@ input order_items_inc_input {
   id: bigint
 
   """单价，记录product_sku的价格，防止价格变动"""
-  price: numeric
+  product_price: numeric
 
   """关联产品id"""
   product_sku_product_skus: bigint
@@ -4513,8 +5311,14 @@ input order_items_insert_input {
   created_at: timestamptz
   id: bigint
 
+  """商品图片快照"""
+  product_image_url: String
+
+  """商品名称快照"""
+  product_name: String
+
   """单价，记录product_sku的价格，防止价格变动"""
-  price: numeric
+  product_price: numeric
   product_sku: product_skus_obj_rel_insert_input
 
   """关联产品id"""
@@ -4533,8 +5337,14 @@ type order_items_max_fields {
   created_at: timestamptz
   id: bigint
 
+  """商品图片快照"""
+  product_image_url: String
+
+  """商品名称快照"""
+  product_name: String
+
   """单价，记录product_sku的价格，防止价格变动"""
-  price: numeric
+  product_price: numeric
 
   """关联产品id"""
   product_sku_product_skus: bigint
@@ -4554,8 +5364,14 @@ input order_items_max_order_by {
   created_at: order_by
   id: order_by
 
+  """商品图片快照"""
+  product_image_url: order_by
+
+  """商品名称快照"""
+  product_name: order_by
+
   """单价，记录product_sku的价格，防止价格变动"""
-  price: order_by
+  product_price: order_by
 
   """关联产品id"""
   product_sku_product_skus: order_by
@@ -4573,8 +5389,14 @@ type order_items_min_fields {
   created_at: timestamptz
   id: bigint
 
+  """商品图片快照"""
+  product_image_url: String
+
+  """商品名称快照"""
+  product_name: String
+
   """单价，记录product_sku的价格，防止价格变动"""
-  price: numeric
+  product_price: numeric
 
   """关联产品id"""
   product_sku_product_skus: bigint
@@ -4594,8 +5416,14 @@ input order_items_min_order_by {
   created_at: order_by
   id: order_by
 
+  """商品图片快照"""
+  product_image_url: order_by
+
+  """商品名称快照"""
+  product_name: order_by
+
   """单价，记录product_sku的价格，防止价格变动"""
-  price: order_by
+  product_price: order_by
 
   """关联产品id"""
   product_sku_product_skus: order_by
@@ -4632,7 +5460,9 @@ input order_items_on_conflict {
 input order_items_order_by {
   created_at: order_by
   id: order_by
-  price: order_by
+  product_image_url: order_by
+  product_name: order_by
+  product_price: order_by
   product_sku: product_skus_order_by
   product_sku_product_skus: order_by
   quantity: order_by
@@ -4656,7 +5486,13 @@ enum order_items_select_column {
   id
 
   """column name"""
-  price
+  product_image_url
+
+  """column name"""
+  product_name
+
+  """column name"""
+  product_price
 
   """column name"""
   product_sku_product_skus
@@ -4678,8 +5514,14 @@ input order_items_set_input {
   created_at: timestamptz
   id: bigint
 
+  """商品图片快照"""
+  product_image_url: String
+
+  """商品名称快照"""
+  product_name: String
+
   """单价，记录product_sku的价格，防止价格变动"""
-  price: numeric
+  product_price: numeric
 
   """关联产品id"""
   product_sku_product_skus: bigint
@@ -4697,7 +5539,7 @@ type order_items_stddev_fields {
   id: Float
 
   """单价，记录product_sku的价格，防止价格变动"""
-  price: Float
+  product_price: Float
 
   """关联产品id"""
   product_sku_product_skus: Float
@@ -4713,7 +5555,7 @@ input order_items_stddev_order_by {
   id: order_by
 
   """单价，记录product_sku的价格，防止价格变动"""
-  price: order_by
+  product_price: order_by
 
   """关联产品id"""
   product_sku_product_skus: order_by
@@ -4727,7 +5569,7 @@ type order_items_stddev_pop_fields {
   id: Float
 
   """单价，记录product_sku的价格，防止价格变动"""
-  price: Float
+  product_price: Float
 
   """关联产品id"""
   product_sku_product_skus: Float
@@ -4743,7 +5585,7 @@ input order_items_stddev_pop_order_by {
   id: order_by
 
   """单价，记录product_sku的价格，防止价格变动"""
-  price: order_by
+  product_price: order_by
 
   """关联产品id"""
   product_sku_product_skus: order_by
@@ -4757,7 +5599,7 @@ type order_items_stddev_samp_fields {
   id: Float
 
   """单价，记录product_sku的价格，防止价格变动"""
-  price: Float
+  product_price: Float
 
   """关联产品id"""
   product_sku_product_skus: Float
@@ -4773,7 +5615,7 @@ input order_items_stddev_samp_order_by {
   id: order_by
 
   """单价，记录product_sku的价格，防止价格变动"""
-  price: order_by
+  product_price: order_by
 
   """关联产品id"""
   product_sku_product_skus: order_by
@@ -4798,8 +5640,14 @@ input order_items_stream_cursor_value_input {
   created_at: timestamptz
   id: bigint
 
+  """商品图片快照"""
+  product_image_url: String
+
+  """商品名称快照"""
+  product_name: String
+
   """单价，记录product_sku的价格，防止价格变动"""
-  price: numeric
+  product_price: numeric
 
   """关联产品id"""
   product_sku_product_skus: bigint
@@ -4817,7 +5665,7 @@ type order_items_sum_fields {
   id: bigint
 
   """单价，记录product_sku的价格，防止价格变动"""
-  price: numeric
+  product_price: numeric
 
   """关联产品id"""
   product_sku_product_skus: bigint
@@ -4833,7 +5681,7 @@ input order_items_sum_order_by {
   id: order_by
 
   """单价，记录product_sku的价格，防止价格变动"""
-  price: order_by
+  product_price: order_by
 
   """关联产品id"""
   product_sku_product_skus: order_by
@@ -4853,7 +5701,13 @@ enum order_items_update_column {
   id
 
   """column name"""
-  price
+  product_image_url
+
+  """column name"""
+  product_name
+
+  """column name"""
+  product_price
 
   """column name"""
   product_sku_product_skus
@@ -4884,7 +5738,7 @@ type order_items_var_pop_fields {
   id: Float
 
   """单价，记录product_sku的价格，防止价格变动"""
-  price: Float
+  product_price: Float
 
   """关联产品id"""
   product_sku_product_skus: Float
@@ -4900,7 +5754,7 @@ input order_items_var_pop_order_by {
   id: order_by
 
   """单价，记录product_sku的价格，防止价格变动"""
-  price: order_by
+  product_price: order_by
 
   """关联产品id"""
   product_sku_product_skus: order_by
@@ -4914,7 +5768,7 @@ type order_items_var_samp_fields {
   id: Float
 
   """单价，记录product_sku的价格，防止价格变动"""
-  price: Float
+  product_price: Float
 
   """关联产品id"""
   product_sku_product_skus: Float
@@ -4930,7 +5784,7 @@ input order_items_var_samp_order_by {
   id: order_by
 
   """单价，记录product_sku的价格，防止价格变动"""
-  price: order_by
+  product_price: order_by
 
   """关联产品id"""
   product_sku_product_skus: order_by
@@ -4944,7 +5798,7 @@ type order_items_variance_fields {
   id: Float
 
   """单价，记录product_sku的价格，防止价格变动"""
-  price: Float
+  product_price: Float
 
   """关联产品id"""
   product_sku_product_skus: Float
@@ -4960,7 +5814,7 @@ input order_items_variance_order_by {
   id: order_by
 
   """单价，记录product_sku的价格，防止价格变动"""
-  price: order_by
+  product_price: order_by
 
   """关联产品id"""
   product_sku_product_skus: order_by
@@ -4971,6 +5825,9 @@ input order_items_variance_order_by {
 
 """订单表"""
 type orders {
+  """实际支付金额，由公司管理员设置确认，用于真实的统计"""
+  actual_amount: numeric!
+
   """An object relationship"""
   company: companies!
 
@@ -4982,14 +5839,39 @@ type orders {
   """是否删除"""
   is_deleted: Boolean!
 
-  """下单用户在改公司的价格系数"""
+  """
+  -- 状态值： -- pending: 等待确认（用户提交了订单，管理员没有确认，用户可能已经付款了，也可能没有） -- confirmed: 已确认（管理员完成确认了订单可以发货，此时会锁库存，但用户不一定付款了）-- completed: 已完成（订单完成结束，对应的payment_status是approved）
+  """
+  order_status: String!
+
+  """
+  -- 支付审核状态（管理员设置）： -- pending: 待支付（用户尚未支付） -- approved: 已通过（管理员确认用户订单已经付款了）
+  """
+  payment_status: String!
+
+  """下单用户在该公司的价格系数快照"""
   price_factor: numeric!
+
+  """收货地址"""
+  receiver_address: String!
+
+  """可不填，收货人-市"""
+  receiver_city: String
+
+  """可不填，收货人-区"""
+  receiver_district: String
+
+  """收货人"""
+  receiver_name: String!
+
+  """收货电话"""
+  receiver_phone: String!
+
+  """可不填，收货人-省"""
+  receiver_province: String
 
   """订单用户备注"""
   remark: String
-
-  """订单状态（1.pending（待确认） 2.submitted（.已提交）"""
-  status: String!
 
   """总金额，总价*价格系数"""
   total_amount: numeric!
@@ -5086,11 +5968,14 @@ input orders_arr_rel_insert_input {
 
 """aggregate avg on columns"""
 type orders_avg_fields {
+  """实际支付金额，由公司管理员设置确认，用于真实的统计"""
+  actual_amount: Float
+
   """关联公司id，在哪个公司下单的"""
   company_companies: Float
   id: Float
 
-  """下单用户在改公司的价格系数"""
+  """下单用户在该公司的价格系数快照"""
   price_factor: Float
 
   """总金额，总价*价格系数"""
@@ -5107,11 +5992,14 @@ type orders_avg_fields {
 order by avg() on columns of table "orders"
 """
 input orders_avg_order_by {
+  """实际支付金额，由公司管理员设置确认，用于真实的统计"""
+  actual_amount: order_by
+
   """关联公司id，在哪个公司下单的"""
   company_companies: order_by
   id: order_by
 
-  """下单用户在改公司的价格系数"""
+  """下单用户在该公司的价格系数快照"""
   price_factor: order_by
 
   """总金额，总价*价格系数"""
@@ -5131,14 +6019,22 @@ input orders_bool_exp {
   _and: [orders_bool_exp!]
   _not: orders_bool_exp
   _or: [orders_bool_exp!]
+  actual_amount: numeric_comparison_exp
   company: companies_bool_exp
   company_companies: bigint_comparison_exp
   created_at: timestamptz_comparison_exp
   id: bigint_comparison_exp
   is_deleted: Boolean_comparison_exp
+  order_status: String_comparison_exp
+  payment_status: String_comparison_exp
   price_factor: numeric_comparison_exp
+  receiver_address: String_comparison_exp
+  receiver_city: String_comparison_exp
+  receiver_district: String_comparison_exp
+  receiver_name: String_comparison_exp
+  receiver_phone: String_comparison_exp
+  receiver_province: String_comparison_exp
   remark: String_comparison_exp
-  status: String_comparison_exp
   total_amount: numeric_comparison_exp
   total_price: numeric_comparison_exp
   updated_at: timestamptz_comparison_exp
@@ -5160,11 +6056,14 @@ enum orders_constraint {
 input type for incrementing numeric columns in table "orders"
 """
 input orders_inc_input {
+  """实际支付金额，由公司管理员设置确认，用于真实的统计"""
+  actual_amount: numeric
+
   """关联公司id，在哪个公司下单的"""
   company_companies: bigint
   id: bigint
 
-  """下单用户在改公司的价格系数"""
+  """下单用户在该公司的价格系数快照"""
   price_factor: numeric
 
   """总金额，总价*价格系数"""
@@ -5181,6 +6080,8 @@ input orders_inc_input {
 input type for inserting data into table "orders"
 """
 input orders_insert_input {
+  """实际支付金额，由公司管理员设置确认，用于真实的统计"""
+  actual_amount: numeric
   company: companies_obj_rel_insert_input
 
   """关联公司id，在哪个公司下单的"""
@@ -5191,14 +6092,39 @@ input orders_insert_input {
   """是否删除"""
   is_deleted: Boolean
 
-  """下单用户在改公司的价格系数"""
+  """
+  -- 状态值： -- pending: 等待确认（用户提交了订单，管理员没有确认，用户可能已经付款了，也可能没有） -- confirmed: 已确认（管理员完成确认了订单可以发货，此时会锁库存，但用户不一定付款了）-- completed: 已完成（订单完成结束，对应的payment_status是approved）
+  """
+  order_status: String
+
+  """
+  -- 支付审核状态（管理员设置）： -- pending: 待支付（用户尚未支付） -- approved: 已通过（管理员确认用户订单已经付款了）
+  """
+  payment_status: String
+
+  """下单用户在该公司的价格系数快照"""
   price_factor: numeric
+
+  """收货地址"""
+  receiver_address: String
+
+  """可不填，收货人-市"""
+  receiver_city: String
+
+  """可不填，收货人-区"""
+  receiver_district: String
+
+  """收货人"""
+  receiver_name: String
+
+  """收货电话"""
+  receiver_phone: String
+
+  """可不填，收货人-省"""
+  receiver_province: String
 
   """订单用户备注"""
   remark: String
-
-  """订单状态（1.pending（待确认） 2.submitted（.已提交）"""
-  status: String
 
   """总金额，总价*价格系数"""
   total_amount: numeric
@@ -5214,19 +6140,47 @@ input orders_insert_input {
 
 """aggregate max on columns"""
 type orders_max_fields {
+  """实际支付金额，由公司管理员设置确认，用于真实的统计"""
+  actual_amount: numeric
+
   """关联公司id，在哪个公司下单的"""
   company_companies: bigint
   created_at: timestamptz
   id: bigint
 
-  """下单用户在改公司的价格系数"""
+  """
+  -- 状态值： -- pending: 等待确认（用户提交了订单，管理员没有确认，用户可能已经付款了，也可能没有） -- confirmed: 已确认（管理员完成确认了订单可以发货，此时会锁库存，但用户不一定付款了）-- completed: 已完成（订单完成结束，对应的payment_status是approved）
+  """
+  order_status: String
+
+  """
+  -- 支付审核状态（管理员设置）： -- pending: 待支付（用户尚未支付） -- approved: 已通过（管理员确认用户订单已经付款了）
+  """
+  payment_status: String
+
+  """下单用户在该公司的价格系数快照"""
   price_factor: numeric
+
+  """收货地址"""
+  receiver_address: String
+
+  """可不填，收货人-市"""
+  receiver_city: String
+
+  """可不填，收货人-区"""
+  receiver_district: String
+
+  """收货人"""
+  receiver_name: String
+
+  """收货电话"""
+  receiver_phone: String
+
+  """可不填，收货人-省"""
+  receiver_province: String
 
   """订单用户备注"""
   remark: String
-
-  """订单状态（1.pending（待确认） 2.submitted（.已提交）"""
-  status: String
 
   """总金额，总价*价格系数"""
   total_amount: numeric
@@ -5243,19 +6197,47 @@ type orders_max_fields {
 order by max() on columns of table "orders"
 """
 input orders_max_order_by {
+  """实际支付金额，由公司管理员设置确认，用于真实的统计"""
+  actual_amount: order_by
+
   """关联公司id，在哪个公司下单的"""
   company_companies: order_by
   created_at: order_by
   id: order_by
 
-  """下单用户在改公司的价格系数"""
+  """
+  -- 状态值： -- pending: 等待确认（用户提交了订单，管理员没有确认，用户可能已经付款了，也可能没有） -- confirmed: 已确认（管理员完成确认了订单可以发货，此时会锁库存，但用户不一定付款了）-- completed: 已完成（订单完成结束，对应的payment_status是approved）
+  """
+  order_status: order_by
+
+  """
+  -- 支付审核状态（管理员设置）： -- pending: 待支付（用户尚未支付） -- approved: 已通过（管理员确认用户订单已经付款了）
+  """
+  payment_status: order_by
+
+  """下单用户在该公司的价格系数快照"""
   price_factor: order_by
+
+  """收货地址"""
+  receiver_address: order_by
+
+  """可不填，收货人-市"""
+  receiver_city: order_by
+
+  """可不填，收货人-区"""
+  receiver_district: order_by
+
+  """收货人"""
+  receiver_name: order_by
+
+  """收货电话"""
+  receiver_phone: order_by
+
+  """可不填，收货人-省"""
+  receiver_province: order_by
 
   """订单用户备注"""
   remark: order_by
-
-  """订单状态（1.pending（待确认） 2.submitted（.已提交）"""
-  status: order_by
 
   """总金额，总价*价格系数"""
   total_amount: order_by
@@ -5270,19 +6252,47 @@ input orders_max_order_by {
 
 """aggregate min on columns"""
 type orders_min_fields {
+  """实际支付金额，由公司管理员设置确认，用于真实的统计"""
+  actual_amount: numeric
+
   """关联公司id，在哪个公司下单的"""
   company_companies: bigint
   created_at: timestamptz
   id: bigint
 
-  """下单用户在改公司的价格系数"""
+  """
+  -- 状态值： -- pending: 等待确认（用户提交了订单，管理员没有确认，用户可能已经付款了，也可能没有） -- confirmed: 已确认（管理员完成确认了订单可以发货，此时会锁库存，但用户不一定付款了）-- completed: 已完成（订单完成结束，对应的payment_status是approved）
+  """
+  order_status: String
+
+  """
+  -- 支付审核状态（管理员设置）： -- pending: 待支付（用户尚未支付） -- approved: 已通过（管理员确认用户订单已经付款了）
+  """
+  payment_status: String
+
+  """下单用户在该公司的价格系数快照"""
   price_factor: numeric
+
+  """收货地址"""
+  receiver_address: String
+
+  """可不填，收货人-市"""
+  receiver_city: String
+
+  """可不填，收货人-区"""
+  receiver_district: String
+
+  """收货人"""
+  receiver_name: String
+
+  """收货电话"""
+  receiver_phone: String
+
+  """可不填，收货人-省"""
+  receiver_province: String
 
   """订单用户备注"""
   remark: String
-
-  """订单状态（1.pending（待确认） 2.submitted（.已提交）"""
-  status: String
 
   """总金额，总价*价格系数"""
   total_amount: numeric
@@ -5299,19 +6309,47 @@ type orders_min_fields {
 order by min() on columns of table "orders"
 """
 input orders_min_order_by {
+  """实际支付金额，由公司管理员设置确认，用于真实的统计"""
+  actual_amount: order_by
+
   """关联公司id，在哪个公司下单的"""
   company_companies: order_by
   created_at: order_by
   id: order_by
 
-  """下单用户在改公司的价格系数"""
+  """
+  -- 状态值： -- pending: 等待确认（用户提交了订单，管理员没有确认，用户可能已经付款了，也可能没有） -- confirmed: 已确认（管理员完成确认了订单可以发货，此时会锁库存，但用户不一定付款了）-- completed: 已完成（订单完成结束，对应的payment_status是approved）
+  """
+  order_status: order_by
+
+  """
+  -- 支付审核状态（管理员设置）： -- pending: 待支付（用户尚未支付） -- approved: 已通过（管理员确认用户订单已经付款了）
+  """
+  payment_status: order_by
+
+  """下单用户在该公司的价格系数快照"""
   price_factor: order_by
+
+  """收货地址"""
+  receiver_address: order_by
+
+  """可不填，收货人-市"""
+  receiver_city: order_by
+
+  """可不填，收货人-区"""
+  receiver_district: order_by
+
+  """收货人"""
+  receiver_name: order_by
+
+  """收货电话"""
+  receiver_phone: order_by
+
+  """可不填，收货人-省"""
+  receiver_province: order_by
 
   """订单用户备注"""
   remark: order_by
-
-  """订单状态（1.pending（待确认） 2.submitted（.已提交）"""
-  status: order_by
 
   """总金额，总价*价格系数"""
   total_amount: order_by
@@ -5346,14 +6384,22 @@ input orders_on_conflict {
 
 """Ordering options when selecting data from "orders"."""
 input orders_order_by {
+  actual_amount: order_by
   company: companies_order_by
   company_companies: order_by
   created_at: order_by
   id: order_by
   is_deleted: order_by
+  order_status: order_by
+  payment_status: order_by
   price_factor: order_by
+  receiver_address: order_by
+  receiver_city: order_by
+  receiver_district: order_by
+  receiver_name: order_by
+  receiver_phone: order_by
+  receiver_province: order_by
   remark: order_by
-  status: order_by
   total_amount: order_by
   total_price: order_by
   updated_at: order_by
@@ -5371,6 +6417,9 @@ select columns of table "orders"
 """
 enum orders_select_column {
   """column name"""
+  actual_amount
+
+  """column name"""
   company_companies
 
   """column name"""
@@ -5383,13 +6432,34 @@ enum orders_select_column {
   is_deleted
 
   """column name"""
+  order_status
+
+  """column name"""
+  payment_status
+
+  """column name"""
   price_factor
 
   """column name"""
-  remark
+  receiver_address
 
   """column name"""
-  status
+  receiver_city
+
+  """column name"""
+  receiver_district
+
+  """column name"""
+  receiver_name
+
+  """column name"""
+  receiver_phone
+
+  """column name"""
+  receiver_province
+
+  """column name"""
+  remark
 
   """column name"""
   total_amount
@@ -5424,6 +6494,9 @@ enum orders_select_column_orders_aggregate_bool_exp_bool_or_arguments_columns {
 input type for updating data in table "orders"
 """
 input orders_set_input {
+  """实际支付金额，由公司管理员设置确认，用于真实的统计"""
+  actual_amount: numeric
+
   """关联公司id，在哪个公司下单的"""
   company_companies: bigint
   created_at: timestamptz
@@ -5432,14 +6505,39 @@ input orders_set_input {
   """是否删除"""
   is_deleted: Boolean
 
-  """下单用户在改公司的价格系数"""
+  """
+  -- 状态值： -- pending: 等待确认（用户提交了订单，管理员没有确认，用户可能已经付款了，也可能没有） -- confirmed: 已确认（管理员完成确认了订单可以发货，此时会锁库存，但用户不一定付款了）-- completed: 已完成（订单完成结束，对应的payment_status是approved）
+  """
+  order_status: String
+
+  """
+  -- 支付审核状态（管理员设置）： -- pending: 待支付（用户尚未支付） -- approved: 已通过（管理员确认用户订单已经付款了）
+  """
+  payment_status: String
+
+  """下单用户在该公司的价格系数快照"""
   price_factor: numeric
+
+  """收货地址"""
+  receiver_address: String
+
+  """可不填，收货人-市"""
+  receiver_city: String
+
+  """可不填，收货人-区"""
+  receiver_district: String
+
+  """收货人"""
+  receiver_name: String
+
+  """收货电话"""
+  receiver_phone: String
+
+  """可不填，收货人-省"""
+  receiver_province: String
 
   """订单用户备注"""
   remark: String
-
-  """订单状态（1.pending（待确认） 2.submitted（.已提交）"""
-  status: String
 
   """总金额，总价*价格系数"""
   total_amount: numeric
@@ -5454,11 +6552,14 @@ input orders_set_input {
 
 """aggregate stddev on columns"""
 type orders_stddev_fields {
+  """实际支付金额，由公司管理员设置确认，用于真实的统计"""
+  actual_amount: Float
+
   """关联公司id，在哪个公司下单的"""
   company_companies: Float
   id: Float
 
-  """下单用户在改公司的价格系数"""
+  """下单用户在该公司的价格系数快照"""
   price_factor: Float
 
   """总金额，总价*价格系数"""
@@ -5475,11 +6576,14 @@ type orders_stddev_fields {
 order by stddev() on columns of table "orders"
 """
 input orders_stddev_order_by {
+  """实际支付金额，由公司管理员设置确认，用于真实的统计"""
+  actual_amount: order_by
+
   """关联公司id，在哪个公司下单的"""
   company_companies: order_by
   id: order_by
 
-  """下单用户在改公司的价格系数"""
+  """下单用户在该公司的价格系数快照"""
   price_factor: order_by
 
   """总金额，总价*价格系数"""
@@ -5494,11 +6598,14 @@ input orders_stddev_order_by {
 
 """aggregate stddev_pop on columns"""
 type orders_stddev_pop_fields {
+  """实际支付金额，由公司管理员设置确认，用于真实的统计"""
+  actual_amount: Float
+
   """关联公司id，在哪个公司下单的"""
   company_companies: Float
   id: Float
 
-  """下单用户在改公司的价格系数"""
+  """下单用户在该公司的价格系数快照"""
   price_factor: Float
 
   """总金额，总价*价格系数"""
@@ -5515,11 +6622,14 @@ type orders_stddev_pop_fields {
 order by stddev_pop() on columns of table "orders"
 """
 input orders_stddev_pop_order_by {
+  """实际支付金额，由公司管理员设置确认，用于真实的统计"""
+  actual_amount: order_by
+
   """关联公司id，在哪个公司下单的"""
   company_companies: order_by
   id: order_by
 
-  """下单用户在改公司的价格系数"""
+  """下单用户在该公司的价格系数快照"""
   price_factor: order_by
 
   """总金额，总价*价格系数"""
@@ -5534,11 +6644,14 @@ input orders_stddev_pop_order_by {
 
 """aggregate stddev_samp on columns"""
 type orders_stddev_samp_fields {
+  """实际支付金额，由公司管理员设置确认，用于真实的统计"""
+  actual_amount: Float
+
   """关联公司id，在哪个公司下单的"""
   company_companies: Float
   id: Float
 
-  """下单用户在改公司的价格系数"""
+  """下单用户在该公司的价格系数快照"""
   price_factor: Float
 
   """总金额，总价*价格系数"""
@@ -5555,11 +6668,14 @@ type orders_stddev_samp_fields {
 order by stddev_samp() on columns of table "orders"
 """
 input orders_stddev_samp_order_by {
+  """实际支付金额，由公司管理员设置确认，用于真实的统计"""
+  actual_amount: order_by
+
   """关联公司id，在哪个公司下单的"""
   company_companies: order_by
   id: order_by
 
-  """下单用户在改公司的价格系数"""
+  """下单用户在该公司的价格系数快照"""
   price_factor: order_by
 
   """总金额，总价*价格系数"""
@@ -5585,6 +6701,9 @@ input orders_stream_cursor_input {
 
 """Initial value of the column from where the streaming should start"""
 input orders_stream_cursor_value_input {
+  """实际支付金额，由公司管理员设置确认，用于真实的统计"""
+  actual_amount: numeric
+
   """关联公司id，在哪个公司下单的"""
   company_companies: bigint
   created_at: timestamptz
@@ -5593,14 +6712,39 @@ input orders_stream_cursor_value_input {
   """是否删除"""
   is_deleted: Boolean
 
-  """下单用户在改公司的价格系数"""
+  """
+  -- 状态值： -- pending: 等待确认（用户提交了订单，管理员没有确认，用户可能已经付款了，也可能没有） -- confirmed: 已确认（管理员完成确认了订单可以发货，此时会锁库存，但用户不一定付款了）-- completed: 已完成（订单完成结束，对应的payment_status是approved）
+  """
+  order_status: String
+
+  """
+  -- 支付审核状态（管理员设置）： -- pending: 待支付（用户尚未支付） -- approved: 已通过（管理员确认用户订单已经付款了）
+  """
+  payment_status: String
+
+  """下单用户在该公司的价格系数快照"""
   price_factor: numeric
+
+  """收货地址"""
+  receiver_address: String
+
+  """可不填，收货人-市"""
+  receiver_city: String
+
+  """可不填，收货人-区"""
+  receiver_district: String
+
+  """收货人"""
+  receiver_name: String
+
+  """收货电话"""
+  receiver_phone: String
+
+  """可不填，收货人-省"""
+  receiver_province: String
 
   """订单用户备注"""
   remark: String
-
-  """订单状态（1.pending（待确认） 2.submitted（.已提交）"""
-  status: String
 
   """总金额，总价*价格系数"""
   total_amount: numeric
@@ -5615,11 +6759,14 @@ input orders_stream_cursor_value_input {
 
 """aggregate sum on columns"""
 type orders_sum_fields {
+  """实际支付金额，由公司管理员设置确认，用于真实的统计"""
+  actual_amount: numeric
+
   """关联公司id，在哪个公司下单的"""
   company_companies: bigint
   id: bigint
 
-  """下单用户在改公司的价格系数"""
+  """下单用户在该公司的价格系数快照"""
   price_factor: numeric
 
   """总金额，总价*价格系数"""
@@ -5636,11 +6783,14 @@ type orders_sum_fields {
 order by sum() on columns of table "orders"
 """
 input orders_sum_order_by {
+  """实际支付金额，由公司管理员设置确认，用于真实的统计"""
+  actual_amount: order_by
+
   """关联公司id，在哪个公司下单的"""
   company_companies: order_by
   id: order_by
 
-  """下单用户在改公司的价格系数"""
+  """下单用户在该公司的价格系数快照"""
   price_factor: order_by
 
   """总金额，总价*价格系数"""
@@ -5658,6 +6808,9 @@ update columns of table "orders"
 """
 enum orders_update_column {
   """column name"""
+  actual_amount
+
+  """column name"""
   company_companies
 
   """column name"""
@@ -5670,13 +6823,34 @@ enum orders_update_column {
   is_deleted
 
   """column name"""
+  order_status
+
+  """column name"""
+  payment_status
+
+  """column name"""
   price_factor
 
   """column name"""
-  remark
+  receiver_address
 
   """column name"""
-  status
+  receiver_city
+
+  """column name"""
+  receiver_district
+
+  """column name"""
+  receiver_name
+
+  """column name"""
+  receiver_phone
+
+  """column name"""
+  receiver_province
+
+  """column name"""
+  remark
 
   """column name"""
   total_amount
@@ -5704,11 +6878,14 @@ input orders_updates {
 
 """aggregate var_pop on columns"""
 type orders_var_pop_fields {
+  """实际支付金额，由公司管理员设置确认，用于真实的统计"""
+  actual_amount: Float
+
   """关联公司id，在哪个公司下单的"""
   company_companies: Float
   id: Float
 
-  """下单用户在改公司的价格系数"""
+  """下单用户在该公司的价格系数快照"""
   price_factor: Float
 
   """总金额，总价*价格系数"""
@@ -5725,11 +6902,14 @@ type orders_var_pop_fields {
 order by var_pop() on columns of table "orders"
 """
 input orders_var_pop_order_by {
+  """实际支付金额，由公司管理员设置确认，用于真实的统计"""
+  actual_amount: order_by
+
   """关联公司id，在哪个公司下单的"""
   company_companies: order_by
   id: order_by
 
-  """下单用户在改公司的价格系数"""
+  """下单用户在该公司的价格系数快照"""
   price_factor: order_by
 
   """总金额，总价*价格系数"""
@@ -5744,11 +6924,14 @@ input orders_var_pop_order_by {
 
 """aggregate var_samp on columns"""
 type orders_var_samp_fields {
+  """实际支付金额，由公司管理员设置确认，用于真实的统计"""
+  actual_amount: Float
+
   """关联公司id，在哪个公司下单的"""
   company_companies: Float
   id: Float
 
-  """下单用户在改公司的价格系数"""
+  """下单用户在该公司的价格系数快照"""
   price_factor: Float
 
   """总金额，总价*价格系数"""
@@ -5765,11 +6948,14 @@ type orders_var_samp_fields {
 order by var_samp() on columns of table "orders"
 """
 input orders_var_samp_order_by {
+  """实际支付金额，由公司管理员设置确认，用于真实的统计"""
+  actual_amount: order_by
+
   """关联公司id，在哪个公司下单的"""
   company_companies: order_by
   id: order_by
 
-  """下单用户在改公司的价格系数"""
+  """下单用户在该公司的价格系数快照"""
   price_factor: order_by
 
   """总金额，总价*价格系数"""
@@ -5784,11 +6970,14 @@ input orders_var_samp_order_by {
 
 """aggregate variance on columns"""
 type orders_variance_fields {
+  """实际支付金额，由公司管理员设置确认，用于真实的统计"""
+  actual_amount: Float
+
   """关联公司id，在哪个公司下单的"""
   company_companies: Float
   id: Float
 
-  """下单用户在改公司的价格系数"""
+  """下单用户在该公司的价格系数快照"""
   price_factor: Float
 
   """总金额，总价*价格系数"""
@@ -5805,11 +6994,14 @@ type orders_variance_fields {
 order by variance() on columns of table "orders"
 """
 input orders_variance_order_by {
+  """实际支付金额，由公司管理员设置确认，用于真实的统计"""
+  actual_amount: order_by
+
   """关联公司id，在哪个公司下单的"""
   company_companies: order_by
   id: order_by
 
-  """下单用户在改公司的价格系数"""
+  """下单用户在该公司的价格系数快照"""
   price_factor: order_by
 
   """总金额，总价*价格系数"""
@@ -8916,6 +10108,45 @@ input products_variance_order_by {
 
 type query_root {
   """An array relationship"""
+  addresses(
+    """distinct select on columns"""
+    distinct_on: [addresses_select_column!]
+
+    """limit the number of rows returned"""
+    limit: Int
+
+    """skip the first n rows. Use only with order_by"""
+    offset: Int
+
+    """sort the rows by one or more columns"""
+    order_by: [addresses_order_by!]
+
+    """filter the rows returned"""
+    where: addresses_bool_exp
+  ): [addresses!]!
+
+  """An aggregate relationship"""
+  addresses_aggregate(
+    """distinct select on columns"""
+    distinct_on: [addresses_select_column!]
+
+    """limit the number of rows returned"""
+    limit: Int
+
+    """skip the first n rows. Use only with order_by"""
+    offset: Int
+
+    """sort the rows by one or more columns"""
+    order_by: [addresses_order_by!]
+
+    """filter the rows returned"""
+    where: addresses_bool_exp
+  ): addresses_aggregate!
+
+  """fetch data from the table: "addresses" using primary key columns"""
+  addresses_by_pk(id: bigint!): addresses
+
+  """An array relationship"""
   carts(
     """distinct select on columns"""
     distinct_on: [carts_select_column!]
@@ -9399,6 +10630,59 @@ type query_root {
 }
 
 type subscription_root {
+  """An array relationship"""
+  addresses(
+    """distinct select on columns"""
+    distinct_on: [addresses_select_column!]
+
+    """limit the number of rows returned"""
+    limit: Int
+
+    """skip the first n rows. Use only with order_by"""
+    offset: Int
+
+    """sort the rows by one or more columns"""
+    order_by: [addresses_order_by!]
+
+    """filter the rows returned"""
+    where: addresses_bool_exp
+  ): [addresses!]!
+
+  """An aggregate relationship"""
+  addresses_aggregate(
+    """distinct select on columns"""
+    distinct_on: [addresses_select_column!]
+
+    """limit the number of rows returned"""
+    limit: Int
+
+    """skip the first n rows. Use only with order_by"""
+    offset: Int
+
+    """sort the rows by one or more columns"""
+    order_by: [addresses_order_by!]
+
+    """filter the rows returned"""
+    where: addresses_bool_exp
+  ): addresses_aggregate!
+
+  """fetch data from the table: "addresses" using primary key columns"""
+  addresses_by_pk(id: bigint!): addresses
+
+  """
+  fetch data from the table in a streaming manner: "addresses"
+  """
+  addresses_stream(
+    """maximum number of rows returned in a single batch"""
+    batch_size: Int!
+
+    """cursor to stream the results returned by the query"""
+    cursor: [addresses_stream_cursor_input]!
+
+    """filter the rows returned"""
+    where: addresses_bool_exp
+  ): [addresses!]!
+
   """An array relationship"""
   carts(
     """distinct select on columns"""
@@ -10069,6 +11353,42 @@ input timestamptz_comparison_exp {
 
 """用户表"""
 type users {
+  """An array relationship"""
+  addresses(
+    """distinct select on columns"""
+    distinct_on: [addresses_select_column!]
+
+    """limit the number of rows returned"""
+    limit: Int
+
+    """skip the first n rows. Use only with order_by"""
+    offset: Int
+
+    """sort the rows by one or more columns"""
+    order_by: [addresses_order_by!]
+
+    """filter the rows returned"""
+    where: addresses_bool_exp
+  ): [addresses!]!
+
+  """An aggregate relationship"""
+  addresses_aggregate(
+    """distinct select on columns"""
+    distinct_on: [addresses_select_column!]
+
+    """limit the number of rows returned"""
+    limit: Int
+
+    """skip the first n rows. Use only with order_by"""
+    offset: Int
+
+    """sort the rows by one or more columns"""
+    order_by: [addresses_order_by!]
+
+    """filter the rows returned"""
+    where: addresses_bool_exp
+  ): addresses_aggregate!
+
   """头像"""
   avatar_url: String
 
@@ -10236,6 +11556,8 @@ input users_bool_exp {
   _and: [users_bool_exp!]
   _not: users_bool_exp
   _or: [users_bool_exp!]
+  addresses: addresses_bool_exp
+  addresses_aggregate: addresses_aggregate_bool_exp
   avatar_url: String_comparison_exp
   bio: String_comparison_exp
   carts: carts_bool_exp
@@ -10279,6 +11601,8 @@ input users_inc_input {
 input type for inserting data into table "users"
 """
 input users_insert_input {
+  addresses: addresses_arr_rel_insert_input
+
   """头像"""
   avatar_url: String
 
@@ -10384,6 +11708,7 @@ input users_on_conflict {
 
 """Ordering options when selecting data from "users"."""
 input users_order_by {
+  addresses_aggregate: addresses_aggregate_order_by
   avatar_url: order_by
   bio: order_by
   carts_aggregate: carts_aggregate_order_by

@@ -77,6 +77,512 @@ export type String_Comparison_Exp = {
   _similar?: InputMaybe<Scalars['String']['input']>;
 };
 
+/** 用户地址表 */
+export type Addresses = {
+  __typename?: 'addresses';
+  created_at: Scalars['timestamptz']['output'];
+  id: Scalars['bigint']['output'];
+  /** 是否默认 */
+  is_default: Scalars['Boolean']['output'];
+  /** 收货地址，完整省市区和详细地址 */
+  receiver_address: Scalars['String']['output'];
+  /** 可不填，收货人-市 */
+  receiver_city?: Maybe<Scalars['String']['output']>;
+  /** 可不填，收货人-区 */
+  receiver_district?: Maybe<Scalars['String']['output']>;
+  /** 收货人 */
+  receiver_name: Scalars['String']['output'];
+  /** 收货电话 */
+  receiver_phone: Scalars['String']['output'];
+  /** 可不填，收货人-省 */
+  receiver_province?: Maybe<Scalars['String']['output']>;
+  updated_at: Scalars['timestamptz']['output'];
+  /** An object relationship */
+  user: Users;
+  user_users: Scalars['bigint']['output'];
+};
+
+/** aggregated selection of "addresses" */
+export type Addresses_Aggregate = {
+  __typename?: 'addresses_aggregate';
+  aggregate?: Maybe<Addresses_Aggregate_Fields>;
+  nodes: Array<Addresses>;
+};
+
+export type Addresses_Aggregate_Bool_Exp = {
+  bool_and?: InputMaybe<Addresses_Aggregate_Bool_Exp_Bool_And>;
+  bool_or?: InputMaybe<Addresses_Aggregate_Bool_Exp_Bool_Or>;
+  count?: InputMaybe<Addresses_Aggregate_Bool_Exp_Count>;
+};
+
+export type Addresses_Aggregate_Bool_Exp_Bool_And = {
+  arguments: Addresses_Select_Column_Addresses_Aggregate_Bool_Exp_Bool_And_Arguments_Columns;
+  distinct?: InputMaybe<Scalars['Boolean']['input']>;
+  filter?: InputMaybe<Addresses_Bool_Exp>;
+  predicate: Boolean_Comparison_Exp;
+};
+
+export type Addresses_Aggregate_Bool_Exp_Bool_Or = {
+  arguments: Addresses_Select_Column_Addresses_Aggregate_Bool_Exp_Bool_Or_Arguments_Columns;
+  distinct?: InputMaybe<Scalars['Boolean']['input']>;
+  filter?: InputMaybe<Addresses_Bool_Exp>;
+  predicate: Boolean_Comparison_Exp;
+};
+
+export type Addresses_Aggregate_Bool_Exp_Count = {
+  arguments?: InputMaybe<Array<Addresses_Select_Column>>;
+  distinct?: InputMaybe<Scalars['Boolean']['input']>;
+  filter?: InputMaybe<Addresses_Bool_Exp>;
+  predicate: Int_Comparison_Exp;
+};
+
+/** aggregate fields of "addresses" */
+export type Addresses_Aggregate_Fields = {
+  __typename?: 'addresses_aggregate_fields';
+  avg?: Maybe<Addresses_Avg_Fields>;
+  count: Scalars['Int']['output'];
+  max?: Maybe<Addresses_Max_Fields>;
+  min?: Maybe<Addresses_Min_Fields>;
+  stddev?: Maybe<Addresses_Stddev_Fields>;
+  stddev_pop?: Maybe<Addresses_Stddev_Pop_Fields>;
+  stddev_samp?: Maybe<Addresses_Stddev_Samp_Fields>;
+  sum?: Maybe<Addresses_Sum_Fields>;
+  var_pop?: Maybe<Addresses_Var_Pop_Fields>;
+  var_samp?: Maybe<Addresses_Var_Samp_Fields>;
+  variance?: Maybe<Addresses_Variance_Fields>;
+};
+
+
+/** aggregate fields of "addresses" */
+export type Addresses_Aggregate_FieldsCountArgs = {
+  columns?: InputMaybe<Array<Addresses_Select_Column>>;
+  distinct?: InputMaybe<Scalars['Boolean']['input']>;
+};
+
+/** order by aggregate values of table "addresses" */
+export type Addresses_Aggregate_Order_By = {
+  avg?: InputMaybe<Addresses_Avg_Order_By>;
+  count?: InputMaybe<Order_By>;
+  max?: InputMaybe<Addresses_Max_Order_By>;
+  min?: InputMaybe<Addresses_Min_Order_By>;
+  stddev?: InputMaybe<Addresses_Stddev_Order_By>;
+  stddev_pop?: InputMaybe<Addresses_Stddev_Pop_Order_By>;
+  stddev_samp?: InputMaybe<Addresses_Stddev_Samp_Order_By>;
+  sum?: InputMaybe<Addresses_Sum_Order_By>;
+  var_pop?: InputMaybe<Addresses_Var_Pop_Order_By>;
+  var_samp?: InputMaybe<Addresses_Var_Samp_Order_By>;
+  variance?: InputMaybe<Addresses_Variance_Order_By>;
+};
+
+/** input type for inserting array relation for remote table "addresses" */
+export type Addresses_Arr_Rel_Insert_Input = {
+  data: Array<Addresses_Insert_Input>;
+  /** upsert condition */
+  on_conflict?: InputMaybe<Addresses_On_Conflict>;
+};
+
+/** aggregate avg on columns */
+export type Addresses_Avg_Fields = {
+  __typename?: 'addresses_avg_fields';
+  id?: Maybe<Scalars['Float']['output']>;
+  user_users?: Maybe<Scalars['Float']['output']>;
+};
+
+/** order by avg() on columns of table "addresses" */
+export type Addresses_Avg_Order_By = {
+  id?: InputMaybe<Order_By>;
+  user_users?: InputMaybe<Order_By>;
+};
+
+/** Boolean expression to filter rows from the table "addresses". All fields are combined with a logical 'AND'. */
+export type Addresses_Bool_Exp = {
+  _and?: InputMaybe<Array<Addresses_Bool_Exp>>;
+  _not?: InputMaybe<Addresses_Bool_Exp>;
+  _or?: InputMaybe<Array<Addresses_Bool_Exp>>;
+  created_at?: InputMaybe<Timestamptz_Comparison_Exp>;
+  id?: InputMaybe<Bigint_Comparison_Exp>;
+  is_default?: InputMaybe<Boolean_Comparison_Exp>;
+  receiver_address?: InputMaybe<String_Comparison_Exp>;
+  receiver_city?: InputMaybe<String_Comparison_Exp>;
+  receiver_district?: InputMaybe<String_Comparison_Exp>;
+  receiver_name?: InputMaybe<String_Comparison_Exp>;
+  receiver_phone?: InputMaybe<String_Comparison_Exp>;
+  receiver_province?: InputMaybe<String_Comparison_Exp>;
+  updated_at?: InputMaybe<Timestamptz_Comparison_Exp>;
+  user?: InputMaybe<Users_Bool_Exp>;
+  user_users?: InputMaybe<Bigint_Comparison_Exp>;
+};
+
+/** unique or primary key constraints on table "addresses" */
+export enum Addresses_Constraint {
+  /** unique or primary key constraint on columns "id" */
+  AddressesPkey = 'addresses_pkey'
+}
+
+/** input type for incrementing numeric columns in table "addresses" */
+export type Addresses_Inc_Input = {
+  id?: InputMaybe<Scalars['bigint']['input']>;
+  user_users?: InputMaybe<Scalars['bigint']['input']>;
+};
+
+/** input type for inserting data into table "addresses" */
+export type Addresses_Insert_Input = {
+  created_at?: InputMaybe<Scalars['timestamptz']['input']>;
+  id?: InputMaybe<Scalars['bigint']['input']>;
+  /** 是否默认 */
+  is_default?: InputMaybe<Scalars['Boolean']['input']>;
+  /** 收货地址，完整省市区和详细地址 */
+  receiver_address?: InputMaybe<Scalars['String']['input']>;
+  /** 可不填，收货人-市 */
+  receiver_city?: InputMaybe<Scalars['String']['input']>;
+  /** 可不填，收货人-区 */
+  receiver_district?: InputMaybe<Scalars['String']['input']>;
+  /** 收货人 */
+  receiver_name?: InputMaybe<Scalars['String']['input']>;
+  /** 收货电话 */
+  receiver_phone?: InputMaybe<Scalars['String']['input']>;
+  /** 可不填，收货人-省 */
+  receiver_province?: InputMaybe<Scalars['String']['input']>;
+  updated_at?: InputMaybe<Scalars['timestamptz']['input']>;
+  user?: InputMaybe<Users_Obj_Rel_Insert_Input>;
+  user_users?: InputMaybe<Scalars['bigint']['input']>;
+};
+
+/** aggregate max on columns */
+export type Addresses_Max_Fields = {
+  __typename?: 'addresses_max_fields';
+  created_at?: Maybe<Scalars['timestamptz']['output']>;
+  id?: Maybe<Scalars['bigint']['output']>;
+  /** 收货地址，完整省市区和详细地址 */
+  receiver_address?: Maybe<Scalars['String']['output']>;
+  /** 可不填，收货人-市 */
+  receiver_city?: Maybe<Scalars['String']['output']>;
+  /** 可不填，收货人-区 */
+  receiver_district?: Maybe<Scalars['String']['output']>;
+  /** 收货人 */
+  receiver_name?: Maybe<Scalars['String']['output']>;
+  /** 收货电话 */
+  receiver_phone?: Maybe<Scalars['String']['output']>;
+  /** 可不填，收货人-省 */
+  receiver_province?: Maybe<Scalars['String']['output']>;
+  updated_at?: Maybe<Scalars['timestamptz']['output']>;
+  user_users?: Maybe<Scalars['bigint']['output']>;
+};
+
+/** order by max() on columns of table "addresses" */
+export type Addresses_Max_Order_By = {
+  created_at?: InputMaybe<Order_By>;
+  id?: InputMaybe<Order_By>;
+  /** 收货地址，完整省市区和详细地址 */
+  receiver_address?: InputMaybe<Order_By>;
+  /** 可不填，收货人-市 */
+  receiver_city?: InputMaybe<Order_By>;
+  /** 可不填，收货人-区 */
+  receiver_district?: InputMaybe<Order_By>;
+  /** 收货人 */
+  receiver_name?: InputMaybe<Order_By>;
+  /** 收货电话 */
+  receiver_phone?: InputMaybe<Order_By>;
+  /** 可不填，收货人-省 */
+  receiver_province?: InputMaybe<Order_By>;
+  updated_at?: InputMaybe<Order_By>;
+  user_users?: InputMaybe<Order_By>;
+};
+
+/** aggregate min on columns */
+export type Addresses_Min_Fields = {
+  __typename?: 'addresses_min_fields';
+  created_at?: Maybe<Scalars['timestamptz']['output']>;
+  id?: Maybe<Scalars['bigint']['output']>;
+  /** 收货地址，完整省市区和详细地址 */
+  receiver_address?: Maybe<Scalars['String']['output']>;
+  /** 可不填，收货人-市 */
+  receiver_city?: Maybe<Scalars['String']['output']>;
+  /** 可不填，收货人-区 */
+  receiver_district?: Maybe<Scalars['String']['output']>;
+  /** 收货人 */
+  receiver_name?: Maybe<Scalars['String']['output']>;
+  /** 收货电话 */
+  receiver_phone?: Maybe<Scalars['String']['output']>;
+  /** 可不填，收货人-省 */
+  receiver_province?: Maybe<Scalars['String']['output']>;
+  updated_at?: Maybe<Scalars['timestamptz']['output']>;
+  user_users?: Maybe<Scalars['bigint']['output']>;
+};
+
+/** order by min() on columns of table "addresses" */
+export type Addresses_Min_Order_By = {
+  created_at?: InputMaybe<Order_By>;
+  id?: InputMaybe<Order_By>;
+  /** 收货地址，完整省市区和详细地址 */
+  receiver_address?: InputMaybe<Order_By>;
+  /** 可不填，收货人-市 */
+  receiver_city?: InputMaybe<Order_By>;
+  /** 可不填，收货人-区 */
+  receiver_district?: InputMaybe<Order_By>;
+  /** 收货人 */
+  receiver_name?: InputMaybe<Order_By>;
+  /** 收货电话 */
+  receiver_phone?: InputMaybe<Order_By>;
+  /** 可不填，收货人-省 */
+  receiver_province?: InputMaybe<Order_By>;
+  updated_at?: InputMaybe<Order_By>;
+  user_users?: InputMaybe<Order_By>;
+};
+
+/** response of any mutation on the table "addresses" */
+export type Addresses_Mutation_Response = {
+  __typename?: 'addresses_mutation_response';
+  /** number of rows affected by the mutation */
+  affected_rows: Scalars['Int']['output'];
+  /** data from the rows affected by the mutation */
+  returning: Array<Addresses>;
+};
+
+/** on_conflict condition type for table "addresses" */
+export type Addresses_On_Conflict = {
+  constraint: Addresses_Constraint;
+  update_columns?: Array<Addresses_Update_Column>;
+  where?: InputMaybe<Addresses_Bool_Exp>;
+};
+
+/** Ordering options when selecting data from "addresses". */
+export type Addresses_Order_By = {
+  created_at?: InputMaybe<Order_By>;
+  id?: InputMaybe<Order_By>;
+  is_default?: InputMaybe<Order_By>;
+  receiver_address?: InputMaybe<Order_By>;
+  receiver_city?: InputMaybe<Order_By>;
+  receiver_district?: InputMaybe<Order_By>;
+  receiver_name?: InputMaybe<Order_By>;
+  receiver_phone?: InputMaybe<Order_By>;
+  receiver_province?: InputMaybe<Order_By>;
+  updated_at?: InputMaybe<Order_By>;
+  user?: InputMaybe<Users_Order_By>;
+  user_users?: InputMaybe<Order_By>;
+};
+
+/** primary key columns input for table: addresses */
+export type Addresses_Pk_Columns_Input = {
+  id: Scalars['bigint']['input'];
+};
+
+/** select columns of table "addresses" */
+export enum Addresses_Select_Column {
+  /** column name */
+  CreatedAt = 'created_at',
+  /** column name */
+  Id = 'id',
+  /** column name */
+  IsDefault = 'is_default',
+  /** column name */
+  ReceiverAddress = 'receiver_address',
+  /** column name */
+  ReceiverCity = 'receiver_city',
+  /** column name */
+  ReceiverDistrict = 'receiver_district',
+  /** column name */
+  ReceiverName = 'receiver_name',
+  /** column name */
+  ReceiverPhone = 'receiver_phone',
+  /** column name */
+  ReceiverProvince = 'receiver_province',
+  /** column name */
+  UpdatedAt = 'updated_at',
+  /** column name */
+  UserUsers = 'user_users'
+}
+
+/** select "addresses_aggregate_bool_exp_bool_and_arguments_columns" columns of table "addresses" */
+export enum Addresses_Select_Column_Addresses_Aggregate_Bool_Exp_Bool_And_Arguments_Columns {
+  /** column name */
+  IsDefault = 'is_default'
+}
+
+/** select "addresses_aggregate_bool_exp_bool_or_arguments_columns" columns of table "addresses" */
+export enum Addresses_Select_Column_Addresses_Aggregate_Bool_Exp_Bool_Or_Arguments_Columns {
+  /** column name */
+  IsDefault = 'is_default'
+}
+
+/** input type for updating data in table "addresses" */
+export type Addresses_Set_Input = {
+  created_at?: InputMaybe<Scalars['timestamptz']['input']>;
+  id?: InputMaybe<Scalars['bigint']['input']>;
+  /** 是否默认 */
+  is_default?: InputMaybe<Scalars['Boolean']['input']>;
+  /** 收货地址，完整省市区和详细地址 */
+  receiver_address?: InputMaybe<Scalars['String']['input']>;
+  /** 可不填，收货人-市 */
+  receiver_city?: InputMaybe<Scalars['String']['input']>;
+  /** 可不填，收货人-区 */
+  receiver_district?: InputMaybe<Scalars['String']['input']>;
+  /** 收货人 */
+  receiver_name?: InputMaybe<Scalars['String']['input']>;
+  /** 收货电话 */
+  receiver_phone?: InputMaybe<Scalars['String']['input']>;
+  /** 可不填，收货人-省 */
+  receiver_province?: InputMaybe<Scalars['String']['input']>;
+  updated_at?: InputMaybe<Scalars['timestamptz']['input']>;
+  user_users?: InputMaybe<Scalars['bigint']['input']>;
+};
+
+/** aggregate stddev on columns */
+export type Addresses_Stddev_Fields = {
+  __typename?: 'addresses_stddev_fields';
+  id?: Maybe<Scalars['Float']['output']>;
+  user_users?: Maybe<Scalars['Float']['output']>;
+};
+
+/** order by stddev() on columns of table "addresses" */
+export type Addresses_Stddev_Order_By = {
+  id?: InputMaybe<Order_By>;
+  user_users?: InputMaybe<Order_By>;
+};
+
+/** aggregate stddev_pop on columns */
+export type Addresses_Stddev_Pop_Fields = {
+  __typename?: 'addresses_stddev_pop_fields';
+  id?: Maybe<Scalars['Float']['output']>;
+  user_users?: Maybe<Scalars['Float']['output']>;
+};
+
+/** order by stddev_pop() on columns of table "addresses" */
+export type Addresses_Stddev_Pop_Order_By = {
+  id?: InputMaybe<Order_By>;
+  user_users?: InputMaybe<Order_By>;
+};
+
+/** aggregate stddev_samp on columns */
+export type Addresses_Stddev_Samp_Fields = {
+  __typename?: 'addresses_stddev_samp_fields';
+  id?: Maybe<Scalars['Float']['output']>;
+  user_users?: Maybe<Scalars['Float']['output']>;
+};
+
+/** order by stddev_samp() on columns of table "addresses" */
+export type Addresses_Stddev_Samp_Order_By = {
+  id?: InputMaybe<Order_By>;
+  user_users?: InputMaybe<Order_By>;
+};
+
+/** Streaming cursor of the table "addresses" */
+export type Addresses_Stream_Cursor_Input = {
+  /** Stream column input with initial value */
+  initial_value: Addresses_Stream_Cursor_Value_Input;
+  /** cursor ordering */
+  ordering?: InputMaybe<Cursor_Ordering>;
+};
+
+/** Initial value of the column from where the streaming should start */
+export type Addresses_Stream_Cursor_Value_Input = {
+  created_at?: InputMaybe<Scalars['timestamptz']['input']>;
+  id?: InputMaybe<Scalars['bigint']['input']>;
+  /** 是否默认 */
+  is_default?: InputMaybe<Scalars['Boolean']['input']>;
+  /** 收货地址，完整省市区和详细地址 */
+  receiver_address?: InputMaybe<Scalars['String']['input']>;
+  /** 可不填，收货人-市 */
+  receiver_city?: InputMaybe<Scalars['String']['input']>;
+  /** 可不填，收货人-区 */
+  receiver_district?: InputMaybe<Scalars['String']['input']>;
+  /** 收货人 */
+  receiver_name?: InputMaybe<Scalars['String']['input']>;
+  /** 收货电话 */
+  receiver_phone?: InputMaybe<Scalars['String']['input']>;
+  /** 可不填，收货人-省 */
+  receiver_province?: InputMaybe<Scalars['String']['input']>;
+  updated_at?: InputMaybe<Scalars['timestamptz']['input']>;
+  user_users?: InputMaybe<Scalars['bigint']['input']>;
+};
+
+/** aggregate sum on columns */
+export type Addresses_Sum_Fields = {
+  __typename?: 'addresses_sum_fields';
+  id?: Maybe<Scalars['bigint']['output']>;
+  user_users?: Maybe<Scalars['bigint']['output']>;
+};
+
+/** order by sum() on columns of table "addresses" */
+export type Addresses_Sum_Order_By = {
+  id?: InputMaybe<Order_By>;
+  user_users?: InputMaybe<Order_By>;
+};
+
+/** update columns of table "addresses" */
+export enum Addresses_Update_Column {
+  /** column name */
+  CreatedAt = 'created_at',
+  /** column name */
+  Id = 'id',
+  /** column name */
+  IsDefault = 'is_default',
+  /** column name */
+  ReceiverAddress = 'receiver_address',
+  /** column name */
+  ReceiverCity = 'receiver_city',
+  /** column name */
+  ReceiverDistrict = 'receiver_district',
+  /** column name */
+  ReceiverName = 'receiver_name',
+  /** column name */
+  ReceiverPhone = 'receiver_phone',
+  /** column name */
+  ReceiverProvince = 'receiver_province',
+  /** column name */
+  UpdatedAt = 'updated_at',
+  /** column name */
+  UserUsers = 'user_users'
+}
+
+export type Addresses_Updates = {
+  /** increments the numeric columns with given value of the filtered values */
+  _inc?: InputMaybe<Addresses_Inc_Input>;
+  /** sets the columns of the filtered rows to the given values */
+  _set?: InputMaybe<Addresses_Set_Input>;
+  /** filter the rows which have to be updated */
+  where: Addresses_Bool_Exp;
+};
+
+/** aggregate var_pop on columns */
+export type Addresses_Var_Pop_Fields = {
+  __typename?: 'addresses_var_pop_fields';
+  id?: Maybe<Scalars['Float']['output']>;
+  user_users?: Maybe<Scalars['Float']['output']>;
+};
+
+/** order by var_pop() on columns of table "addresses" */
+export type Addresses_Var_Pop_Order_By = {
+  id?: InputMaybe<Order_By>;
+  user_users?: InputMaybe<Order_By>;
+};
+
+/** aggregate var_samp on columns */
+export type Addresses_Var_Samp_Fields = {
+  __typename?: 'addresses_var_samp_fields';
+  id?: Maybe<Scalars['Float']['output']>;
+  user_users?: Maybe<Scalars['Float']['output']>;
+};
+
+/** order by var_samp() on columns of table "addresses" */
+export type Addresses_Var_Samp_Order_By = {
+  id?: InputMaybe<Order_By>;
+  user_users?: InputMaybe<Order_By>;
+};
+
+/** aggregate variance on columns */
+export type Addresses_Variance_Fields = {
+  __typename?: 'addresses_variance_fields';
+  id?: Maybe<Scalars['Float']['output']>;
+  user_users?: Maybe<Scalars['Float']['output']>;
+};
+
+/** order by variance() on columns of table "addresses" */
+export type Addresses_Variance_Order_By = {
+  id?: InputMaybe<Order_By>;
+  user_users?: InputMaybe<Order_By>;
+};
+
 /** Boolean expression to compare columns of type "bigint". All fields are combined with logical 'AND'. */
 export type Bigint_Array_Comparison_Exp = {
   /** is the array contained in the given array value */
@@ -1447,7 +1953,11 @@ export type Companies = {
   company_users: Array<Company_Users>;
   /** An aggregate relationship */
   company_users_aggregate: Company_Users_Aggregate;
+  /** 联系我们 二维码 */
+  contact_code?: Maybe<Scalars['String']['output']>;
   created_at: Scalars['timestamptz']['output'];
+  /** 富文本，公司介绍 */
+  description?: Maybe<Scalars['String']['output']>;
   /** 隐藏的分类ids */
   hidden_category_ids?: Maybe<Array<Scalars['bigint']['output']>>;
   /** 隐藏的套餐id */
@@ -1471,7 +1981,11 @@ export type Companies = {
   products: Array<Products>;
   /** An aggregate relationship */
   products_aggregate: Products_Aggregate;
+  /** 资源库文件url，一般是pdf文档 */
+  resource_file_url?: Maybe<Scalars['String']['output']>;
   updated_at: Scalars['timestamptz']['output'];
+  /** 微信加好友二维码 */
+  wechat_code?: Maybe<Scalars['String']['output']>;
 };
 
 
@@ -1621,7 +2135,9 @@ export type Companies_Bool_Exp = {
   categories_aggregate?: InputMaybe<Categories_Aggregate_Bool_Exp>;
   company_users?: InputMaybe<Company_Users_Bool_Exp>;
   company_users_aggregate?: InputMaybe<Company_Users_Aggregate_Bool_Exp>;
+  contact_code?: InputMaybe<String_Comparison_Exp>;
   created_at?: InputMaybe<Timestamptz_Comparison_Exp>;
+  description?: InputMaybe<String_Comparison_Exp>;
   hidden_category_ids?: InputMaybe<Bigint_Array_Comparison_Exp>;
   hidden_package_ids?: InputMaybe<Bigint_Array_Comparison_Exp>;
   hidden_product_ids?: InputMaybe<Bigint_Array_Comparison_Exp>;
@@ -1634,7 +2150,9 @@ export type Companies_Bool_Exp = {
   product_skus_aggregate?: InputMaybe<Product_Skus_Aggregate_Bool_Exp>;
   products?: InputMaybe<Products_Bool_Exp>;
   products_aggregate?: InputMaybe<Products_Aggregate_Bool_Exp>;
+  resource_file_url?: InputMaybe<String_Comparison_Exp>;
   updated_at?: InputMaybe<Timestamptz_Comparison_Exp>;
+  wechat_code?: InputMaybe<String_Comparison_Exp>;
 };
 
 /** unique or primary key constraints on table "companies" */
@@ -1658,7 +2176,11 @@ export type Companies_Insert_Input = {
   banner_top?: InputMaybe<Array<Scalars['json']['input']>>;
   categories?: InputMaybe<Categories_Arr_Rel_Insert_Input>;
   company_users?: InputMaybe<Company_Users_Arr_Rel_Insert_Input>;
+  /** 联系我们 二维码 */
+  contact_code?: InputMaybe<Scalars['String']['input']>;
   created_at?: InputMaybe<Scalars['timestamptz']['input']>;
+  /** 富文本，公司介绍 */
+  description?: InputMaybe<Scalars['String']['input']>;
   /** 隐藏的分类ids */
   hidden_category_ids?: InputMaybe<Array<Scalars['bigint']['input']>>;
   /** 隐藏的套餐id */
@@ -1673,7 +2195,11 @@ export type Companies_Insert_Input = {
   orders?: InputMaybe<Orders_Arr_Rel_Insert_Input>;
   product_skus?: InputMaybe<Product_Skus_Arr_Rel_Insert_Input>;
   products?: InputMaybe<Products_Arr_Rel_Insert_Input>;
+  /** 资源库文件url，一般是pdf文档 */
+  resource_file_url?: InputMaybe<Scalars['String']['input']>;
   updated_at?: InputMaybe<Scalars['timestamptz']['input']>;
+  /** 微信加好友二维码 */
+  wechat_code?: InputMaybe<Scalars['String']['input']>;
 };
 
 /** aggregate max on columns */
@@ -1683,7 +2209,11 @@ export type Companies_Max_Fields = {
   banner_bottom?: Maybe<Array<Scalars['json']['output']>>;
   /** 顶部轮播图（json数组）export interface BannerItem { /** 文件类型（如：image、video） *\/ file_type?: string; /** 文件 URL *\/ file_url: string; /** 跳转链接（小程序路径或外部链接） *\/ link?: string; /** 排序索引 *\/ sort?: number; /** 标题 *\/ title?: string; } */
   banner_top?: Maybe<Array<Scalars['json']['output']>>;
+  /** 联系我们 二维码 */
+  contact_code?: Maybe<Scalars['String']['output']>;
   created_at?: Maybe<Scalars['timestamptz']['output']>;
+  /** 富文本，公司介绍 */
+  description?: Maybe<Scalars['String']['output']>;
   /** 隐藏的分类ids */
   hidden_category_ids?: Maybe<Array<Scalars['bigint']['output']>>;
   /** 隐藏的套餐id */
@@ -1695,7 +2225,11 @@ export type Companies_Max_Fields = {
   logo_url?: Maybe<Scalars['String']['output']>;
   /** 公司名称 */
   name?: Maybe<Scalars['String']['output']>;
+  /** 资源库文件url，一般是pdf文档 */
+  resource_file_url?: Maybe<Scalars['String']['output']>;
   updated_at?: Maybe<Scalars['timestamptz']['output']>;
+  /** 微信加好友二维码 */
+  wechat_code?: Maybe<Scalars['String']['output']>;
 };
 
 /** aggregate min on columns */
@@ -1705,7 +2239,11 @@ export type Companies_Min_Fields = {
   banner_bottom?: Maybe<Array<Scalars['json']['output']>>;
   /** 顶部轮播图（json数组）export interface BannerItem { /** 文件类型（如：image、video） *\/ file_type?: string; /** 文件 URL *\/ file_url: string; /** 跳转链接（小程序路径或外部链接） *\/ link?: string; /** 排序索引 *\/ sort?: number; /** 标题 *\/ title?: string; } */
   banner_top?: Maybe<Array<Scalars['json']['output']>>;
+  /** 联系我们 二维码 */
+  contact_code?: Maybe<Scalars['String']['output']>;
   created_at?: Maybe<Scalars['timestamptz']['output']>;
+  /** 富文本，公司介绍 */
+  description?: Maybe<Scalars['String']['output']>;
   /** 隐藏的分类ids */
   hidden_category_ids?: Maybe<Array<Scalars['bigint']['output']>>;
   /** 隐藏的套餐id */
@@ -1717,7 +2255,11 @@ export type Companies_Min_Fields = {
   logo_url?: Maybe<Scalars['String']['output']>;
   /** 公司名称 */
   name?: Maybe<Scalars['String']['output']>;
+  /** 资源库文件url，一般是pdf文档 */
+  resource_file_url?: Maybe<Scalars['String']['output']>;
   updated_at?: Maybe<Scalars['timestamptz']['output']>;
+  /** 微信加好友二维码 */
+  wechat_code?: Maybe<Scalars['String']['output']>;
 };
 
 /** response of any mutation on the table "companies" */
@@ -1749,7 +2291,9 @@ export type Companies_Order_By = {
   banner_top?: InputMaybe<Order_By>;
   categories_aggregate?: InputMaybe<Categories_Aggregate_Order_By>;
   company_users_aggregate?: InputMaybe<Company_Users_Aggregate_Order_By>;
+  contact_code?: InputMaybe<Order_By>;
   created_at?: InputMaybe<Order_By>;
+  description?: InputMaybe<Order_By>;
   hidden_category_ids?: InputMaybe<Order_By>;
   hidden_package_ids?: InputMaybe<Order_By>;
   hidden_product_ids?: InputMaybe<Order_By>;
@@ -1759,7 +2303,9 @@ export type Companies_Order_By = {
   orders_aggregate?: InputMaybe<Orders_Aggregate_Order_By>;
   product_skus_aggregate?: InputMaybe<Product_Skus_Aggregate_Order_By>;
   products_aggregate?: InputMaybe<Products_Aggregate_Order_By>;
+  resource_file_url?: InputMaybe<Order_By>;
   updated_at?: InputMaybe<Order_By>;
+  wechat_code?: InputMaybe<Order_By>;
 };
 
 /** primary key columns input for table: companies */
@@ -1774,7 +2320,11 @@ export enum Companies_Select_Column {
   /** column name */
   BannerTop = 'banner_top',
   /** column name */
+  ContactCode = 'contact_code',
+  /** column name */
   CreatedAt = 'created_at',
+  /** column name */
+  Description = 'description',
   /** column name */
   HiddenCategoryIds = 'hidden_category_ids',
   /** column name */
@@ -1788,7 +2338,11 @@ export enum Companies_Select_Column {
   /** column name */
   Name = 'name',
   /** column name */
-  UpdatedAt = 'updated_at'
+  ResourceFileUrl = 'resource_file_url',
+  /** column name */
+  UpdatedAt = 'updated_at',
+  /** column name */
+  WechatCode = 'wechat_code'
 }
 
 /** input type for updating data in table "companies" */
@@ -1797,7 +2351,11 @@ export type Companies_Set_Input = {
   banner_bottom?: InputMaybe<Array<Scalars['json']['input']>>;
   /** 顶部轮播图（json数组）export interface BannerItem { /** 文件类型（如：image、video） *\/ file_type?: string; /** 文件 URL *\/ file_url: string; /** 跳转链接（小程序路径或外部链接） *\/ link?: string; /** 排序索引 *\/ sort?: number; /** 标题 *\/ title?: string; } */
   banner_top?: InputMaybe<Array<Scalars['json']['input']>>;
+  /** 联系我们 二维码 */
+  contact_code?: InputMaybe<Scalars['String']['input']>;
   created_at?: InputMaybe<Scalars['timestamptz']['input']>;
+  /** 富文本，公司介绍 */
+  description?: InputMaybe<Scalars['String']['input']>;
   /** 隐藏的分类ids */
   hidden_category_ids?: InputMaybe<Array<Scalars['bigint']['input']>>;
   /** 隐藏的套餐id */
@@ -1809,7 +2367,11 @@ export type Companies_Set_Input = {
   logo_url?: InputMaybe<Scalars['String']['input']>;
   /** 公司名称 */
   name?: InputMaybe<Scalars['String']['input']>;
+  /** 资源库文件url，一般是pdf文档 */
+  resource_file_url?: InputMaybe<Scalars['String']['input']>;
   updated_at?: InputMaybe<Scalars['timestamptz']['input']>;
+  /** 微信加好友二维码 */
+  wechat_code?: InputMaybe<Scalars['String']['input']>;
 };
 
 /** aggregate stddev on columns */
@@ -1844,7 +2406,11 @@ export type Companies_Stream_Cursor_Value_Input = {
   banner_bottom?: InputMaybe<Array<Scalars['json']['input']>>;
   /** 顶部轮播图（json数组）export interface BannerItem { /** 文件类型（如：image、video） *\/ file_type?: string; /** 文件 URL *\/ file_url: string; /** 跳转链接（小程序路径或外部链接） *\/ link?: string; /** 排序索引 *\/ sort?: number; /** 标题 *\/ title?: string; } */
   banner_top?: InputMaybe<Array<Scalars['json']['input']>>;
+  /** 联系我们 二维码 */
+  contact_code?: InputMaybe<Scalars['String']['input']>;
   created_at?: InputMaybe<Scalars['timestamptz']['input']>;
+  /** 富文本，公司介绍 */
+  description?: InputMaybe<Scalars['String']['input']>;
   /** 隐藏的分类ids */
   hidden_category_ids?: InputMaybe<Array<Scalars['bigint']['input']>>;
   /** 隐藏的套餐id */
@@ -1856,7 +2422,11 @@ export type Companies_Stream_Cursor_Value_Input = {
   logo_url?: InputMaybe<Scalars['String']['input']>;
   /** 公司名称 */
   name?: InputMaybe<Scalars['String']['input']>;
+  /** 资源库文件url，一般是pdf文档 */
+  resource_file_url?: InputMaybe<Scalars['String']['input']>;
   updated_at?: InputMaybe<Scalars['timestamptz']['input']>;
+  /** 微信加好友二维码 */
+  wechat_code?: InputMaybe<Scalars['String']['input']>;
 };
 
 /** aggregate sum on columns */
@@ -1872,7 +2442,11 @@ export enum Companies_Update_Column {
   /** column name */
   BannerTop = 'banner_top',
   /** column name */
+  ContactCode = 'contact_code',
+  /** column name */
   CreatedAt = 'created_at',
+  /** column name */
+  Description = 'description',
   /** column name */
   HiddenCategoryIds = 'hidden_category_ids',
   /** column name */
@@ -1886,7 +2460,11 @@ export enum Companies_Update_Column {
   /** column name */
   Name = 'name',
   /** column name */
-  UpdatedAt = 'updated_at'
+  ResourceFileUrl = 'resource_file_url',
+  /** column name */
+  UpdatedAt = 'updated_at',
+  /** column name */
+  WechatCode = 'wechat_code'
 }
 
 export type Companies_Updates = {
@@ -1927,7 +2505,7 @@ export type Company_Users = {
   company_companies: Scalars['bigint']['output'];
   created_at: Scalars['timestamptz']['output'];
   id: Scalars['bigint']['output'];
-  /** 该用户在公司下看到的价格系数（0-·1的数值），默认为1表示和产品价格一致 */
+  /** 该用户在公司下看到的价格系数（大于0数值），默认为1表示和产品价格一致 */
   price_factor: Scalars['numeric']['output'];
   /** 用户在公司下的角色： 1.admin（可以管理公司的分类、公司的产品及套餐、授权公司用户）、2.user（普通用户） */
   role: Scalars['String']['output'];
@@ -2023,7 +2601,7 @@ export type Company_Users_Avg_Fields = {
   /** 公司id */
   company_companies?: Maybe<Scalars['Float']['output']>;
   id?: Maybe<Scalars['Float']['output']>;
-  /** 该用户在公司下看到的价格系数（0-·1的数值），默认为1表示和产品价格一致 */
+  /** 该用户在公司下看到的价格系数（大于0数值），默认为1表示和产品价格一致 */
   price_factor?: Maybe<Scalars['Float']['output']>;
   /** 用户id */
   user_users?: Maybe<Scalars['Float']['output']>;
@@ -2034,7 +2612,7 @@ export type Company_Users_Avg_Order_By = {
   /** 公司id */
   company_companies?: InputMaybe<Order_By>;
   id?: InputMaybe<Order_By>;
-  /** 该用户在公司下看到的价格系数（0-·1的数值），默认为1表示和产品价格一致 */
+  /** 该用户在公司下看到的价格系数（大于0数值），默认为1表示和产品价格一致 */
   price_factor?: InputMaybe<Order_By>;
   /** 用户id */
   user_users?: InputMaybe<Order_By>;
@@ -2070,7 +2648,7 @@ export type Company_Users_Inc_Input = {
   /** 公司id */
   company_companies?: InputMaybe<Scalars['bigint']['input']>;
   id?: InputMaybe<Scalars['bigint']['input']>;
-  /** 该用户在公司下看到的价格系数（0-·1的数值），默认为1表示和产品价格一致 */
+  /** 该用户在公司下看到的价格系数（大于0数值），默认为1表示和产品价格一致 */
   price_factor?: InputMaybe<Scalars['numeric']['input']>;
   /** 用户id */
   user_users?: InputMaybe<Scalars['bigint']['input']>;
@@ -2085,7 +2663,7 @@ export type Company_Users_Insert_Input = {
   company_companies?: InputMaybe<Scalars['bigint']['input']>;
   created_at?: InputMaybe<Scalars['timestamptz']['input']>;
   id?: InputMaybe<Scalars['bigint']['input']>;
-  /** 该用户在公司下看到的价格系数（0-·1的数值），默认为1表示和产品价格一致 */
+  /** 该用户在公司下看到的价格系数（大于0数值），默认为1表示和产品价格一致 */
   price_factor?: InputMaybe<Scalars['numeric']['input']>;
   /** 用户在公司下的角色： 1.admin（可以管理公司的分类、公司的产品及套餐、授权公司用户）、2.user（普通用户） */
   role?: InputMaybe<Scalars['String']['input']>;
@@ -2102,7 +2680,7 @@ export type Company_Users_Max_Fields = {
   company_companies?: Maybe<Scalars['bigint']['output']>;
   created_at?: Maybe<Scalars['timestamptz']['output']>;
   id?: Maybe<Scalars['bigint']['output']>;
-  /** 该用户在公司下看到的价格系数（0-·1的数值），默认为1表示和产品价格一致 */
+  /** 该用户在公司下看到的价格系数（大于0数值），默认为1表示和产品价格一致 */
   price_factor?: Maybe<Scalars['numeric']['output']>;
   /** 用户在公司下的角色： 1.admin（可以管理公司的分类、公司的产品及套餐、授权公司用户）、2.user（普通用户） */
   role?: Maybe<Scalars['String']['output']>;
@@ -2117,7 +2695,7 @@ export type Company_Users_Max_Order_By = {
   company_companies?: InputMaybe<Order_By>;
   created_at?: InputMaybe<Order_By>;
   id?: InputMaybe<Order_By>;
-  /** 该用户在公司下看到的价格系数（0-·1的数值），默认为1表示和产品价格一致 */
+  /** 该用户在公司下看到的价格系数（大于0数值），默认为1表示和产品价格一致 */
   price_factor?: InputMaybe<Order_By>;
   /** 用户在公司下的角色： 1.admin（可以管理公司的分类、公司的产品及套餐、授权公司用户）、2.user（普通用户） */
   role?: InputMaybe<Order_By>;
@@ -2133,7 +2711,7 @@ export type Company_Users_Min_Fields = {
   company_companies?: Maybe<Scalars['bigint']['output']>;
   created_at?: Maybe<Scalars['timestamptz']['output']>;
   id?: Maybe<Scalars['bigint']['output']>;
-  /** 该用户在公司下看到的价格系数（0-·1的数值），默认为1表示和产品价格一致 */
+  /** 该用户在公司下看到的价格系数（大于0数值），默认为1表示和产品价格一致 */
   price_factor?: Maybe<Scalars['numeric']['output']>;
   /** 用户在公司下的角色： 1.admin（可以管理公司的分类、公司的产品及套餐、授权公司用户）、2.user（普通用户） */
   role?: Maybe<Scalars['String']['output']>;
@@ -2148,7 +2726,7 @@ export type Company_Users_Min_Order_By = {
   company_companies?: InputMaybe<Order_By>;
   created_at?: InputMaybe<Order_By>;
   id?: InputMaybe<Order_By>;
-  /** 该用户在公司下看到的价格系数（0-·1的数值），默认为1表示和产品价格一致 */
+  /** 该用户在公司下看到的价格系数（大于0数值），默认为1表示和产品价格一致 */
   price_factor?: InputMaybe<Order_By>;
   /** 用户在公司下的角色： 1.admin（可以管理公司的分类、公司的产品及套餐、授权公司用户）、2.user（普通用户） */
   role?: InputMaybe<Order_By>;
@@ -2232,7 +2810,7 @@ export type Company_Users_Set_Input = {
   company_companies?: InputMaybe<Scalars['bigint']['input']>;
   created_at?: InputMaybe<Scalars['timestamptz']['input']>;
   id?: InputMaybe<Scalars['bigint']['input']>;
-  /** 该用户在公司下看到的价格系数（0-·1的数值），默认为1表示和产品价格一致 */
+  /** 该用户在公司下看到的价格系数（大于0数值），默认为1表示和产品价格一致 */
   price_factor?: InputMaybe<Scalars['numeric']['input']>;
   /** 用户在公司下的角色： 1.admin（可以管理公司的分类、公司的产品及套餐、授权公司用户）、2.user（普通用户） */
   role?: InputMaybe<Scalars['String']['input']>;
@@ -2247,7 +2825,7 @@ export type Company_Users_Stddev_Fields = {
   /** 公司id */
   company_companies?: Maybe<Scalars['Float']['output']>;
   id?: Maybe<Scalars['Float']['output']>;
-  /** 该用户在公司下看到的价格系数（0-·1的数值），默认为1表示和产品价格一致 */
+  /** 该用户在公司下看到的价格系数（大于0数值），默认为1表示和产品价格一致 */
   price_factor?: Maybe<Scalars['Float']['output']>;
   /** 用户id */
   user_users?: Maybe<Scalars['Float']['output']>;
@@ -2258,7 +2836,7 @@ export type Company_Users_Stddev_Order_By = {
   /** 公司id */
   company_companies?: InputMaybe<Order_By>;
   id?: InputMaybe<Order_By>;
-  /** 该用户在公司下看到的价格系数（0-·1的数值），默认为1表示和产品价格一致 */
+  /** 该用户在公司下看到的价格系数（大于0数值），默认为1表示和产品价格一致 */
   price_factor?: InputMaybe<Order_By>;
   /** 用户id */
   user_users?: InputMaybe<Order_By>;
@@ -2270,7 +2848,7 @@ export type Company_Users_Stddev_Pop_Fields = {
   /** 公司id */
   company_companies?: Maybe<Scalars['Float']['output']>;
   id?: Maybe<Scalars['Float']['output']>;
-  /** 该用户在公司下看到的价格系数（0-·1的数值），默认为1表示和产品价格一致 */
+  /** 该用户在公司下看到的价格系数（大于0数值），默认为1表示和产品价格一致 */
   price_factor?: Maybe<Scalars['Float']['output']>;
   /** 用户id */
   user_users?: Maybe<Scalars['Float']['output']>;
@@ -2281,7 +2859,7 @@ export type Company_Users_Stddev_Pop_Order_By = {
   /** 公司id */
   company_companies?: InputMaybe<Order_By>;
   id?: InputMaybe<Order_By>;
-  /** 该用户在公司下看到的价格系数（0-·1的数值），默认为1表示和产品价格一致 */
+  /** 该用户在公司下看到的价格系数（大于0数值），默认为1表示和产品价格一致 */
   price_factor?: InputMaybe<Order_By>;
   /** 用户id */
   user_users?: InputMaybe<Order_By>;
@@ -2293,7 +2871,7 @@ export type Company_Users_Stddev_Samp_Fields = {
   /** 公司id */
   company_companies?: Maybe<Scalars['Float']['output']>;
   id?: Maybe<Scalars['Float']['output']>;
-  /** 该用户在公司下看到的价格系数（0-·1的数值），默认为1表示和产品价格一致 */
+  /** 该用户在公司下看到的价格系数（大于0数值），默认为1表示和产品价格一致 */
   price_factor?: Maybe<Scalars['Float']['output']>;
   /** 用户id */
   user_users?: Maybe<Scalars['Float']['output']>;
@@ -2304,7 +2882,7 @@ export type Company_Users_Stddev_Samp_Order_By = {
   /** 公司id */
   company_companies?: InputMaybe<Order_By>;
   id?: InputMaybe<Order_By>;
-  /** 该用户在公司下看到的价格系数（0-·1的数值），默认为1表示和产品价格一致 */
+  /** 该用户在公司下看到的价格系数（大于0数值），默认为1表示和产品价格一致 */
   price_factor?: InputMaybe<Order_By>;
   /** 用户id */
   user_users?: InputMaybe<Order_By>;
@@ -2326,7 +2904,7 @@ export type Company_Users_Stream_Cursor_Value_Input = {
   company_companies?: InputMaybe<Scalars['bigint']['input']>;
   created_at?: InputMaybe<Scalars['timestamptz']['input']>;
   id?: InputMaybe<Scalars['bigint']['input']>;
-  /** 该用户在公司下看到的价格系数（0-·1的数值），默认为1表示和产品价格一致 */
+  /** 该用户在公司下看到的价格系数（大于0数值），默认为1表示和产品价格一致 */
   price_factor?: InputMaybe<Scalars['numeric']['input']>;
   /** 用户在公司下的角色： 1.admin（可以管理公司的分类、公司的产品及套餐、授权公司用户）、2.user（普通用户） */
   role?: InputMaybe<Scalars['String']['input']>;
@@ -2341,7 +2919,7 @@ export type Company_Users_Sum_Fields = {
   /** 公司id */
   company_companies?: Maybe<Scalars['bigint']['output']>;
   id?: Maybe<Scalars['bigint']['output']>;
-  /** 该用户在公司下看到的价格系数（0-·1的数值），默认为1表示和产品价格一致 */
+  /** 该用户在公司下看到的价格系数（大于0数值），默认为1表示和产品价格一致 */
   price_factor?: Maybe<Scalars['numeric']['output']>;
   /** 用户id */
   user_users?: Maybe<Scalars['bigint']['output']>;
@@ -2352,7 +2930,7 @@ export type Company_Users_Sum_Order_By = {
   /** 公司id */
   company_companies?: InputMaybe<Order_By>;
   id?: InputMaybe<Order_By>;
-  /** 该用户在公司下看到的价格系数（0-·1的数值），默认为1表示和产品价格一致 */
+  /** 该用户在公司下看到的价格系数（大于0数值），默认为1表示和产品价格一致 */
   price_factor?: InputMaybe<Order_By>;
   /** 用户id */
   user_users?: InputMaybe<Order_By>;
@@ -2393,7 +2971,7 @@ export type Company_Users_Var_Pop_Fields = {
   /** 公司id */
   company_companies?: Maybe<Scalars['Float']['output']>;
   id?: Maybe<Scalars['Float']['output']>;
-  /** 该用户在公司下看到的价格系数（0-·1的数值），默认为1表示和产品价格一致 */
+  /** 该用户在公司下看到的价格系数（大于0数值），默认为1表示和产品价格一致 */
   price_factor?: Maybe<Scalars['Float']['output']>;
   /** 用户id */
   user_users?: Maybe<Scalars['Float']['output']>;
@@ -2404,7 +2982,7 @@ export type Company_Users_Var_Pop_Order_By = {
   /** 公司id */
   company_companies?: InputMaybe<Order_By>;
   id?: InputMaybe<Order_By>;
-  /** 该用户在公司下看到的价格系数（0-·1的数值），默认为1表示和产品价格一致 */
+  /** 该用户在公司下看到的价格系数（大于0数值），默认为1表示和产品价格一致 */
   price_factor?: InputMaybe<Order_By>;
   /** 用户id */
   user_users?: InputMaybe<Order_By>;
@@ -2416,7 +2994,7 @@ export type Company_Users_Var_Samp_Fields = {
   /** 公司id */
   company_companies?: Maybe<Scalars['Float']['output']>;
   id?: Maybe<Scalars['Float']['output']>;
-  /** 该用户在公司下看到的价格系数（0-·1的数值），默认为1表示和产品价格一致 */
+  /** 该用户在公司下看到的价格系数（大于0数值），默认为1表示和产品价格一致 */
   price_factor?: Maybe<Scalars['Float']['output']>;
   /** 用户id */
   user_users?: Maybe<Scalars['Float']['output']>;
@@ -2427,7 +3005,7 @@ export type Company_Users_Var_Samp_Order_By = {
   /** 公司id */
   company_companies?: InputMaybe<Order_By>;
   id?: InputMaybe<Order_By>;
-  /** 该用户在公司下看到的价格系数（0-·1的数值），默认为1表示和产品价格一致 */
+  /** 该用户在公司下看到的价格系数（大于0数值），默认为1表示和产品价格一致 */
   price_factor?: InputMaybe<Order_By>;
   /** 用户id */
   user_users?: InputMaybe<Order_By>;
@@ -2439,7 +3017,7 @@ export type Company_Users_Variance_Fields = {
   /** 公司id */
   company_companies?: Maybe<Scalars['Float']['output']>;
   id?: Maybe<Scalars['Float']['output']>;
-  /** 该用户在公司下看到的价格系数（0-·1的数值），默认为1表示和产品价格一致 */
+  /** 该用户在公司下看到的价格系数（大于0数值），默认为1表示和产品价格一致 */
   price_factor?: Maybe<Scalars['Float']['output']>;
   /** 用户id */
   user_users?: Maybe<Scalars['Float']['output']>;
@@ -2450,7 +3028,7 @@ export type Company_Users_Variance_Order_By = {
   /** 公司id */
   company_companies?: InputMaybe<Order_By>;
   id?: InputMaybe<Order_By>;
-  /** 该用户在公司下看到的价格系数（0-·1的数值），默认为1表示和产品价格一致 */
+  /** 该用户在公司下看到的价格系数（大于0数值），默认为1表示和产品价格一致 */
   price_factor?: InputMaybe<Order_By>;
   /** 用户id */
   user_users?: InputMaybe<Order_By>;
@@ -2778,6 +3356,10 @@ export type Json_Comparison_Exp = {
 /** mutation root */
 export type Mutation_Root = {
   __typename?: 'mutation_root';
+  /** delete data from the table: "addresses" */
+  delete_addresses?: Maybe<Addresses_Mutation_Response>;
+  /** delete single row from the table: "addresses" */
+  delete_addresses_by_pk?: Maybe<Addresses>;
   /** delete data from the table: "carts" */
   delete_carts?: Maybe<Carts_Mutation_Response>;
   /** delete single row from the table: "carts" */
@@ -2826,6 +3408,10 @@ export type Mutation_Root = {
   delete_users?: Maybe<Users_Mutation_Response>;
   /** delete single row from the table: "users" */
   delete_users_by_pk?: Maybe<Users>;
+  /** insert data into the table: "addresses" */
+  insert_addresses?: Maybe<Addresses_Mutation_Response>;
+  /** insert a single row into the table: "addresses" */
+  insert_addresses_one?: Maybe<Addresses>;
   /** insert data into the table: "carts" */
   insert_carts?: Maybe<Carts_Mutation_Response>;
   /** insert a single row into the table: "carts" */
@@ -2874,6 +3460,12 @@ export type Mutation_Root = {
   insert_users?: Maybe<Users_Mutation_Response>;
   /** insert a single row into the table: "users" */
   insert_users_one?: Maybe<Users>;
+  /** update data of the table: "addresses" */
+  update_addresses?: Maybe<Addresses_Mutation_Response>;
+  /** update single row of the table: "addresses" */
+  update_addresses_by_pk?: Maybe<Addresses>;
+  /** update multiples rows of table: "addresses" */
+  update_addresses_many?: Maybe<Array<Maybe<Addresses_Mutation_Response>>>;
   /** update data of the table: "carts" */
   update_carts?: Maybe<Carts_Mutation_Response>;
   /** update single row of the table: "carts" */
@@ -2946,6 +3538,18 @@ export type Mutation_Root = {
   update_users_by_pk?: Maybe<Users>;
   /** update multiples rows of table: "users" */
   update_users_many?: Maybe<Array<Maybe<Users_Mutation_Response>>>;
+};
+
+
+/** mutation root */
+export type Mutation_RootDelete_AddressesArgs = {
+  where: Addresses_Bool_Exp;
+};
+
+
+/** mutation root */
+export type Mutation_RootDelete_Addresses_By_PkArgs = {
+  id: Scalars['bigint']['input'];
 };
 
 
@@ -3090,6 +3694,20 @@ export type Mutation_RootDelete_UsersArgs = {
 /** mutation root */
 export type Mutation_RootDelete_Users_By_PkArgs = {
   id: Scalars['bigint']['input'];
+};
+
+
+/** mutation root */
+export type Mutation_RootInsert_AddressesArgs = {
+  objects: Array<Addresses_Insert_Input>;
+  on_conflict?: InputMaybe<Addresses_On_Conflict>;
+};
+
+
+/** mutation root */
+export type Mutation_RootInsert_Addresses_OneArgs = {
+  object: Addresses_Insert_Input;
+  on_conflict?: InputMaybe<Addresses_On_Conflict>;
 };
 
 
@@ -3258,6 +3876,28 @@ export type Mutation_RootInsert_UsersArgs = {
 export type Mutation_RootInsert_Users_OneArgs = {
   object: Users_Insert_Input;
   on_conflict?: InputMaybe<Users_On_Conflict>;
+};
+
+
+/** mutation root */
+export type Mutation_RootUpdate_AddressesArgs = {
+  _inc?: InputMaybe<Addresses_Inc_Input>;
+  _set?: InputMaybe<Addresses_Set_Input>;
+  where: Addresses_Bool_Exp;
+};
+
+
+/** mutation root */
+export type Mutation_RootUpdate_Addresses_By_PkArgs = {
+  _inc?: InputMaybe<Addresses_Inc_Input>;
+  _set?: InputMaybe<Addresses_Set_Input>;
+  pk_columns: Addresses_Pk_Columns_Input;
+};
+
+
+/** mutation root */
+export type Mutation_RootUpdate_Addresses_ManyArgs = {
+  updates: Array<Addresses_Updates>;
 };
 
 
@@ -3558,8 +4198,12 @@ export type Order_Items = {
   __typename?: 'order_items';
   created_at: Scalars['timestamptz']['output'];
   id: Scalars['bigint']['output'];
+  /** 商品图片快照 */
+  product_image_url?: Maybe<Scalars['String']['output']>;
+  /** 商品名称快照 */
+  product_name?: Maybe<Scalars['String']['output']>;
   /** 单价，记录product_sku的价格，防止价格变动 */
-  price: Scalars['numeric']['output'];
+  product_price: Scalars['numeric']['output'];
   /** An object relationship */
   product_sku: Product_Skus;
   /** 关联产品id */
@@ -3639,7 +4283,7 @@ export type Order_Items_Avg_Fields = {
   __typename?: 'order_items_avg_fields';
   id?: Maybe<Scalars['Float']['output']>;
   /** 单价，记录product_sku的价格，防止价格变动 */
-  price?: Maybe<Scalars['Float']['output']>;
+  product_price?: Maybe<Scalars['Float']['output']>;
   /** 关联产品id */
   product_sku_product_skus?: Maybe<Scalars['Float']['output']>;
   /** 数量 */
@@ -3650,7 +4294,7 @@ export type Order_Items_Avg_Fields = {
 export type Order_Items_Avg_Order_By = {
   id?: InputMaybe<Order_By>;
   /** 单价，记录product_sku的价格，防止价格变动 */
-  price?: InputMaybe<Order_By>;
+  product_price?: InputMaybe<Order_By>;
   /** 关联产品id */
   product_sku_product_skus?: InputMaybe<Order_By>;
   /** 数量 */
@@ -3664,7 +4308,9 @@ export type Order_Items_Bool_Exp = {
   _or?: InputMaybe<Array<Order_Items_Bool_Exp>>;
   created_at?: InputMaybe<Timestamptz_Comparison_Exp>;
   id?: InputMaybe<Bigint_Comparison_Exp>;
-  price?: InputMaybe<Numeric_Comparison_Exp>;
+  product_image_url?: InputMaybe<String_Comparison_Exp>;
+  product_name?: InputMaybe<String_Comparison_Exp>;
+  product_price?: InputMaybe<Numeric_Comparison_Exp>;
   product_sku?: InputMaybe<Product_Skus_Bool_Exp>;
   product_sku_product_skus?: InputMaybe<Bigint_Comparison_Exp>;
   quantity?: InputMaybe<Bigint_Comparison_Exp>;
@@ -3682,7 +4328,7 @@ export enum Order_Items_Constraint {
 export type Order_Items_Inc_Input = {
   id?: InputMaybe<Scalars['bigint']['input']>;
   /** 单价，记录product_sku的价格，防止价格变动 */
-  price?: InputMaybe<Scalars['numeric']['input']>;
+  product_price?: InputMaybe<Scalars['numeric']['input']>;
   /** 关联产品id */
   product_sku_product_skus?: InputMaybe<Scalars['bigint']['input']>;
   /** 数量 */
@@ -3693,8 +4339,12 @@ export type Order_Items_Inc_Input = {
 export type Order_Items_Insert_Input = {
   created_at?: InputMaybe<Scalars['timestamptz']['input']>;
   id?: InputMaybe<Scalars['bigint']['input']>;
+  /** 商品图片快照 */
+  product_image_url?: InputMaybe<Scalars['String']['input']>;
+  /** 商品名称快照 */
+  product_name?: InputMaybe<Scalars['String']['input']>;
   /** 单价，记录product_sku的价格，防止价格变动 */
-  price?: InputMaybe<Scalars['numeric']['input']>;
+  product_price?: InputMaybe<Scalars['numeric']['input']>;
   product_sku?: InputMaybe<Product_Skus_Obj_Rel_Insert_Input>;
   /** 关联产品id */
   product_sku_product_skus?: InputMaybe<Scalars['bigint']['input']>;
@@ -3710,8 +4360,12 @@ export type Order_Items_Max_Fields = {
   __typename?: 'order_items_max_fields';
   created_at?: Maybe<Scalars['timestamptz']['output']>;
   id?: Maybe<Scalars['bigint']['output']>;
+  /** 商品图片快照 */
+  product_image_url?: Maybe<Scalars['String']['output']>;
+  /** 商品名称快照 */
+  product_name?: Maybe<Scalars['String']['output']>;
   /** 单价，记录product_sku的价格，防止价格变动 */
-  price?: Maybe<Scalars['numeric']['output']>;
+  product_price?: Maybe<Scalars['numeric']['output']>;
   /** 关联产品id */
   product_sku_product_skus?: Maybe<Scalars['bigint']['output']>;
   /** 数量 */
@@ -3725,8 +4379,12 @@ export type Order_Items_Max_Fields = {
 export type Order_Items_Max_Order_By = {
   created_at?: InputMaybe<Order_By>;
   id?: InputMaybe<Order_By>;
+  /** 商品图片快照 */
+  product_image_url?: InputMaybe<Order_By>;
+  /** 商品名称快照 */
+  product_name?: InputMaybe<Order_By>;
   /** 单价，记录product_sku的价格，防止价格变动 */
-  price?: InputMaybe<Order_By>;
+  product_price?: InputMaybe<Order_By>;
   /** 关联产品id */
   product_sku_product_skus?: InputMaybe<Order_By>;
   /** 数量 */
@@ -3741,8 +4399,12 @@ export type Order_Items_Min_Fields = {
   __typename?: 'order_items_min_fields';
   created_at?: Maybe<Scalars['timestamptz']['output']>;
   id?: Maybe<Scalars['bigint']['output']>;
+  /** 商品图片快照 */
+  product_image_url?: Maybe<Scalars['String']['output']>;
+  /** 商品名称快照 */
+  product_name?: Maybe<Scalars['String']['output']>;
   /** 单价，记录product_sku的价格，防止价格变动 */
-  price?: Maybe<Scalars['numeric']['output']>;
+  product_price?: Maybe<Scalars['numeric']['output']>;
   /** 关联产品id */
   product_sku_product_skus?: Maybe<Scalars['bigint']['output']>;
   /** 数量 */
@@ -3756,8 +4418,12 @@ export type Order_Items_Min_Fields = {
 export type Order_Items_Min_Order_By = {
   created_at?: InputMaybe<Order_By>;
   id?: InputMaybe<Order_By>;
+  /** 商品图片快照 */
+  product_image_url?: InputMaybe<Order_By>;
+  /** 商品名称快照 */
+  product_name?: InputMaybe<Order_By>;
   /** 单价，记录product_sku的价格，防止价格变动 */
-  price?: InputMaybe<Order_By>;
+  product_price?: InputMaybe<Order_By>;
   /** 关联产品id */
   product_sku_product_skus?: InputMaybe<Order_By>;
   /** 数量 */
@@ -3787,7 +4453,9 @@ export type Order_Items_On_Conflict = {
 export type Order_Items_Order_By = {
   created_at?: InputMaybe<Order_By>;
   id?: InputMaybe<Order_By>;
-  price?: InputMaybe<Order_By>;
+  product_image_url?: InputMaybe<Order_By>;
+  product_name?: InputMaybe<Order_By>;
+  product_price?: InputMaybe<Order_By>;
   product_sku?: InputMaybe<Product_Skus_Order_By>;
   product_sku_product_skus?: InputMaybe<Order_By>;
   quantity?: InputMaybe<Order_By>;
@@ -3807,7 +4475,11 @@ export enum Order_Items_Select_Column {
   /** column name */
   Id = 'id',
   /** column name */
-  Price = 'price',
+  ProductImageUrl = 'product_image_url',
+  /** column name */
+  ProductName = 'product_name',
+  /** column name */
+  ProductPrice = 'product_price',
   /** column name */
   ProductSkuProductSkus = 'product_sku_product_skus',
   /** column name */
@@ -3822,8 +4494,12 @@ export enum Order_Items_Select_Column {
 export type Order_Items_Set_Input = {
   created_at?: InputMaybe<Scalars['timestamptz']['input']>;
   id?: InputMaybe<Scalars['bigint']['input']>;
+  /** 商品图片快照 */
+  product_image_url?: InputMaybe<Scalars['String']['input']>;
+  /** 商品名称快照 */
+  product_name?: InputMaybe<Scalars['String']['input']>;
   /** 单价，记录product_sku的价格，防止价格变动 */
-  price?: InputMaybe<Scalars['numeric']['input']>;
+  product_price?: InputMaybe<Scalars['numeric']['input']>;
   /** 关联产品id */
   product_sku_product_skus?: InputMaybe<Scalars['bigint']['input']>;
   /** 数量 */
@@ -3838,7 +4514,7 @@ export type Order_Items_Stddev_Fields = {
   __typename?: 'order_items_stddev_fields';
   id?: Maybe<Scalars['Float']['output']>;
   /** 单价，记录product_sku的价格，防止价格变动 */
-  price?: Maybe<Scalars['Float']['output']>;
+  product_price?: Maybe<Scalars['Float']['output']>;
   /** 关联产品id */
   product_sku_product_skus?: Maybe<Scalars['Float']['output']>;
   /** 数量 */
@@ -3849,7 +4525,7 @@ export type Order_Items_Stddev_Fields = {
 export type Order_Items_Stddev_Order_By = {
   id?: InputMaybe<Order_By>;
   /** 单价，记录product_sku的价格，防止价格变动 */
-  price?: InputMaybe<Order_By>;
+  product_price?: InputMaybe<Order_By>;
   /** 关联产品id */
   product_sku_product_skus?: InputMaybe<Order_By>;
   /** 数量 */
@@ -3861,7 +4537,7 @@ export type Order_Items_Stddev_Pop_Fields = {
   __typename?: 'order_items_stddev_pop_fields';
   id?: Maybe<Scalars['Float']['output']>;
   /** 单价，记录product_sku的价格，防止价格变动 */
-  price?: Maybe<Scalars['Float']['output']>;
+  product_price?: Maybe<Scalars['Float']['output']>;
   /** 关联产品id */
   product_sku_product_skus?: Maybe<Scalars['Float']['output']>;
   /** 数量 */
@@ -3872,7 +4548,7 @@ export type Order_Items_Stddev_Pop_Fields = {
 export type Order_Items_Stddev_Pop_Order_By = {
   id?: InputMaybe<Order_By>;
   /** 单价，记录product_sku的价格，防止价格变动 */
-  price?: InputMaybe<Order_By>;
+  product_price?: InputMaybe<Order_By>;
   /** 关联产品id */
   product_sku_product_skus?: InputMaybe<Order_By>;
   /** 数量 */
@@ -3884,7 +4560,7 @@ export type Order_Items_Stddev_Samp_Fields = {
   __typename?: 'order_items_stddev_samp_fields';
   id?: Maybe<Scalars['Float']['output']>;
   /** 单价，记录product_sku的价格，防止价格变动 */
-  price?: Maybe<Scalars['Float']['output']>;
+  product_price?: Maybe<Scalars['Float']['output']>;
   /** 关联产品id */
   product_sku_product_skus?: Maybe<Scalars['Float']['output']>;
   /** 数量 */
@@ -3895,7 +4571,7 @@ export type Order_Items_Stddev_Samp_Fields = {
 export type Order_Items_Stddev_Samp_Order_By = {
   id?: InputMaybe<Order_By>;
   /** 单价，记录product_sku的价格，防止价格变动 */
-  price?: InputMaybe<Order_By>;
+  product_price?: InputMaybe<Order_By>;
   /** 关联产品id */
   product_sku_product_skus?: InputMaybe<Order_By>;
   /** 数量 */
@@ -3914,8 +4590,12 @@ export type Order_Items_Stream_Cursor_Input = {
 export type Order_Items_Stream_Cursor_Value_Input = {
   created_at?: InputMaybe<Scalars['timestamptz']['input']>;
   id?: InputMaybe<Scalars['bigint']['input']>;
+  /** 商品图片快照 */
+  product_image_url?: InputMaybe<Scalars['String']['input']>;
+  /** 商品名称快照 */
+  product_name?: InputMaybe<Scalars['String']['input']>;
   /** 单价，记录product_sku的价格，防止价格变动 */
-  price?: InputMaybe<Scalars['numeric']['input']>;
+  product_price?: InputMaybe<Scalars['numeric']['input']>;
   /** 关联产品id */
   product_sku_product_skus?: InputMaybe<Scalars['bigint']['input']>;
   /** 数量 */
@@ -3930,7 +4610,7 @@ export type Order_Items_Sum_Fields = {
   __typename?: 'order_items_sum_fields';
   id?: Maybe<Scalars['bigint']['output']>;
   /** 单价，记录product_sku的价格，防止价格变动 */
-  price?: Maybe<Scalars['numeric']['output']>;
+  product_price?: Maybe<Scalars['numeric']['output']>;
   /** 关联产品id */
   product_sku_product_skus?: Maybe<Scalars['bigint']['output']>;
   /** 数量 */
@@ -3941,7 +4621,7 @@ export type Order_Items_Sum_Fields = {
 export type Order_Items_Sum_Order_By = {
   id?: InputMaybe<Order_By>;
   /** 单价，记录product_sku的价格，防止价格变动 */
-  price?: InputMaybe<Order_By>;
+  product_price?: InputMaybe<Order_By>;
   /** 关联产品id */
   product_sku_product_skus?: InputMaybe<Order_By>;
   /** 数量 */
@@ -3955,7 +4635,11 @@ export enum Order_Items_Update_Column {
   /** column name */
   Id = 'id',
   /** column name */
-  Price = 'price',
+  ProductImageUrl = 'product_image_url',
+  /** column name */
+  ProductName = 'product_name',
+  /** column name */
+  ProductPrice = 'product_price',
   /** column name */
   ProductSkuProductSkus = 'product_sku_product_skus',
   /** column name */
@@ -3980,7 +4664,7 @@ export type Order_Items_Var_Pop_Fields = {
   __typename?: 'order_items_var_pop_fields';
   id?: Maybe<Scalars['Float']['output']>;
   /** 单价，记录product_sku的价格，防止价格变动 */
-  price?: Maybe<Scalars['Float']['output']>;
+  product_price?: Maybe<Scalars['Float']['output']>;
   /** 关联产品id */
   product_sku_product_skus?: Maybe<Scalars['Float']['output']>;
   /** 数量 */
@@ -3991,7 +4675,7 @@ export type Order_Items_Var_Pop_Fields = {
 export type Order_Items_Var_Pop_Order_By = {
   id?: InputMaybe<Order_By>;
   /** 单价，记录product_sku的价格，防止价格变动 */
-  price?: InputMaybe<Order_By>;
+  product_price?: InputMaybe<Order_By>;
   /** 关联产品id */
   product_sku_product_skus?: InputMaybe<Order_By>;
   /** 数量 */
@@ -4003,7 +4687,7 @@ export type Order_Items_Var_Samp_Fields = {
   __typename?: 'order_items_var_samp_fields';
   id?: Maybe<Scalars['Float']['output']>;
   /** 单价，记录product_sku的价格，防止价格变动 */
-  price?: Maybe<Scalars['Float']['output']>;
+  product_price?: Maybe<Scalars['Float']['output']>;
   /** 关联产品id */
   product_sku_product_skus?: Maybe<Scalars['Float']['output']>;
   /** 数量 */
@@ -4014,7 +4698,7 @@ export type Order_Items_Var_Samp_Fields = {
 export type Order_Items_Var_Samp_Order_By = {
   id?: InputMaybe<Order_By>;
   /** 单价，记录product_sku的价格，防止价格变动 */
-  price?: InputMaybe<Order_By>;
+  product_price?: InputMaybe<Order_By>;
   /** 关联产品id */
   product_sku_product_skus?: InputMaybe<Order_By>;
   /** 数量 */
@@ -4026,7 +4710,7 @@ export type Order_Items_Variance_Fields = {
   __typename?: 'order_items_variance_fields';
   id?: Maybe<Scalars['Float']['output']>;
   /** 单价，记录product_sku的价格，防止价格变动 */
-  price?: Maybe<Scalars['Float']['output']>;
+  product_price?: Maybe<Scalars['Float']['output']>;
   /** 关联产品id */
   product_sku_product_skus?: Maybe<Scalars['Float']['output']>;
   /** 数量 */
@@ -4037,7 +4721,7 @@ export type Order_Items_Variance_Fields = {
 export type Order_Items_Variance_Order_By = {
   id?: InputMaybe<Order_By>;
   /** 单价，记录product_sku的价格，防止价格变动 */
-  price?: InputMaybe<Order_By>;
+  product_price?: InputMaybe<Order_By>;
   /** 关联产品id */
   product_sku_product_skus?: InputMaybe<Order_By>;
   /** 数量 */
@@ -4047,6 +4731,8 @@ export type Order_Items_Variance_Order_By = {
 /** 订单表 */
 export type Orders = {
   __typename?: 'orders';
+  /** 实际支付金额，由公司管理员设置确认，用于真实的统计 */
+  actual_amount: Scalars['numeric']['output'];
   /** An object relationship */
   company: Companies;
   /** 关联公司id，在哪个公司下单的 */
@@ -4055,12 +4741,26 @@ export type Orders = {
   id: Scalars['bigint']['output'];
   /** 是否删除 */
   is_deleted: Scalars['Boolean']['output'];
-  /** 下单用户在改公司的价格系数 */
+  /** -- 状态值： -- pending: 等待确认（用户提交了订单，管理员没有确认，用户可能已经付款了，也可能没有） -- confirmed: 已确认（管理员完成确认了订单可以发货，此时会锁库存，但用户不一定付款了）-- completed: 已完成（订单完成结束，对应的payment_status是approved） */
+  order_status: Scalars['String']['output'];
+  /** -- 支付审核状态（管理员设置）： -- pending: 待支付（用户尚未支付） -- approved: 已通过（管理员确认用户订单已经付款了） */
+  payment_status: Scalars['String']['output'];
+  /** 下单用户在该公司的价格系数快照 */
   price_factor: Scalars['numeric']['output'];
+  /** 收货地址 */
+  receiver_address: Scalars['String']['output'];
+  /** 可不填，收货人-市 */
+  receiver_city?: Maybe<Scalars['String']['output']>;
+  /** 可不填，收货人-区 */
+  receiver_district?: Maybe<Scalars['String']['output']>;
+  /** 收货人 */
+  receiver_name: Scalars['String']['output'];
+  /** 收货电话 */
+  receiver_phone: Scalars['String']['output'];
+  /** 可不填，收货人-省 */
+  receiver_province?: Maybe<Scalars['String']['output']>;
   /** 订单用户备注 */
   remark?: Maybe<Scalars['String']['output']>;
-  /** 订单状态（1.pending（待确认） 2.submitted（.已提交） */
-  status: Scalars['String']['output'];
   /** 总金额，总价*价格系数 */
   total_amount: Scalars['numeric']['output'];
   /** 规格总价=所有规格单价*数量的总和 */
@@ -4154,10 +4854,12 @@ export type Orders_Arr_Rel_Insert_Input = {
 /** aggregate avg on columns */
 export type Orders_Avg_Fields = {
   __typename?: 'orders_avg_fields';
+  /** 实际支付金额，由公司管理员设置确认，用于真实的统计 */
+  actual_amount?: Maybe<Scalars['Float']['output']>;
   /** 关联公司id，在哪个公司下单的 */
   company_companies?: Maybe<Scalars['Float']['output']>;
   id?: Maybe<Scalars['Float']['output']>;
-  /** 下单用户在改公司的价格系数 */
+  /** 下单用户在该公司的价格系数快照 */
   price_factor?: Maybe<Scalars['Float']['output']>;
   /** 总金额，总价*价格系数 */
   total_amount?: Maybe<Scalars['Float']['output']>;
@@ -4169,10 +4871,12 @@ export type Orders_Avg_Fields = {
 
 /** order by avg() on columns of table "orders" */
 export type Orders_Avg_Order_By = {
+  /** 实际支付金额，由公司管理员设置确认，用于真实的统计 */
+  actual_amount?: InputMaybe<Order_By>;
   /** 关联公司id，在哪个公司下单的 */
   company_companies?: InputMaybe<Order_By>;
   id?: InputMaybe<Order_By>;
-  /** 下单用户在改公司的价格系数 */
+  /** 下单用户在该公司的价格系数快照 */
   price_factor?: InputMaybe<Order_By>;
   /** 总金额，总价*价格系数 */
   total_amount?: InputMaybe<Order_By>;
@@ -4187,14 +4891,22 @@ export type Orders_Bool_Exp = {
   _and?: InputMaybe<Array<Orders_Bool_Exp>>;
   _not?: InputMaybe<Orders_Bool_Exp>;
   _or?: InputMaybe<Array<Orders_Bool_Exp>>;
+  actual_amount?: InputMaybe<Numeric_Comparison_Exp>;
   company?: InputMaybe<Companies_Bool_Exp>;
   company_companies?: InputMaybe<Bigint_Comparison_Exp>;
   created_at?: InputMaybe<Timestamptz_Comparison_Exp>;
   id?: InputMaybe<Bigint_Comparison_Exp>;
   is_deleted?: InputMaybe<Boolean_Comparison_Exp>;
+  order_status?: InputMaybe<String_Comparison_Exp>;
+  payment_status?: InputMaybe<String_Comparison_Exp>;
   price_factor?: InputMaybe<Numeric_Comparison_Exp>;
+  receiver_address?: InputMaybe<String_Comparison_Exp>;
+  receiver_city?: InputMaybe<String_Comparison_Exp>;
+  receiver_district?: InputMaybe<String_Comparison_Exp>;
+  receiver_name?: InputMaybe<String_Comparison_Exp>;
+  receiver_phone?: InputMaybe<String_Comparison_Exp>;
+  receiver_province?: InputMaybe<String_Comparison_Exp>;
   remark?: InputMaybe<String_Comparison_Exp>;
-  status?: InputMaybe<String_Comparison_Exp>;
   total_amount?: InputMaybe<Numeric_Comparison_Exp>;
   total_price?: InputMaybe<Numeric_Comparison_Exp>;
   updated_at?: InputMaybe<Timestamptz_Comparison_Exp>;
@@ -4210,10 +4922,12 @@ export enum Orders_Constraint {
 
 /** input type for incrementing numeric columns in table "orders" */
 export type Orders_Inc_Input = {
+  /** 实际支付金额，由公司管理员设置确认，用于真实的统计 */
+  actual_amount?: InputMaybe<Scalars['numeric']['input']>;
   /** 关联公司id，在哪个公司下单的 */
   company_companies?: InputMaybe<Scalars['bigint']['input']>;
   id?: InputMaybe<Scalars['bigint']['input']>;
-  /** 下单用户在改公司的价格系数 */
+  /** 下单用户在该公司的价格系数快照 */
   price_factor?: InputMaybe<Scalars['numeric']['input']>;
   /** 总金额，总价*价格系数 */
   total_amount?: InputMaybe<Scalars['numeric']['input']>;
@@ -4225,6 +4939,8 @@ export type Orders_Inc_Input = {
 
 /** input type for inserting data into table "orders" */
 export type Orders_Insert_Input = {
+  /** 实际支付金额，由公司管理员设置确认，用于真实的统计 */
+  actual_amount?: InputMaybe<Scalars['numeric']['input']>;
   company?: InputMaybe<Companies_Obj_Rel_Insert_Input>;
   /** 关联公司id，在哪个公司下单的 */
   company_companies?: InputMaybe<Scalars['bigint']['input']>;
@@ -4232,12 +4948,26 @@ export type Orders_Insert_Input = {
   id?: InputMaybe<Scalars['bigint']['input']>;
   /** 是否删除 */
   is_deleted?: InputMaybe<Scalars['Boolean']['input']>;
-  /** 下单用户在改公司的价格系数 */
+  /** -- 状态值： -- pending: 等待确认（用户提交了订单，管理员没有确认，用户可能已经付款了，也可能没有） -- confirmed: 已确认（管理员完成确认了订单可以发货，此时会锁库存，但用户不一定付款了）-- completed: 已完成（订单完成结束，对应的payment_status是approved） */
+  order_status?: InputMaybe<Scalars['String']['input']>;
+  /** -- 支付审核状态（管理员设置）： -- pending: 待支付（用户尚未支付） -- approved: 已通过（管理员确认用户订单已经付款了） */
+  payment_status?: InputMaybe<Scalars['String']['input']>;
+  /** 下单用户在该公司的价格系数快照 */
   price_factor?: InputMaybe<Scalars['numeric']['input']>;
+  /** 收货地址 */
+  receiver_address?: InputMaybe<Scalars['String']['input']>;
+  /** 可不填，收货人-市 */
+  receiver_city?: InputMaybe<Scalars['String']['input']>;
+  /** 可不填，收货人-区 */
+  receiver_district?: InputMaybe<Scalars['String']['input']>;
+  /** 收货人 */
+  receiver_name?: InputMaybe<Scalars['String']['input']>;
+  /** 收货电话 */
+  receiver_phone?: InputMaybe<Scalars['String']['input']>;
+  /** 可不填，收货人-省 */
+  receiver_province?: InputMaybe<Scalars['String']['input']>;
   /** 订单用户备注 */
   remark?: InputMaybe<Scalars['String']['input']>;
-  /** 订单状态（1.pending（待确认） 2.submitted（.已提交） */
-  status?: InputMaybe<Scalars['String']['input']>;
   /** 总金额，总价*价格系数 */
   total_amount?: InputMaybe<Scalars['numeric']['input']>;
   /** 规格总价=所有规格单价*数量的总和 */
@@ -4251,16 +4981,32 @@ export type Orders_Insert_Input = {
 /** aggregate max on columns */
 export type Orders_Max_Fields = {
   __typename?: 'orders_max_fields';
+  /** 实际支付金额，由公司管理员设置确认，用于真实的统计 */
+  actual_amount?: Maybe<Scalars['numeric']['output']>;
   /** 关联公司id，在哪个公司下单的 */
   company_companies?: Maybe<Scalars['bigint']['output']>;
   created_at?: Maybe<Scalars['timestamptz']['output']>;
   id?: Maybe<Scalars['bigint']['output']>;
-  /** 下单用户在改公司的价格系数 */
+  /** -- 状态值： -- pending: 等待确认（用户提交了订单，管理员没有确认，用户可能已经付款了，也可能没有） -- confirmed: 已确认（管理员完成确认了订单可以发货，此时会锁库存，但用户不一定付款了）-- completed: 已完成（订单完成结束，对应的payment_status是approved） */
+  order_status?: Maybe<Scalars['String']['output']>;
+  /** -- 支付审核状态（管理员设置）： -- pending: 待支付（用户尚未支付） -- approved: 已通过（管理员确认用户订单已经付款了） */
+  payment_status?: Maybe<Scalars['String']['output']>;
+  /** 下单用户在该公司的价格系数快照 */
   price_factor?: Maybe<Scalars['numeric']['output']>;
+  /** 收货地址 */
+  receiver_address?: Maybe<Scalars['String']['output']>;
+  /** 可不填，收货人-市 */
+  receiver_city?: Maybe<Scalars['String']['output']>;
+  /** 可不填，收货人-区 */
+  receiver_district?: Maybe<Scalars['String']['output']>;
+  /** 收货人 */
+  receiver_name?: Maybe<Scalars['String']['output']>;
+  /** 收货电话 */
+  receiver_phone?: Maybe<Scalars['String']['output']>;
+  /** 可不填，收货人-省 */
+  receiver_province?: Maybe<Scalars['String']['output']>;
   /** 订单用户备注 */
   remark?: Maybe<Scalars['String']['output']>;
-  /** 订单状态（1.pending（待确认） 2.submitted（.已提交） */
-  status?: Maybe<Scalars['String']['output']>;
   /** 总金额，总价*价格系数 */
   total_amount?: Maybe<Scalars['numeric']['output']>;
   /** 规格总价=所有规格单价*数量的总和 */
@@ -4272,16 +5018,32 @@ export type Orders_Max_Fields = {
 
 /** order by max() on columns of table "orders" */
 export type Orders_Max_Order_By = {
+  /** 实际支付金额，由公司管理员设置确认，用于真实的统计 */
+  actual_amount?: InputMaybe<Order_By>;
   /** 关联公司id，在哪个公司下单的 */
   company_companies?: InputMaybe<Order_By>;
   created_at?: InputMaybe<Order_By>;
   id?: InputMaybe<Order_By>;
-  /** 下单用户在改公司的价格系数 */
+  /** -- 状态值： -- pending: 等待确认（用户提交了订单，管理员没有确认，用户可能已经付款了，也可能没有） -- confirmed: 已确认（管理员完成确认了订单可以发货，此时会锁库存，但用户不一定付款了）-- completed: 已完成（订单完成结束，对应的payment_status是approved） */
+  order_status?: InputMaybe<Order_By>;
+  /** -- 支付审核状态（管理员设置）： -- pending: 待支付（用户尚未支付） -- approved: 已通过（管理员确认用户订单已经付款了） */
+  payment_status?: InputMaybe<Order_By>;
+  /** 下单用户在该公司的价格系数快照 */
   price_factor?: InputMaybe<Order_By>;
+  /** 收货地址 */
+  receiver_address?: InputMaybe<Order_By>;
+  /** 可不填，收货人-市 */
+  receiver_city?: InputMaybe<Order_By>;
+  /** 可不填，收货人-区 */
+  receiver_district?: InputMaybe<Order_By>;
+  /** 收货人 */
+  receiver_name?: InputMaybe<Order_By>;
+  /** 收货电话 */
+  receiver_phone?: InputMaybe<Order_By>;
+  /** 可不填，收货人-省 */
+  receiver_province?: InputMaybe<Order_By>;
   /** 订单用户备注 */
   remark?: InputMaybe<Order_By>;
-  /** 订单状态（1.pending（待确认） 2.submitted（.已提交） */
-  status?: InputMaybe<Order_By>;
   /** 总金额，总价*价格系数 */
   total_amount?: InputMaybe<Order_By>;
   /** 规格总价=所有规格单价*数量的总和 */
@@ -4294,16 +5056,32 @@ export type Orders_Max_Order_By = {
 /** aggregate min on columns */
 export type Orders_Min_Fields = {
   __typename?: 'orders_min_fields';
+  /** 实际支付金额，由公司管理员设置确认，用于真实的统计 */
+  actual_amount?: Maybe<Scalars['numeric']['output']>;
   /** 关联公司id，在哪个公司下单的 */
   company_companies?: Maybe<Scalars['bigint']['output']>;
   created_at?: Maybe<Scalars['timestamptz']['output']>;
   id?: Maybe<Scalars['bigint']['output']>;
-  /** 下单用户在改公司的价格系数 */
+  /** -- 状态值： -- pending: 等待确认（用户提交了订单，管理员没有确认，用户可能已经付款了，也可能没有） -- confirmed: 已确认（管理员完成确认了订单可以发货，此时会锁库存，但用户不一定付款了）-- completed: 已完成（订单完成结束，对应的payment_status是approved） */
+  order_status?: Maybe<Scalars['String']['output']>;
+  /** -- 支付审核状态（管理员设置）： -- pending: 待支付（用户尚未支付） -- approved: 已通过（管理员确认用户订单已经付款了） */
+  payment_status?: Maybe<Scalars['String']['output']>;
+  /** 下单用户在该公司的价格系数快照 */
   price_factor?: Maybe<Scalars['numeric']['output']>;
+  /** 收货地址 */
+  receiver_address?: Maybe<Scalars['String']['output']>;
+  /** 可不填，收货人-市 */
+  receiver_city?: Maybe<Scalars['String']['output']>;
+  /** 可不填，收货人-区 */
+  receiver_district?: Maybe<Scalars['String']['output']>;
+  /** 收货人 */
+  receiver_name?: Maybe<Scalars['String']['output']>;
+  /** 收货电话 */
+  receiver_phone?: Maybe<Scalars['String']['output']>;
+  /** 可不填，收货人-省 */
+  receiver_province?: Maybe<Scalars['String']['output']>;
   /** 订单用户备注 */
   remark?: Maybe<Scalars['String']['output']>;
-  /** 订单状态（1.pending（待确认） 2.submitted（.已提交） */
-  status?: Maybe<Scalars['String']['output']>;
   /** 总金额，总价*价格系数 */
   total_amount?: Maybe<Scalars['numeric']['output']>;
   /** 规格总价=所有规格单价*数量的总和 */
@@ -4315,16 +5093,32 @@ export type Orders_Min_Fields = {
 
 /** order by min() on columns of table "orders" */
 export type Orders_Min_Order_By = {
+  /** 实际支付金额，由公司管理员设置确认，用于真实的统计 */
+  actual_amount?: InputMaybe<Order_By>;
   /** 关联公司id，在哪个公司下单的 */
   company_companies?: InputMaybe<Order_By>;
   created_at?: InputMaybe<Order_By>;
   id?: InputMaybe<Order_By>;
-  /** 下单用户在改公司的价格系数 */
+  /** -- 状态值： -- pending: 等待确认（用户提交了订单，管理员没有确认，用户可能已经付款了，也可能没有） -- confirmed: 已确认（管理员完成确认了订单可以发货，此时会锁库存，但用户不一定付款了）-- completed: 已完成（订单完成结束，对应的payment_status是approved） */
+  order_status?: InputMaybe<Order_By>;
+  /** -- 支付审核状态（管理员设置）： -- pending: 待支付（用户尚未支付） -- approved: 已通过（管理员确认用户订单已经付款了） */
+  payment_status?: InputMaybe<Order_By>;
+  /** 下单用户在该公司的价格系数快照 */
   price_factor?: InputMaybe<Order_By>;
+  /** 收货地址 */
+  receiver_address?: InputMaybe<Order_By>;
+  /** 可不填，收货人-市 */
+  receiver_city?: InputMaybe<Order_By>;
+  /** 可不填，收货人-区 */
+  receiver_district?: InputMaybe<Order_By>;
+  /** 收货人 */
+  receiver_name?: InputMaybe<Order_By>;
+  /** 收货电话 */
+  receiver_phone?: InputMaybe<Order_By>;
+  /** 可不填，收货人-省 */
+  receiver_province?: InputMaybe<Order_By>;
   /** 订单用户备注 */
   remark?: InputMaybe<Order_By>;
-  /** 订单状态（1.pending（待确认） 2.submitted（.已提交） */
-  status?: InputMaybe<Order_By>;
   /** 总金额，总价*价格系数 */
   total_amount?: InputMaybe<Order_By>;
   /** 规格总价=所有规格单价*数量的总和 */
@@ -4352,14 +5146,22 @@ export type Orders_On_Conflict = {
 
 /** Ordering options when selecting data from "orders". */
 export type Orders_Order_By = {
+  actual_amount?: InputMaybe<Order_By>;
   company?: InputMaybe<Companies_Order_By>;
   company_companies?: InputMaybe<Order_By>;
   created_at?: InputMaybe<Order_By>;
   id?: InputMaybe<Order_By>;
   is_deleted?: InputMaybe<Order_By>;
+  order_status?: InputMaybe<Order_By>;
+  payment_status?: InputMaybe<Order_By>;
   price_factor?: InputMaybe<Order_By>;
+  receiver_address?: InputMaybe<Order_By>;
+  receiver_city?: InputMaybe<Order_By>;
+  receiver_district?: InputMaybe<Order_By>;
+  receiver_name?: InputMaybe<Order_By>;
+  receiver_phone?: InputMaybe<Order_By>;
+  receiver_province?: InputMaybe<Order_By>;
   remark?: InputMaybe<Order_By>;
-  status?: InputMaybe<Order_By>;
   total_amount?: InputMaybe<Order_By>;
   total_price?: InputMaybe<Order_By>;
   updated_at?: InputMaybe<Order_By>;
@@ -4375,6 +5177,8 @@ export type Orders_Pk_Columns_Input = {
 /** select columns of table "orders" */
 export enum Orders_Select_Column {
   /** column name */
+  ActualAmount = 'actual_amount',
+  /** column name */
   CompanyCompanies = 'company_companies',
   /** column name */
   CreatedAt = 'created_at',
@@ -4383,11 +5187,25 @@ export enum Orders_Select_Column {
   /** column name */
   IsDeleted = 'is_deleted',
   /** column name */
+  OrderStatus = 'order_status',
+  /** column name */
+  PaymentStatus = 'payment_status',
+  /** column name */
   PriceFactor = 'price_factor',
   /** column name */
-  Remark = 'remark',
+  ReceiverAddress = 'receiver_address',
   /** column name */
-  Status = 'status',
+  ReceiverCity = 'receiver_city',
+  /** column name */
+  ReceiverDistrict = 'receiver_district',
+  /** column name */
+  ReceiverName = 'receiver_name',
+  /** column name */
+  ReceiverPhone = 'receiver_phone',
+  /** column name */
+  ReceiverProvince = 'receiver_province',
+  /** column name */
+  Remark = 'remark',
   /** column name */
   TotalAmount = 'total_amount',
   /** column name */
@@ -4412,18 +5230,34 @@ export enum Orders_Select_Column_Orders_Aggregate_Bool_Exp_Bool_Or_Arguments_Col
 
 /** input type for updating data in table "orders" */
 export type Orders_Set_Input = {
+  /** 实际支付金额，由公司管理员设置确认，用于真实的统计 */
+  actual_amount?: InputMaybe<Scalars['numeric']['input']>;
   /** 关联公司id，在哪个公司下单的 */
   company_companies?: InputMaybe<Scalars['bigint']['input']>;
   created_at?: InputMaybe<Scalars['timestamptz']['input']>;
   id?: InputMaybe<Scalars['bigint']['input']>;
   /** 是否删除 */
   is_deleted?: InputMaybe<Scalars['Boolean']['input']>;
-  /** 下单用户在改公司的价格系数 */
+  /** -- 状态值： -- pending: 等待确认（用户提交了订单，管理员没有确认，用户可能已经付款了，也可能没有） -- confirmed: 已确认（管理员完成确认了订单可以发货，此时会锁库存，但用户不一定付款了）-- completed: 已完成（订单完成结束，对应的payment_status是approved） */
+  order_status?: InputMaybe<Scalars['String']['input']>;
+  /** -- 支付审核状态（管理员设置）： -- pending: 待支付（用户尚未支付） -- approved: 已通过（管理员确认用户订单已经付款了） */
+  payment_status?: InputMaybe<Scalars['String']['input']>;
+  /** 下单用户在该公司的价格系数快照 */
   price_factor?: InputMaybe<Scalars['numeric']['input']>;
+  /** 收货地址 */
+  receiver_address?: InputMaybe<Scalars['String']['input']>;
+  /** 可不填，收货人-市 */
+  receiver_city?: InputMaybe<Scalars['String']['input']>;
+  /** 可不填，收货人-区 */
+  receiver_district?: InputMaybe<Scalars['String']['input']>;
+  /** 收货人 */
+  receiver_name?: InputMaybe<Scalars['String']['input']>;
+  /** 收货电话 */
+  receiver_phone?: InputMaybe<Scalars['String']['input']>;
+  /** 可不填，收货人-省 */
+  receiver_province?: InputMaybe<Scalars['String']['input']>;
   /** 订单用户备注 */
   remark?: InputMaybe<Scalars['String']['input']>;
-  /** 订单状态（1.pending（待确认） 2.submitted（.已提交） */
-  status?: InputMaybe<Scalars['String']['input']>;
   /** 总金额，总价*价格系数 */
   total_amount?: InputMaybe<Scalars['numeric']['input']>;
   /** 规格总价=所有规格单价*数量的总和 */
@@ -4436,10 +5270,12 @@ export type Orders_Set_Input = {
 /** aggregate stddev on columns */
 export type Orders_Stddev_Fields = {
   __typename?: 'orders_stddev_fields';
+  /** 实际支付金额，由公司管理员设置确认，用于真实的统计 */
+  actual_amount?: Maybe<Scalars['Float']['output']>;
   /** 关联公司id，在哪个公司下单的 */
   company_companies?: Maybe<Scalars['Float']['output']>;
   id?: Maybe<Scalars['Float']['output']>;
-  /** 下单用户在改公司的价格系数 */
+  /** 下单用户在该公司的价格系数快照 */
   price_factor?: Maybe<Scalars['Float']['output']>;
   /** 总金额，总价*价格系数 */
   total_amount?: Maybe<Scalars['Float']['output']>;
@@ -4451,10 +5287,12 @@ export type Orders_Stddev_Fields = {
 
 /** order by stddev() on columns of table "orders" */
 export type Orders_Stddev_Order_By = {
+  /** 实际支付金额，由公司管理员设置确认，用于真实的统计 */
+  actual_amount?: InputMaybe<Order_By>;
   /** 关联公司id，在哪个公司下单的 */
   company_companies?: InputMaybe<Order_By>;
   id?: InputMaybe<Order_By>;
-  /** 下单用户在改公司的价格系数 */
+  /** 下单用户在该公司的价格系数快照 */
   price_factor?: InputMaybe<Order_By>;
   /** 总金额，总价*价格系数 */
   total_amount?: InputMaybe<Order_By>;
@@ -4467,10 +5305,12 @@ export type Orders_Stddev_Order_By = {
 /** aggregate stddev_pop on columns */
 export type Orders_Stddev_Pop_Fields = {
   __typename?: 'orders_stddev_pop_fields';
+  /** 实际支付金额，由公司管理员设置确认，用于真实的统计 */
+  actual_amount?: Maybe<Scalars['Float']['output']>;
   /** 关联公司id，在哪个公司下单的 */
   company_companies?: Maybe<Scalars['Float']['output']>;
   id?: Maybe<Scalars['Float']['output']>;
-  /** 下单用户在改公司的价格系数 */
+  /** 下单用户在该公司的价格系数快照 */
   price_factor?: Maybe<Scalars['Float']['output']>;
   /** 总金额，总价*价格系数 */
   total_amount?: Maybe<Scalars['Float']['output']>;
@@ -4482,10 +5322,12 @@ export type Orders_Stddev_Pop_Fields = {
 
 /** order by stddev_pop() on columns of table "orders" */
 export type Orders_Stddev_Pop_Order_By = {
+  /** 实际支付金额，由公司管理员设置确认，用于真实的统计 */
+  actual_amount?: InputMaybe<Order_By>;
   /** 关联公司id，在哪个公司下单的 */
   company_companies?: InputMaybe<Order_By>;
   id?: InputMaybe<Order_By>;
-  /** 下单用户在改公司的价格系数 */
+  /** 下单用户在该公司的价格系数快照 */
   price_factor?: InputMaybe<Order_By>;
   /** 总金额，总价*价格系数 */
   total_amount?: InputMaybe<Order_By>;
@@ -4498,10 +5340,12 @@ export type Orders_Stddev_Pop_Order_By = {
 /** aggregate stddev_samp on columns */
 export type Orders_Stddev_Samp_Fields = {
   __typename?: 'orders_stddev_samp_fields';
+  /** 实际支付金额，由公司管理员设置确认，用于真实的统计 */
+  actual_amount?: Maybe<Scalars['Float']['output']>;
   /** 关联公司id，在哪个公司下单的 */
   company_companies?: Maybe<Scalars['Float']['output']>;
   id?: Maybe<Scalars['Float']['output']>;
-  /** 下单用户在改公司的价格系数 */
+  /** 下单用户在该公司的价格系数快照 */
   price_factor?: Maybe<Scalars['Float']['output']>;
   /** 总金额，总价*价格系数 */
   total_amount?: Maybe<Scalars['Float']['output']>;
@@ -4513,10 +5357,12 @@ export type Orders_Stddev_Samp_Fields = {
 
 /** order by stddev_samp() on columns of table "orders" */
 export type Orders_Stddev_Samp_Order_By = {
+  /** 实际支付金额，由公司管理员设置确认，用于真实的统计 */
+  actual_amount?: InputMaybe<Order_By>;
   /** 关联公司id，在哪个公司下单的 */
   company_companies?: InputMaybe<Order_By>;
   id?: InputMaybe<Order_By>;
-  /** 下单用户在改公司的价格系数 */
+  /** 下单用户在该公司的价格系数快照 */
   price_factor?: InputMaybe<Order_By>;
   /** 总金额，总价*价格系数 */
   total_amount?: InputMaybe<Order_By>;
@@ -4536,18 +5382,34 @@ export type Orders_Stream_Cursor_Input = {
 
 /** Initial value of the column from where the streaming should start */
 export type Orders_Stream_Cursor_Value_Input = {
+  /** 实际支付金额，由公司管理员设置确认，用于真实的统计 */
+  actual_amount?: InputMaybe<Scalars['numeric']['input']>;
   /** 关联公司id，在哪个公司下单的 */
   company_companies?: InputMaybe<Scalars['bigint']['input']>;
   created_at?: InputMaybe<Scalars['timestamptz']['input']>;
   id?: InputMaybe<Scalars['bigint']['input']>;
   /** 是否删除 */
   is_deleted?: InputMaybe<Scalars['Boolean']['input']>;
-  /** 下单用户在改公司的价格系数 */
+  /** -- 状态值： -- pending: 等待确认（用户提交了订单，管理员没有确认，用户可能已经付款了，也可能没有） -- confirmed: 已确认（管理员完成确认了订单可以发货，此时会锁库存，但用户不一定付款了）-- completed: 已完成（订单完成结束，对应的payment_status是approved） */
+  order_status?: InputMaybe<Scalars['String']['input']>;
+  /** -- 支付审核状态（管理员设置）： -- pending: 待支付（用户尚未支付） -- approved: 已通过（管理员确认用户订单已经付款了） */
+  payment_status?: InputMaybe<Scalars['String']['input']>;
+  /** 下单用户在该公司的价格系数快照 */
   price_factor?: InputMaybe<Scalars['numeric']['input']>;
+  /** 收货地址 */
+  receiver_address?: InputMaybe<Scalars['String']['input']>;
+  /** 可不填，收货人-市 */
+  receiver_city?: InputMaybe<Scalars['String']['input']>;
+  /** 可不填，收货人-区 */
+  receiver_district?: InputMaybe<Scalars['String']['input']>;
+  /** 收货人 */
+  receiver_name?: InputMaybe<Scalars['String']['input']>;
+  /** 收货电话 */
+  receiver_phone?: InputMaybe<Scalars['String']['input']>;
+  /** 可不填，收货人-省 */
+  receiver_province?: InputMaybe<Scalars['String']['input']>;
   /** 订单用户备注 */
   remark?: InputMaybe<Scalars['String']['input']>;
-  /** 订单状态（1.pending（待确认） 2.submitted（.已提交） */
-  status?: InputMaybe<Scalars['String']['input']>;
   /** 总金额，总价*价格系数 */
   total_amount?: InputMaybe<Scalars['numeric']['input']>;
   /** 规格总价=所有规格单价*数量的总和 */
@@ -4560,10 +5422,12 @@ export type Orders_Stream_Cursor_Value_Input = {
 /** aggregate sum on columns */
 export type Orders_Sum_Fields = {
   __typename?: 'orders_sum_fields';
+  /** 实际支付金额，由公司管理员设置确认，用于真实的统计 */
+  actual_amount?: Maybe<Scalars['numeric']['output']>;
   /** 关联公司id，在哪个公司下单的 */
   company_companies?: Maybe<Scalars['bigint']['output']>;
   id?: Maybe<Scalars['bigint']['output']>;
-  /** 下单用户在改公司的价格系数 */
+  /** 下单用户在该公司的价格系数快照 */
   price_factor?: Maybe<Scalars['numeric']['output']>;
   /** 总金额，总价*价格系数 */
   total_amount?: Maybe<Scalars['numeric']['output']>;
@@ -4575,10 +5439,12 @@ export type Orders_Sum_Fields = {
 
 /** order by sum() on columns of table "orders" */
 export type Orders_Sum_Order_By = {
+  /** 实际支付金额，由公司管理员设置确认，用于真实的统计 */
+  actual_amount?: InputMaybe<Order_By>;
   /** 关联公司id，在哪个公司下单的 */
   company_companies?: InputMaybe<Order_By>;
   id?: InputMaybe<Order_By>;
-  /** 下单用户在改公司的价格系数 */
+  /** 下单用户在该公司的价格系数快照 */
   price_factor?: InputMaybe<Order_By>;
   /** 总金额，总价*价格系数 */
   total_amount?: InputMaybe<Order_By>;
@@ -4591,6 +5457,8 @@ export type Orders_Sum_Order_By = {
 /** update columns of table "orders" */
 export enum Orders_Update_Column {
   /** column name */
+  ActualAmount = 'actual_amount',
+  /** column name */
   CompanyCompanies = 'company_companies',
   /** column name */
   CreatedAt = 'created_at',
@@ -4599,11 +5467,25 @@ export enum Orders_Update_Column {
   /** column name */
   IsDeleted = 'is_deleted',
   /** column name */
+  OrderStatus = 'order_status',
+  /** column name */
+  PaymentStatus = 'payment_status',
+  /** column name */
   PriceFactor = 'price_factor',
   /** column name */
-  Remark = 'remark',
+  ReceiverAddress = 'receiver_address',
   /** column name */
-  Status = 'status',
+  ReceiverCity = 'receiver_city',
+  /** column name */
+  ReceiverDistrict = 'receiver_district',
+  /** column name */
+  ReceiverName = 'receiver_name',
+  /** column name */
+  ReceiverPhone = 'receiver_phone',
+  /** column name */
+  ReceiverProvince = 'receiver_province',
+  /** column name */
+  Remark = 'remark',
   /** column name */
   TotalAmount = 'total_amount',
   /** column name */
@@ -4626,10 +5508,12 @@ export type Orders_Updates = {
 /** aggregate var_pop on columns */
 export type Orders_Var_Pop_Fields = {
   __typename?: 'orders_var_pop_fields';
+  /** 实际支付金额，由公司管理员设置确认，用于真实的统计 */
+  actual_amount?: Maybe<Scalars['Float']['output']>;
   /** 关联公司id，在哪个公司下单的 */
   company_companies?: Maybe<Scalars['Float']['output']>;
   id?: Maybe<Scalars['Float']['output']>;
-  /** 下单用户在改公司的价格系数 */
+  /** 下单用户在该公司的价格系数快照 */
   price_factor?: Maybe<Scalars['Float']['output']>;
   /** 总金额，总价*价格系数 */
   total_amount?: Maybe<Scalars['Float']['output']>;
@@ -4641,10 +5525,12 @@ export type Orders_Var_Pop_Fields = {
 
 /** order by var_pop() on columns of table "orders" */
 export type Orders_Var_Pop_Order_By = {
+  /** 实际支付金额，由公司管理员设置确认，用于真实的统计 */
+  actual_amount?: InputMaybe<Order_By>;
   /** 关联公司id，在哪个公司下单的 */
   company_companies?: InputMaybe<Order_By>;
   id?: InputMaybe<Order_By>;
-  /** 下单用户在改公司的价格系数 */
+  /** 下单用户在该公司的价格系数快照 */
   price_factor?: InputMaybe<Order_By>;
   /** 总金额，总价*价格系数 */
   total_amount?: InputMaybe<Order_By>;
@@ -4657,10 +5543,12 @@ export type Orders_Var_Pop_Order_By = {
 /** aggregate var_samp on columns */
 export type Orders_Var_Samp_Fields = {
   __typename?: 'orders_var_samp_fields';
+  /** 实际支付金额，由公司管理员设置确认，用于真实的统计 */
+  actual_amount?: Maybe<Scalars['Float']['output']>;
   /** 关联公司id，在哪个公司下单的 */
   company_companies?: Maybe<Scalars['Float']['output']>;
   id?: Maybe<Scalars['Float']['output']>;
-  /** 下单用户在改公司的价格系数 */
+  /** 下单用户在该公司的价格系数快照 */
   price_factor?: Maybe<Scalars['Float']['output']>;
   /** 总金额，总价*价格系数 */
   total_amount?: Maybe<Scalars['Float']['output']>;
@@ -4672,10 +5560,12 @@ export type Orders_Var_Samp_Fields = {
 
 /** order by var_samp() on columns of table "orders" */
 export type Orders_Var_Samp_Order_By = {
+  /** 实际支付金额，由公司管理员设置确认，用于真实的统计 */
+  actual_amount?: InputMaybe<Order_By>;
   /** 关联公司id，在哪个公司下单的 */
   company_companies?: InputMaybe<Order_By>;
   id?: InputMaybe<Order_By>;
-  /** 下单用户在改公司的价格系数 */
+  /** 下单用户在该公司的价格系数快照 */
   price_factor?: InputMaybe<Order_By>;
   /** 总金额，总价*价格系数 */
   total_amount?: InputMaybe<Order_By>;
@@ -4688,10 +5578,12 @@ export type Orders_Var_Samp_Order_By = {
 /** aggregate variance on columns */
 export type Orders_Variance_Fields = {
   __typename?: 'orders_variance_fields';
+  /** 实际支付金额，由公司管理员设置确认，用于真实的统计 */
+  actual_amount?: Maybe<Scalars['Float']['output']>;
   /** 关联公司id，在哪个公司下单的 */
   company_companies?: Maybe<Scalars['Float']['output']>;
   id?: Maybe<Scalars['Float']['output']>;
-  /** 下单用户在改公司的价格系数 */
+  /** 下单用户在该公司的价格系数快照 */
   price_factor?: Maybe<Scalars['Float']['output']>;
   /** 总金额，总价*价格系数 */
   total_amount?: Maybe<Scalars['Float']['output']>;
@@ -4703,10 +5595,12 @@ export type Orders_Variance_Fields = {
 
 /** order by variance() on columns of table "orders" */
 export type Orders_Variance_Order_By = {
+  /** 实际支付金额，由公司管理员设置确认，用于真实的统计 */
+  actual_amount?: InputMaybe<Order_By>;
   /** 关联公司id，在哪个公司下单的 */
   company_companies?: InputMaybe<Order_By>;
   id?: InputMaybe<Order_By>;
-  /** 下单用户在改公司的价格系数 */
+  /** 下单用户在该公司的价格系数快照 */
   price_factor?: InputMaybe<Order_By>;
   /** 总金额，总价*价格系数 */
   total_amount?: InputMaybe<Order_By>;
@@ -7176,6 +8070,12 @@ export type Products_Variance_Order_By = {
 export type Query_Root = {
   __typename?: 'query_root';
   /** An array relationship */
+  addresses: Array<Addresses>;
+  /** An aggregate relationship */
+  addresses_aggregate: Addresses_Aggregate;
+  /** fetch data from the table: "addresses" using primary key columns */
+  addresses_by_pk?: Maybe<Addresses>;
+  /** An array relationship */
   carts: Array<Carts>;
   /** An aggregate relationship */
   carts_aggregate: Carts_Aggregate;
@@ -7247,6 +8147,29 @@ export type Query_Root = {
   users_aggregate: Users_Aggregate;
   /** fetch data from the table: "users" using primary key columns */
   users_by_pk?: Maybe<Users>;
+};
+
+
+export type Query_RootAddressesArgs = {
+  distinct_on?: InputMaybe<Array<Addresses_Select_Column>>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  order_by?: InputMaybe<Array<Addresses_Order_By>>;
+  where?: InputMaybe<Addresses_Bool_Exp>;
+};
+
+
+export type Query_RootAddresses_AggregateArgs = {
+  distinct_on?: InputMaybe<Array<Addresses_Select_Column>>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  order_by?: InputMaybe<Array<Addresses_Order_By>>;
+  where?: InputMaybe<Addresses_Bool_Exp>;
+};
+
+
+export type Query_RootAddresses_By_PkArgs = {
+  id: Scalars['bigint']['input'];
 };
 
 
@@ -7528,6 +8451,14 @@ export type Query_RootUsers_By_PkArgs = {
 export type Subscription_Root = {
   __typename?: 'subscription_root';
   /** An array relationship */
+  addresses: Array<Addresses>;
+  /** An aggregate relationship */
+  addresses_aggregate: Addresses_Aggregate;
+  /** fetch data from the table: "addresses" using primary key columns */
+  addresses_by_pk?: Maybe<Addresses>;
+  /** fetch data from the table in a streaming manner: "addresses" */
+  addresses_stream: Array<Addresses>;
+  /** An array relationship */
   carts: Array<Carts>;
   /** An aggregate relationship */
   carts_aggregate: Carts_Aggregate;
@@ -7623,6 +8554,36 @@ export type Subscription_Root = {
   users_by_pk?: Maybe<Users>;
   /** fetch data from the table in a streaming manner: "users" */
   users_stream: Array<Users>;
+};
+
+
+export type Subscription_RootAddressesArgs = {
+  distinct_on?: InputMaybe<Array<Addresses_Select_Column>>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  order_by?: InputMaybe<Array<Addresses_Order_By>>;
+  where?: InputMaybe<Addresses_Bool_Exp>;
+};
+
+
+export type Subscription_RootAddresses_AggregateArgs = {
+  distinct_on?: InputMaybe<Array<Addresses_Select_Column>>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  order_by?: InputMaybe<Array<Addresses_Order_By>>;
+  where?: InputMaybe<Addresses_Bool_Exp>;
+};
+
+
+export type Subscription_RootAddresses_By_PkArgs = {
+  id: Scalars['bigint']['input'];
+};
+
+
+export type Subscription_RootAddresses_StreamArgs = {
+  batch_size: Scalars['Int']['input'];
+  cursor: Array<InputMaybe<Addresses_Stream_Cursor_Input>>;
+  where?: InputMaybe<Addresses_Bool_Exp>;
 };
 
 
@@ -8001,6 +8962,10 @@ export type Timestamptz_Comparison_Exp = {
 /** 用户表 */
 export type Users = {
   __typename?: 'users';
+  /** An array relationship */
+  addresses: Array<Addresses>;
+  /** An aggregate relationship */
+  addresses_aggregate: Addresses_Aggregate;
   /** 头像 */
   avatar_url?: Maybe<Scalars['String']['output']>;
   /** 简介 */
@@ -8028,6 +8993,26 @@ export type Users = {
   /** 用户角色 1.user（普通用户）2.admin（平台管理员） */
   role: Scalars['String']['output'];
   updated_at: Scalars['timestamptz']['output'];
+};
+
+
+/** 用户表 */
+export type UsersAddressesArgs = {
+  distinct_on?: InputMaybe<Array<Addresses_Select_Column>>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  order_by?: InputMaybe<Array<Addresses_Order_By>>;
+  where?: InputMaybe<Addresses_Bool_Exp>;
+};
+
+
+/** 用户表 */
+export type UsersAddresses_AggregateArgs = {
+  distinct_on?: InputMaybe<Array<Addresses_Select_Column>>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  order_by?: InputMaybe<Array<Addresses_Order_By>>;
+  where?: InputMaybe<Addresses_Bool_Exp>;
 };
 
 
@@ -8131,6 +9116,8 @@ export type Users_Bool_Exp = {
   _and?: InputMaybe<Array<Users_Bool_Exp>>;
   _not?: InputMaybe<Users_Bool_Exp>;
   _or?: InputMaybe<Array<Users_Bool_Exp>>;
+  addresses?: InputMaybe<Addresses_Bool_Exp>;
+  addresses_aggregate?: InputMaybe<Addresses_Aggregate_Bool_Exp>;
   avatar_url?: InputMaybe<String_Comparison_Exp>;
   bio?: InputMaybe<String_Comparison_Exp>;
   carts?: InputMaybe<Carts_Bool_Exp>;
@@ -8163,6 +9150,7 @@ export type Users_Inc_Input = {
 
 /** input type for inserting data into table "users" */
 export type Users_Insert_Input = {
+  addresses?: InputMaybe<Addresses_Arr_Rel_Insert_Input>;
   /** 头像 */
   avatar_url?: InputMaybe<Scalars['String']['input']>;
   /** 简介 */
@@ -8248,6 +9236,7 @@ export type Users_On_Conflict = {
 
 /** Ordering options when selecting data from "users". */
 export type Users_Order_By = {
+  addresses_aggregate?: InputMaybe<Addresses_Aggregate_Order_By>;
   avatar_url?: InputMaybe<Order_By>;
   bio?: InputMaybe<Order_By>;
   carts_aggregate?: InputMaybe<Carts_Aggregate_Order_By>;

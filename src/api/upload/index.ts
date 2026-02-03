@@ -109,7 +109,8 @@ export const upload_to_qiniu = async (
   onProgress?: (progress: number) => void
 ): Promise<{ url?: string; key: string }> => {
   return new Promise((resolve, reject) => {
-    uni.uploadFile({
+    // 微信小程序等平台需在 UploadTask 上监听进度，不能通过 options 传入
+    const uploadTask = uni.uploadFile({
       url: uploadUrl,
       filePath,
       name: 'file', // 七牛云上传接口要求文件字段名为 'file'
@@ -169,17 +170,21 @@ export const upload_to_qiniu = async (
         console.error('上传请求失败:', error);
         reject(new Error(error.errMsg || '上传失败'));
       },
-      // @ts-ignore - uni-app 类型定义可能不完整
-      onProgressUpdate: (progressEvent) => {
-        if (onProgress && progressEvent.totalBytesExpectedToWrite) {
-          const percent = Math.round(
-            (progressEvent.totalBytesWritten /
-              progressEvent.totalBytesExpectedToWrite) *
-              100
-          );
-          onProgress(percent);
-        }
-      },
     });
+
+    // 在 UploadTask 上监听进度（微信小程序等必须这样才能收到进度）
+    if (onProgress && uploadTask && typeof (uploadTask as any).onProgressUpdate === 'function') {
+      (uploadTask as any).onProgressUpdate((ev: { progress?: number; totalBytesSent?: number; totalBytesExpectedToSend?: number; totalBytesWritten?: number; totalBytesExpectedToWrite?: number }) => {
+        let percent = 0;
+        if (typeof ev.progress === 'number') {
+          percent = ev.progress;
+        } else if (ev.totalBytesExpectedToSend != null && ev.totalBytesExpectedToSend > 0 && ev.totalBytesSent != null) {
+          percent = Math.round((ev.totalBytesSent / ev.totalBytesExpectedToSend) * 100);
+        } else if (ev.totalBytesExpectedToWrite != null && ev.totalBytesExpectedToWrite > 0 && (ev as any).totalBytesWritten != null) {
+          percent = Math.round(((ev as any).totalBytesWritten / ev.totalBytesExpectedToWrite) * 100);
+        }
+        onProgress(Math.min(100, percent));
+      });
+    }
   });
 };

@@ -43,51 +43,91 @@
         >
           只看自己公司
         </view>
+        <view 
+          class="scope-tab" 
+          :class="{ active: selectedScope === 'headquarters' }"
+          @click="selectScope('headquarters')"
+        >
+          只看总部
+        </view>
+      </view>
+      <view class="search-row">
+        <input
+          class="search-input"
+          v-model="searchKeyword"
+          placeholder="搜索商品名称"
+          placeholder-class="search-placeholder"
+        />
       </view>
     </view>
 
-    <!-- 商品列表 -->
+    <!-- 商品列表（按分类分区，可折叠） -->
     <view class="product-list">
-      <view 
-        v-for="product in products" 
-        :key="product.id"
-        class="product-item"
-        @click="onProductClick(product)"
-      >
-        <image 
-          class="product-image" 
-          :src="product.cover_image_url" 
-          mode="aspectFill"
-        ></image>
-        <view class="product-info">
-          <view class="product-name">{{ product.name }}</view>
-          <view class="product-meta">
-            <text class="sku-count">{{ product.product_skus?.length || 0 }}个规格</text>
-            <text class="status" :class="{ 'status-shelved': !product.is_shelved }">
-              {{ product.is_shelved ? '已下架' : '已上架' }}
-            </text>
-            <text v-if="isFromDefaultCompany(product)" class="tag-system">系统配置</text>
-            <text v-if="isFromDefaultCompany(product) && isProductHidden(product)" class="tag-hidden">已隐藏</text>
+      <template v-for="section in groupedSections" :key="section.categoryName">
+        <view 
+          class="section-header"
+          :class="{ collapsed: isSectionCollapsed(section.categoryName) }"
+          @click="toggleSection(section.categoryName)"
+        >
+          <text class="section-expand-icon">{{ isSectionCollapsed(section.categoryName) ? '▶' : '▼' }}</text>
+          <text class="section-title-text">{{ section.categoryName }}</text>
+          <text class="section-count">（{{ section.items.length }}）</text>
+        </view>
+        <view v-show="!isSectionCollapsed(section.categoryName)" class="section-body">
+          <view 
+            v-for="product in section.items" 
+            :key="product.id"
+            class="product-item"
+          >
+          <view class="product-item-main" @click="onProductClick(product)">
+            <image 
+              class="product-image" 
+              :src="product.cover_image_url" 
+              mode="aspectFill"
+            ></image>
+            <view class="product-info">
+              <view class="product-name">{{ product.name }}</view>
+              <view class="product-meta">
+                <text class="sku-count">{{ product.product_skus?.length || 0 }}个规格</text>
+                <text class="status" :class="{ 'status-shelved': !product.is_shelved }">
+                  {{ product.is_shelved ? '已下架' : '已上架' }}
+                </text>
+                <text v-if="isFromDefaultCompany(product)" class="tag-system">系统配置</text>
+                <text v-if="isFromDefaultCompany(product) && isProductHidden(product)" class="tag-hidden">已隐藏</text>
+              </view>
+            </view>
+            <view class="product-actions">
+              <template v-if="isFromDefaultCompany(product)">
+                <view v-if="isProductHidden(product)" class="action-btn unhide" @click.stop="handleUnhideProduct(product)">取消隐藏</view>
+                <view v-else class="action-btn hide" @click.stop="handleHideProduct(product)">隐藏</view>
+              </template>
+              <template v-else>
+                <view class="action-btn" @click.stop="toggleShelve(product)">
+                  {{ product.is_shelved ? '上架' : '下架' }}
+                </view>
+                <view class="action-btn delete" @click.stop="handleDelete(product)">
+                  删除
+                </view>
+              </template>
+            </view>
+          </view>
+          <view class="item-entry-row">
+            <template v-if="!isFromDefaultCompany(product)">
+              <text class="entry-link" @click.stop="goToEditProduct(product.id)">编辑</text>
+              <text class="entry-divider">|</text>
+            </template>
+            <text class="entry-link" @click.stop="goToPreviewProduct(product.id)">预览</text>
           </view>
         </view>
-        <view class="product-actions">
-          <template v-if="isFromDefaultCompany(product)">
-            <view v-if="isProductHidden(product)" class="action-btn unhide" @click.stop="handleUnhideProduct(product)">取消隐藏</view>
-            <view v-else class="action-btn hide" @click.stop="handleHideProduct(product)">隐藏</view>
-          </template>
-          <template v-else>
-            <view class="action-btn" @click.stop="toggleShelve(product)">
-              {{ product.is_shelved ? '上架' : '下架' }}
-            </view>
-            <view class="action-btn delete" @click.stop="handleDelete(product)">
-              删除
-            </view>
-          </template>
         </view>
-      </view>
+      </template>
 
+      <!-- 搜索无结果 -->
+      <view v-if="products.length > 0 && groupedSections.length === 0 && !loading" class="empty-state">
+        <text class="empty-text">未找到匹配「{{ searchKeyword }}」的商品</text>
+      </view>
       <!-- 空状态 -->
-      <view v-if="products.length === 0 && !loading" class="empty-state">
+      <view v-else-if="products.length === 0 && !loading" class="empty-state">
         <text class="empty-text">暂无商品</text>
         <button class="empty-btn" @click="goToAddProduct">添加商品</button>
       </view>
@@ -101,7 +141,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { onLoad, onPullDownRefresh, onReachBottom, onShow } from '@dcloudio/uni-app';
 import { companyInfo } from '@/store/userStore';
 import { getProductList, deleteProduct, updateProduct } from '@/api/admin/product';
@@ -114,9 +154,11 @@ const currentTab = ref<'all' | 'shelved' | 'unshelved'>('all');
 const page = ref(1);
 const pageSize = 20;
 const hasMore = ref(true);
-const selectedScope = ref<'all' | 'mine'>('all');
+const selectedScope = ref<'all' | 'mine' | 'headquarters'>('all');
 const defaultCompanyId = ref<number | null>(null);
 const hiddenProductIds = ref<number[]>([]);
+const searchKeyword = ref('');
+const collapsedSections = ref<Set<string>>(new Set());
 
 // 超级管理员从公司管理点进来时传入的 companyId（仅查看，不编辑时用）
 const viewCompanyId = ref<number | null>(null);
@@ -132,14 +174,69 @@ function isProductHidden(product: any): boolean {
   return hiddenProductIds.value.includes(Number(product.id));
 }
 
-function selectScope(scope: 'all' | 'mine') {
+function selectScope(scope: 'all' | 'mine' | 'headquarters') {
   selectedScope.value = scope;
   loadProducts(true);
 }
 
 function onProductClick(product: any) {
-  if (isFromDefaultCompany(product)) return;
+  if (isFromDefaultCompany(product)) {
+    goToPreviewProduct(product.id);
+    return;
+  }
   goToEditProduct(product.id);
+}
+
+// 根据分类的父子关系拼出完整目录路径（一级/二级/三级）
+function getCategoryPath(cat: any): string {
+  if (!cat?.name) return '未分类';
+  const parts: string[] = [];
+  let c: any = cat;
+  while (c?.name) {
+    parts.unshift(String(c.name).trim());
+    c = c.category;
+  }
+  return parts.length ? parts.join(' / ') : '未分类';
+}
+
+// 按关键词过滤（名称、描述）
+const filteredProducts = computed(() => {
+  const kw = (searchKeyword.value || '').trim().toLowerCase();
+  if (!kw) return products.value;
+  return products.value.filter((p: any) => {
+    const name = (p.name || '').toLowerCase();
+    const desc = (p.description || '').toLowerCase();
+    return name.includes(kw) || desc.includes(kw);
+  });
+});
+
+// 按完整目录路径分区展示：{ categoryName, items }（基于过滤后的列表）
+const groupedSections = computed(() => {
+  const map = new Map<string, any[]>();
+  const noCategoryKey = '未分类';
+  for (const p of filteredProducts.value) {
+    const path = getCategoryPath(p.category);
+    const key = path || noCategoryKey;
+    if (!map.has(key)) map.set(key, []);
+    map.get(key)!.push(p);
+  }
+  const sections: { categoryName: string; items: any[] }[] = [];
+  map.forEach((items, categoryName) => {
+    sections.push({ categoryName, items });
+  });
+  sections.sort((a, b) => (a.categoryName === noCategoryKey ? 1 : b.categoryName === noCategoryKey ? -1 : a.categoryName.localeCompare(b.categoryName)));
+  return sections;
+});
+
+function isSectionCollapsed(categoryName: string): boolean {
+  return collapsedSections.value.has(categoryName);
+}
+
+function toggleSection(categoryName: string) {
+  const next = new Set(collapsedSections.value);
+  if (next.has(categoryName)) next.delete(categoryName);
+  else next.add(categoryName);
+  collapsedSections.value = next;
 }
 
 // 加载商品列表（支持「全部」= 当前公司 + 系统配置公司；「只看自己公司」= 仅当前公司）
@@ -166,7 +263,21 @@ const loadProducts = async (reset = false) => {
   loading.value = true;
 
   try {
-    if (selectedScope.value === 'all' && defaultCompanyId.value && defaultCompanyId.value !== myId) {
+    if (selectedScope.value === 'headquarters' && defaultCompanyId.value && defaultCompanyId.value !== myId) {
+      // 只看总部：仅系统配置公司
+      const result = await getProductList({
+        companyId: defaultCompanyId.value,
+        limit: pageSize,
+        offset: (page.value - 1) * pageSize,
+      });
+      let list = (result.products || []).map((p: any) => ({ ...p, _companyId: defaultCompanyId.value }));
+      if (currentTab.value === 'shelved') list = list.filter((p: any) => !p.is_shelved);
+      else if (currentTab.value === 'unshelved') list = list.filter((p: any) => p.is_shelved);
+      if (reset) products.value = list;
+      else products.value = [...products.value, ...list];
+      if (result.total <= products.value.length) hasMore.value = false;
+      else page.value++;
+    } else if (selectedScope.value === 'all' && defaultCompanyId.value && defaultCompanyId.value !== myId) {
       // 全部：拉取当前公司 + 系统配置公司，合并并打标（每边最多 pageSize 条）
       const [myRes, defaultRes] = await Promise.all([
         getProductList({
@@ -307,6 +418,12 @@ const goToEditProduct = (productId: number) => {
   });
 };
 
+const goToPreviewProduct = (productId: number) => {
+  uni.navigateTo({
+    url: `/pages/product-detail/index?id=${productId}`,
+  });
+};
+
 // 监听tab切换
 watch(currentTab, () => {
   loadProducts(true);
@@ -396,6 +513,61 @@ onReachBottom(() => {
   font-weight: 500;
 }
 
+.search-row {
+  margin-top: 16rpx;
+}
+
+.search-input {
+  width: 100%;
+  height: 64rpx;
+  padding: 0 24rpx;
+  background: #f5f5f5;
+  border-radius: 12rpx;
+  font-size: 28rpx;
+  color: #333;
+  box-sizing: border-box;
+}
+
+.search-placeholder {
+  color: #999;
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  padding: 20rpx 0 12rpx;
+  margin-top: 8rpx;
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #333333;
+}
+
+.section-header:first-child {
+  margin-top: 0;
+  padding-top: 0;
+}
+
+.section-expand-icon {
+  font-size: 24rpx;
+  color: #666;
+  width: 32rpx;
+}
+
+.section-title-text {
+  flex: 1;
+}
+
+.section-count {
+  font-size: 24rpx;
+  font-weight: 500;
+  color: #999;
+}
+
+.section-body {
+  padding-left: 32rpx;
+}
+
 .tag-system {
   font-size: 20rpx;
   padding: 2rpx 8rpx;
@@ -432,8 +604,31 @@ onReachBottom(() => {
   padding: 20rpx;
   margin-bottom: 20rpx;
   display: flex;
+  flex-direction: column;
+  gap: 12rpx;
+}
+
+.product-item-main {
+  display: flex;
   align-items: center;
   gap: 20rpx;
+}
+
+.item-entry-row {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  padding-top: 8rpx;
+  border-top: 1rpx solid #f0f0f0;
+  font-size: 24rpx;
+}
+
+.entry-link {
+  color: #667eea;
+}
+
+.entry-divider {
+  color: #ddd;
 }
 
 .product-image {

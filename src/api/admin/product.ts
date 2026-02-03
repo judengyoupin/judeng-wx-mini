@@ -71,6 +71,18 @@ export async function getProductList(params: {
           is_shelved
           created_at
           updated_at
+          category {
+            id
+            name
+            category {
+              id
+              name
+              category {
+                id
+                name
+              }
+            }
+          }
           product_skus(
             where: { is_deleted: { _eq: false } }
           ) {
@@ -121,6 +133,18 @@ export async function getProductList(params: {
           is_shelved
           created_at
           updated_at
+          category {
+            id
+            name
+            category {
+              id
+              name
+              category {
+                id
+                name
+              }
+            }
+          }
           product_skus(
             where: { is_deleted: { _eq: false } }
           ) {

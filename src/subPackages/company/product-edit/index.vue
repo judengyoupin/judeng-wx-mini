@@ -77,7 +77,7 @@
             :key="'done-' + index"
             class="batch-media-card"
           >
-            <view class="batch-media-thumb">
+            <view class="batch-media-thumb" @click.stop="previewMedia('detail', media)">
               <image v-if="media.file_type !== 'video'" :src="media.file_url" class="batch-media-img" mode="aspectFill" />
               <view v-else class="batch-media-video-thumb">
                 <image :src="media.file_url" class="batch-media-img" mode="aspectFill" />
@@ -102,7 +102,7 @@
             :key="item.id"
             class="batch-media-card"
           >
-            <view class="batch-media-thumb">
+            <view class="batch-media-thumb" @click.stop="previewMedia('detail', { file_type: item.file_type, tempPath: item.tempPath })">
               <image v-if="item.file_type === 'image'" :src="item.tempPath" class="batch-media-img" mode="aspectFill" />
               <view v-else class="batch-media-video-thumb">
                 <image :src="item.tempPath" class="batch-media-img" mode="aspectFill" />
@@ -141,7 +141,7 @@
             :key="'scene-done-' + index"
             class="batch-media-card"
           >
-            <view class="batch-media-thumb">
+            <view class="batch-media-thumb" @click.stop="previewMedia('scene', media)">
               <image v-if="media.file_type !== 'video'" :src="media.file_url" class="batch-media-img" mode="aspectFill" />
               <view v-else class="batch-media-video-thumb">
                 <image :src="media.file_url" class="batch-media-img" mode="aspectFill" />
@@ -161,7 +161,7 @@
             :key="item.id"
             class="batch-media-card"
           >
-            <view class="batch-media-thumb">
+            <view class="batch-media-thumb" @click.stop="previewMedia('scene', { file_type: item.file_type, tempPath: item.tempPath })">
               <image v-if="item.file_type === 'image'" :src="item.tempPath" class="batch-media-img" mode="aspectFill" />
               <view v-else class="batch-media-video-thumb">
                 <image :src="item.tempPath" class="batch-media-img" mode="aspectFill" />
@@ -276,10 +276,11 @@
       </view>
     </view>
 
-    <!-- 分类选择弹窗 -->
+    <!-- 分类选择弹窗（仅商品分类） -->
     <CategoryPicker 
       :show="showCategoryPicker"
       :selectedCategoryId="form.category_categories"
+      categoryType="product"
       @update:show="showCategoryPicker = $event"
       @select="onCategorySelect"
     />
@@ -328,6 +329,21 @@
         <view class="upload-progress-bar">
           <view class="upload-progress-fill" :style="{ width: uploadProgress + '%' }"></view>
         </view>
+      </view>
+    </view>
+
+    <!-- 视频预览浮层：点击视频时全屏播放 -->
+    <view v-if="videoPreviewUrl" class="video-preview-overlay" @click="videoPreviewUrl = ''">
+      <view class="video-preview-inner" @click.stop>
+        <video
+          :src="videoPreviewUrl"
+          class="video-preview-player"
+          controls
+          :show-center-play-btn="true"
+          object-fit="contain"
+          :autoplay="true"
+        />
+        <view class="video-preview-close" @click="videoPreviewUrl = ''">关闭</view>
       </view>
     </view>
   </view>
@@ -395,6 +411,9 @@ const uploadingDetailMedias = ref<UploadingDetailItem[]>([]);
 // 实景拍摄媒体：上传中列表
 const uploadingSceneMedias = ref<UploadingDetailItem[]>([]);
 
+// 视频预览浮层（点击视频时全屏播放）
+const videoPreviewUrl = ref('');
+
 const selectedCategory = computed(() => {
   const id = form.value.category_categories;
   if (id == null) return null;
@@ -416,11 +435,11 @@ const selectedCategory = computed(() => {
   return findCategory(categories.value) || null;
 });
 
-// 加载分类树
+// 加载分类树（仅商品分类，用于展示选中项名称）
 const loadCategories = async () => {
   if (!companyInfo.value?.id) return;
   try {
-    categories.value = await getCategoryTree(companyInfo.value.id);
+    categories.value = await getCategoryTree(companyInfo.value.id, 'product');
   } catch (error) {
     console.error('加载分类失败:', error);
   }
@@ -554,6 +573,34 @@ const removeMedia = (type: 'detail' | 'scene', index: number) => {
   }
 };
 
+// 预览媒体：图片用系统预览，视频用全屏浮层
+const previewMedia = (
+  type: 'detail' | 'scene',
+  item: { file_type: string; file_url?: string; tempPath?: string }
+) => {
+  const url = item.file_url ?? (item as { tempPath?: string }).tempPath ?? '';
+  if (!url) return;
+  if (item.file_type === 'video') {
+    videoPreviewUrl.value = url;
+    return;
+  }
+  // 图片：收集当前区块内所有图片 URL，再预览
+  const list = type === 'detail' ? form.value.detail_medias : form.value.scene_medias;
+  const uploading = type === 'detail' ? uploadingDetailMedias.value : uploadingSceneMedias.value;
+  const urls: string[] = [
+    ...list.filter((m: { file_type: string }) => m.file_type !== 'video').map((m: { file_url: string }) => m.file_url),
+    ...uploading.filter((u) => u.file_type === 'image').map((u) => u.tempPath),
+  ].filter(Boolean);
+  if (urls.length === 0) return;
+  const current = urls.indexOf(url) >= 0 ? url : urls[0];
+  uni.previewImage({
+    urls,
+    current,
+    loop: true,
+    indicator: 'number',
+  });
+};
+
 // ---------- 产品详情媒体：选择来源（图片 / 视频 / 微信聊天）----------
 const showDetailMediaSourceSheet = () => {
   uni.showActionSheet({
@@ -648,8 +695,12 @@ const addAndUploadDetailMedia = (fileType: 'image' | 'video', tempPath: string) 
   });
 
   const updateProgress = (p: number) => {
-    const item = uploadingDetailMedias.value.find((x) => x.id === id);
-    if (item) item.progress = p;
+    const list = uploadingDetailMedias.value;
+    const item = list.find((x) => x.id === id);
+    if (item) {
+      item.progress = p;
+      uploadingDetailMedias.value = [...list];
+    }
   };
 
   uploadFile(tempPath, updateProgress, ext)
@@ -736,8 +787,12 @@ const addAndUploadSceneMedia = (fileType: 'image' | 'video', tempPath: string) =
   const ext = fileType === 'video' ? '.mp4' : '.jpg';
   uploadingSceneMedias.value.push({ id, file_type: fileType, tempPath, progress: 0 });
   const updateProgress = (p: number) => {
-    const item = uploadingSceneMedias.value.find((x) => x.id === id);
-    if (item) item.progress = p;
+    const list = uploadingSceneMedias.value;
+    const item = list.find((x) => x.id === id);
+    if (item) {
+      item.progress = p;
+      uploadingSceneMedias.value = [...list];
+    }
   };
   uploadFile(tempPath, updateProgress, ext)
     .then((url) => {
@@ -1553,5 +1608,47 @@ onLoad((options?: { id?: string }) => {
   background: #667eea;
   transition: width 0.3s ease;
   border-radius: 6rpx;
+}
+
+/* 视频预览浮层 */
+.video-preview-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.85);
+  z-index: 3000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.video-preview-inner {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40rpx;
+  box-sizing: border-box;
+}
+
+.video-preview-player {
+  width: 100%;
+  height: 400rpx;
+  max-height: 70vh;
+  border-radius: 12rpx;
+  background: #000;
+}
+
+.video-preview-close {
+  margin-top: 24rpx;
+  padding: 16rpx 48rpx;
+  background: #ffffff;
+  color: #333333;
+  font-size: 28rpx;
+  border-radius: 12rpx;
 }
 </style>

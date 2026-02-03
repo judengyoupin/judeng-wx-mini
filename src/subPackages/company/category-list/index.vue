@@ -41,6 +41,13 @@
           >
             只看自己公司
           </view>
+          <view 
+            class="scope-tab" 
+            :class="{ active: selectedScope === 'headquarters' }"
+            @click="selectScope('headquarters')"
+          >
+            只看总部
+          </view>
         </view>
       </view>
       <button class="add-btn" @click="goToAddCategory">+ 添加分类</button>
@@ -131,7 +138,7 @@ const categories = ref<any[]>([]);
 const allCategories = ref<any[]>([]);
 const loading = ref(false);
 const selectedType = ref<'product' | 'package' | null>(null);
-const selectedScope = ref<'all' | 'mine'>('all');
+const selectedScope = ref<'all' | 'mine' | 'headquarters'>('all');
 const defaultCompanyId = ref<number | null>(null);
 /** 当前公司的隐藏分类 id 列表（用于展示已隐藏状态与取消隐藏） */
 const hiddenCategoryIds = ref<number[]>([]);
@@ -200,13 +207,13 @@ function selectType(type: 'product' | 'package' | null) {
   filterCategories();
 }
 
-// 按范围筛选：只看自己公司时只保留 _companyId === 当前公司 的节点
-function filterByScope(cats: any[], myId: number): any[] {
+// 按范围筛选：只保留 _companyId === 指定公司 的节点
+function filterByScope(cats: any[], companyId: number): any[] {
   return cats
-    .filter((cat: any) => cat._companyId === myId)
+    .filter((cat: any) => cat._companyId === companyId)
     .map((cat: any) => ({
       ...cat,
-      categories: cat.categories ? filterByScope(cat.categories, myId) : [],
+      categories: cat.categories ? filterByScope(cat.categories, companyId) : [],
     }));
 }
 
@@ -216,6 +223,8 @@ function filterCategories() {
   const myId = companyInfo.value?.id;
   if (selectedScope.value === 'mine' && myId) {
     list = filterByScope(list, myId);
+  } else if (selectedScope.value === 'headquarters' && defaultCompanyId.value) {
+    list = filterByScope(list, defaultCompanyId.value);
   }
   if (!selectedType.value) {
     categories.value = list.map((cat: any) => ({
@@ -237,7 +246,7 @@ function filterCategories() {
   }
 }
 
-function selectScope(scope: 'all' | 'mine') {
+function selectScope(scope: 'all' | 'mine' | 'headquarters') {
   selectedScope.value = scope;
   filterCategories();
 }

@@ -21,7 +21,7 @@
           <text class="management-icon">⚙️</text>
         </view>
         <text class="management-label">公司设置</text>
-        <text class="management-desc">设置logo、轮播图、名称、密钥</text>
+        <text class="management-desc">设置logo、轮播图、名称</text>
       </view>
 
       <view class="management-item" @click="goToCategoryManagement">
