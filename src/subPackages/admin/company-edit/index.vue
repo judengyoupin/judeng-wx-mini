@@ -29,17 +29,22 @@
         </view>
 
         <view class="form-item">
-          <view class="label-row">
-            <view class="form-label">访问密钥 <text class="required">*</text></view>
-            <button class="generate-btn" @click="generateSecret" v-if="!companyId">生成密钥</button>
-          </view>
+          <view class="form-label">隐藏分类 ID（逗号分隔）</view>
           <input 
             class="form-input" 
-            v-model="form.secret" 
-            placeholder="请输入访问密钥或点击生成"
-            :disabled="!!companyId"
+            v-model="form.hiddenCategoryIdsStr" 
+            placeholder="如：1,2,3，展示时隐藏这些分类"
           />
-          <view class="form-hint" v-if="!companyId">点击"生成密钥"按钮自动生成16位随机密钥</view>
+          <view class="form-hint">系统默认公司展示时，这些分类将不显示</view>
+        </view>
+        <view class="form-item">
+          <view class="form-label">隐藏商品 ID（逗号分隔）</view>
+          <input 
+            class="form-input" 
+            v-model="form.hiddenProductIdsStr" 
+            placeholder="如：10,20，展示时隐藏这些商品"
+          />
+          <view class="form-hint">系统默认公司展示时，这些商品将不显示</view>
         </view>
       </view>
 
@@ -130,7 +135,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref } from 'vue';
 import { onLoad } from '@dcloudio/uni-app';
 import { getCompanyDetail, createCompany, updateCompany, authorizeCompanyAdmin, searchUserByMobileForPlatform } from '@/api/admin/platform';
 import { uploadFile } from '@/api/upload';
@@ -139,7 +144,8 @@ const companyId = ref<number | null>(null);
 const form = ref({
   name: '',
   logo_url: '',
-  secret: '',
+  hiddenCategoryIdsStr: '',
+  hiddenProductIdsStr: '',
 });
 const loading = ref(false);
 
@@ -152,20 +158,14 @@ const authorizeForm = ref({
 const authorizing = ref(false);
 const createdCompanyId = ref<number | null>(null);
 
-// 生成随机密钥
-const generateSecret = () => {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  let secret = '';
-  for (let i = 0; i < 16; i++) {
-    secret += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  form.value.secret = secret;
-  uni.showToast({
-    title: '密钥已生成',
-    icon: 'success',
-    duration: 1500,
-  });
-};
+/** 将逗号分隔的 ID 字符串解析为数字数组 */
+function parseIdsStr(s: string): number[] {
+  if (!s || typeof s !== 'string') return [];
+  return s
+    .split(/[,，\s]+/)
+    .map((x) => parseInt(x.trim(), 10))
+    .filter((n) => !isNaN(n) && n > 0);
+}
 
 // 上传Logo
 const uploadLogo = async () => {
@@ -197,10 +197,13 @@ const loadCompanyDetail = async () => {
   try {
     const company = await getCompanyDetail(companyId.value);
     if (company) {
+      const hiddenCat = company.hidden_category_ids;
+      const hiddenProd = company.hidden_product_ids;
       form.value = {
         name: company.name,
         logo_url: company.logo_url || '',
-        secret: company.secret,
+        hiddenCategoryIdsStr: Array.isArray(hiddenCat) ? hiddenCat.join(',') : '',
+        hiddenProductIdsStr: Array.isArray(hiddenProd) ? hiddenProd.join(',') : '',
       };
     }
   } catch (error: any) {
@@ -301,9 +304,9 @@ const skipAuthorize = () => {
 
 // 保存公司
 const handleSave = async () => {
-  if (!form.value.name || !form.value.secret) {
+  if (!form.value.name) {
     uni.showToast({
-      title: '请填写公司名称和访问密钥',
+      title: '请填写公司名称',
       icon: 'none',
     });
     return;
@@ -311,10 +314,17 @@ const handleSave = async () => {
 
   loading.value = true;
 
+  const payload = {
+    name: form.value.name,
+    logo_url: form.value.logo_url || undefined,
+    hidden_category_ids: parseIdsStr(form.value.hiddenCategoryIdsStr),
+    hidden_product_ids: parseIdsStr(form.value.hiddenProductIdsStr),
+  };
+
   try {
     if (companyId.value) {
       // 更新公司
-      await updateCompany(companyId.value, form.value);
+      await updateCompany(companyId.value, payload);
       uni.showToast({
         title: '保存成功',
         icon: 'success',
@@ -324,7 +334,7 @@ const handleSave = async () => {
       }, 1500);
     } else {
       // 创建公司
-      const result = await createCompany(form.value);
+      const result = await createCompany(payload);
       createdCompanyId.value = result.id;
       
       uni.showToast({
@@ -354,20 +364,10 @@ const handleCancel = () => {
   uni.navigateBack();
 };
 
-// 初始化时如果是新建，自动生成密钥
-onMounted(() => {
-  if (!companyId.value && !form.value.secret) {
-    generateSecret();
-  }
-});
-
 onLoad((options) => {
   if (options.id) {
     companyId.value = Number(options.id);
     loadCompanyDetail();
-  } else {
-    // 新建公司时自动生成密钥
-    generateSecret();
   }
 });
 </script>

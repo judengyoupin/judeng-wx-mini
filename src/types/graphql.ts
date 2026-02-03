@@ -78,6 +78,23 @@ export type String_Comparison_Exp = {
 };
 
 /** Boolean expression to compare columns of type "bigint". All fields are combined with logical 'AND'. */
+export type Bigint_Array_Comparison_Exp = {
+  /** is the array contained in the given array value */
+  _contained_in?: InputMaybe<Array<Scalars['bigint']['input']>>;
+  /** does the array contain the given value */
+  _contains?: InputMaybe<Array<Scalars['bigint']['input']>>;
+  _eq?: InputMaybe<Array<Scalars['bigint']['input']>>;
+  _gt?: InputMaybe<Array<Scalars['bigint']['input']>>;
+  _gte?: InputMaybe<Array<Scalars['bigint']['input']>>;
+  _in?: InputMaybe<Array<Array<Scalars['bigint']['input']>>>;
+  _is_null?: InputMaybe<Scalars['Boolean']['input']>;
+  _lt?: InputMaybe<Array<Scalars['bigint']['input']>>;
+  _lte?: InputMaybe<Array<Scalars['bigint']['input']>>;
+  _neq?: InputMaybe<Array<Scalars['bigint']['input']>>;
+  _nin?: InputMaybe<Array<Array<Scalars['bigint']['input']>>>;
+};
+
+/** Boolean expression to compare columns of type "bigint". All fields are combined with logical 'AND'. */
 export type Bigint_Comparison_Exp = {
   _eq?: InputMaybe<Scalars['bigint']['input']>;
   _gt?: InputMaybe<Scalars['bigint']['input']>;
@@ -1375,6 +1392,10 @@ export type Companies = {
   /** An aggregate relationship */
   company_users_aggregate: Company_Users_Aggregate;
   created_at: Scalars['timestamptz']['output'];
+  /** 隐藏的分类ids */
+  hidden_category_ids?: Maybe<Array<Scalars['bigint']['output']>>;
+  /** 隐藏的产品id */
+  hidden_product_ids?: Maybe<Array<Scalars['bigint']['output']>>;
   id: Scalars['bigint']['output'];
   /** 公司logo */
   logo_url?: Maybe<Scalars['String']['output']>;
@@ -1392,8 +1413,6 @@ export type Companies = {
   products: Array<Products>;
   /** An aggregate relationship */
   products_aggregate: Products_Aggregate;
-  /** 高端定制区域访问密钥 */
-  secret: Scalars['String']['output'];
   updated_at: Scalars['timestamptz']['output'];
 };
 
@@ -1545,6 +1564,8 @@ export type Companies_Bool_Exp = {
   company_users?: InputMaybe<Company_Users_Bool_Exp>;
   company_users_aggregate?: InputMaybe<Company_Users_Aggregate_Bool_Exp>;
   created_at?: InputMaybe<Timestamptz_Comparison_Exp>;
+  hidden_category_ids?: InputMaybe<Bigint_Array_Comparison_Exp>;
+  hidden_product_ids?: InputMaybe<Bigint_Array_Comparison_Exp>;
   id?: InputMaybe<Bigint_Comparison_Exp>;
   logo_url?: InputMaybe<String_Comparison_Exp>;
   name?: InputMaybe<String_Comparison_Exp>;
@@ -1554,7 +1575,6 @@ export type Companies_Bool_Exp = {
   product_skus_aggregate?: InputMaybe<Product_Skus_Aggregate_Bool_Exp>;
   products?: InputMaybe<Products_Bool_Exp>;
   products_aggregate?: InputMaybe<Products_Aggregate_Bool_Exp>;
-  secret?: InputMaybe<String_Comparison_Exp>;
   updated_at?: InputMaybe<Timestamptz_Comparison_Exp>;
 };
 
@@ -1580,6 +1600,10 @@ export type Companies_Insert_Input = {
   categories?: InputMaybe<Categories_Arr_Rel_Insert_Input>;
   company_users?: InputMaybe<Company_Users_Arr_Rel_Insert_Input>;
   created_at?: InputMaybe<Scalars['timestamptz']['input']>;
+  /** 隐藏的分类ids */
+  hidden_category_ids?: InputMaybe<Array<Scalars['bigint']['input']>>;
+  /** 隐藏的产品id */
+  hidden_product_ids?: InputMaybe<Array<Scalars['bigint']['input']>>;
   id?: InputMaybe<Scalars['bigint']['input']>;
   /** 公司logo */
   logo_url?: InputMaybe<Scalars['String']['input']>;
@@ -1588,8 +1612,6 @@ export type Companies_Insert_Input = {
   orders?: InputMaybe<Orders_Arr_Rel_Insert_Input>;
   product_skus?: InputMaybe<Product_Skus_Arr_Rel_Insert_Input>;
   products?: InputMaybe<Products_Arr_Rel_Insert_Input>;
-  /** 高端定制区域访问密钥 */
-  secret?: InputMaybe<Scalars['String']['input']>;
   updated_at?: InputMaybe<Scalars['timestamptz']['input']>;
 };
 
@@ -1601,13 +1623,15 @@ export type Companies_Max_Fields = {
   /** 顶部轮播图（json数组）export interface BannerItem { /** 文件类型（如：image、video） *\/ file_type?: string; /** 文件 URL *\/ file_url: string; /** 跳转链接（小程序路径或外部链接） *\/ link?: string; /** 排序索引 *\/ sort?: number; /** 标题 *\/ title?: string; } */
   banner_top?: Maybe<Array<Scalars['json']['output']>>;
   created_at?: Maybe<Scalars['timestamptz']['output']>;
+  /** 隐藏的分类ids */
+  hidden_category_ids?: Maybe<Array<Scalars['bigint']['output']>>;
+  /** 隐藏的产品id */
+  hidden_product_ids?: Maybe<Array<Scalars['bigint']['output']>>;
   id?: Maybe<Scalars['bigint']['output']>;
   /** 公司logo */
   logo_url?: Maybe<Scalars['String']['output']>;
   /** 公司名称 */
   name?: Maybe<Scalars['String']['output']>;
-  /** 高端定制区域访问密钥 */
-  secret?: Maybe<Scalars['String']['output']>;
   updated_at?: Maybe<Scalars['timestamptz']['output']>;
 };
 
@@ -1619,13 +1643,15 @@ export type Companies_Min_Fields = {
   /** 顶部轮播图（json数组）export interface BannerItem { /** 文件类型（如：image、video） *\/ file_type?: string; /** 文件 URL *\/ file_url: string; /** 跳转链接（小程序路径或外部链接） *\/ link?: string; /** 排序索引 *\/ sort?: number; /** 标题 *\/ title?: string; } */
   banner_top?: Maybe<Array<Scalars['json']['output']>>;
   created_at?: Maybe<Scalars['timestamptz']['output']>;
+  /** 隐藏的分类ids */
+  hidden_category_ids?: Maybe<Array<Scalars['bigint']['output']>>;
+  /** 隐藏的产品id */
+  hidden_product_ids?: Maybe<Array<Scalars['bigint']['output']>>;
   id?: Maybe<Scalars['bigint']['output']>;
   /** 公司logo */
   logo_url?: Maybe<Scalars['String']['output']>;
   /** 公司名称 */
   name?: Maybe<Scalars['String']['output']>;
-  /** 高端定制区域访问密钥 */
-  secret?: Maybe<Scalars['String']['output']>;
   updated_at?: Maybe<Scalars['timestamptz']['output']>;
 };
 
@@ -1659,13 +1685,14 @@ export type Companies_Order_By = {
   categories_aggregate?: InputMaybe<Categories_Aggregate_Order_By>;
   company_users_aggregate?: InputMaybe<Company_Users_Aggregate_Order_By>;
   created_at?: InputMaybe<Order_By>;
+  hidden_category_ids?: InputMaybe<Order_By>;
+  hidden_product_ids?: InputMaybe<Order_By>;
   id?: InputMaybe<Order_By>;
   logo_url?: InputMaybe<Order_By>;
   name?: InputMaybe<Order_By>;
   orders_aggregate?: InputMaybe<Orders_Aggregate_Order_By>;
   product_skus_aggregate?: InputMaybe<Product_Skus_Aggregate_Order_By>;
   products_aggregate?: InputMaybe<Products_Aggregate_Order_By>;
-  secret?: InputMaybe<Order_By>;
   updated_at?: InputMaybe<Order_By>;
 };
 
@@ -1683,13 +1710,15 @@ export enum Companies_Select_Column {
   /** column name */
   CreatedAt = 'created_at',
   /** column name */
+  HiddenCategoryIds = 'hidden_category_ids',
+  /** column name */
+  HiddenProductIds = 'hidden_product_ids',
+  /** column name */
   Id = 'id',
   /** column name */
   LogoUrl = 'logo_url',
   /** column name */
   Name = 'name',
-  /** column name */
-  Secret = 'secret',
   /** column name */
   UpdatedAt = 'updated_at'
 }
@@ -1701,13 +1730,15 @@ export type Companies_Set_Input = {
   /** 顶部轮播图（json数组）export interface BannerItem { /** 文件类型（如：image、video） *\/ file_type?: string; /** 文件 URL *\/ file_url: string; /** 跳转链接（小程序路径或外部链接） *\/ link?: string; /** 排序索引 *\/ sort?: number; /** 标题 *\/ title?: string; } */
   banner_top?: InputMaybe<Array<Scalars['json']['input']>>;
   created_at?: InputMaybe<Scalars['timestamptz']['input']>;
+  /** 隐藏的分类ids */
+  hidden_category_ids?: InputMaybe<Array<Scalars['bigint']['input']>>;
+  /** 隐藏的产品id */
+  hidden_product_ids?: InputMaybe<Array<Scalars['bigint']['input']>>;
   id?: InputMaybe<Scalars['bigint']['input']>;
   /** 公司logo */
   logo_url?: InputMaybe<Scalars['String']['input']>;
   /** 公司名称 */
   name?: InputMaybe<Scalars['String']['input']>;
-  /** 高端定制区域访问密钥 */
-  secret?: InputMaybe<Scalars['String']['input']>;
   updated_at?: InputMaybe<Scalars['timestamptz']['input']>;
 };
 
@@ -1744,13 +1775,15 @@ export type Companies_Stream_Cursor_Value_Input = {
   /** 顶部轮播图（json数组）export interface BannerItem { /** 文件类型（如：image、video） *\/ file_type?: string; /** 文件 URL *\/ file_url: string; /** 跳转链接（小程序路径或外部链接） *\/ link?: string; /** 排序索引 *\/ sort?: number; /** 标题 *\/ title?: string; } */
   banner_top?: InputMaybe<Array<Scalars['json']['input']>>;
   created_at?: InputMaybe<Scalars['timestamptz']['input']>;
+  /** 隐藏的分类ids */
+  hidden_category_ids?: InputMaybe<Array<Scalars['bigint']['input']>>;
+  /** 隐藏的产品id */
+  hidden_product_ids?: InputMaybe<Array<Scalars['bigint']['input']>>;
   id?: InputMaybe<Scalars['bigint']['input']>;
   /** 公司logo */
   logo_url?: InputMaybe<Scalars['String']['input']>;
   /** 公司名称 */
   name?: InputMaybe<Scalars['String']['input']>;
-  /** 高端定制区域访问密钥 */
-  secret?: InputMaybe<Scalars['String']['input']>;
   updated_at?: InputMaybe<Scalars['timestamptz']['input']>;
 };
 
@@ -1769,13 +1802,15 @@ export enum Companies_Update_Column {
   /** column name */
   CreatedAt = 'created_at',
   /** column name */
+  HiddenCategoryIds = 'hidden_category_ids',
+  /** column name */
+  HiddenProductIds = 'hidden_product_ids',
+  /** column name */
   Id = 'id',
   /** column name */
   LogoUrl = 'logo_url',
   /** column name */
   Name = 'name',
-  /** column name */
-  Secret = 'secret',
   /** column name */
   UpdatedAt = 'updated_at'
 }
@@ -7885,7 +7920,7 @@ export type Users = {
   /** 手机号（唯一） */
   mobile: Scalars['String']['output'];
   /** 昵称 */
-  nickname: Scalars['String']['output'];
+  nickname?: Maybe<Scalars['String']['output']>;
   /** An array relationship */
   orders: Array<Orders>;
   /** An aggregate relationship */

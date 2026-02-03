@@ -255,9 +255,9 @@ const searchUser = async () => {
   }
 };
 
-// 角色选择
+// 角色选择（小程序 picker 的 e.detail.value 可能为字符串，需转为数字再比较）
 const onRoleChange = (e: any) => {
-  const index = e.detail.value;
+  const index = Number(e.detail.value);
   userRoleIndex.value = index;
   userForm.value.role = index === 1 ? 'admin' : 'user';
 };

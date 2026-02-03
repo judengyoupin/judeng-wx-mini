@@ -29,17 +29,6 @@
         </view>
 
         <view class="form-item">
-          <view class="form-label">访问密钥</view>
-          <input 
-            class="form-input" 
-            v-model="form.secret" 
-            placeholder="访问密钥（创建后不可修改）"
-            :disabled="true"
-          />
-          <view class="form-hint">密钥创建后不可修改</view>
-        </view>
-
-        <view class="form-item">
           <view class="form-label">顶部轮播图</view>
           <view class="banner-section">
             <view 
@@ -173,7 +162,6 @@ const companyId = ref<number | null>(null);
 const form = ref({
   name: '',
   logo_url: '',
-  secret: '',
 });
 const topBanners = ref<BannerItem[]>([]);
 const bottomBanners = ref<BannerItem[]>([]);
@@ -368,7 +356,6 @@ const loadCompanyDetail = async () => {
       form.value = {
         name: company.name,
         logo_url: company.logo_url || '',
-        secret: company.secret,
       };
     }
 

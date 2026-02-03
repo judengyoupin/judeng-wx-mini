@@ -4,8 +4,8 @@
     <PageNavBar :title="companyInfo?.name || pageTitle" :show-back="true" @back="goBack" />
 
     <view class="content-container">
-      <!-- 左侧子分类导航 -->
-      <scroll-view scroll-y class="sidebar">
+      <!-- 左侧子分类导航（有子分类时显示） -->
+      <scroll-view v-if="subCategories.length > 0" scroll-y class="sidebar">
         <view
           v-for="(item, index) in subCategories"
           :key="item.id"
@@ -27,9 +27,9 @@
         :refresher-triggered="isRefreshing"
         @refresherrefresh="onRefresh"
       >
-        <!-- 当前分类标题（可选） -->
-        <view class="category-header" v-if="currentCategory">
-          <text class="category-title">{{ currentCategory.name }}</text>
+        <!-- 当前分类标题：有子分类时显示选中的子分类名，无子分类时显示当前分类名 -->
+        <view class="category-header">
+          <text class="category-title">{{ currentCategory ? currentCategory.name : pageTitle }}</text>
         </view>
 
         <!-- 商品网格 -->
@@ -84,7 +84,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import { onLoad } from '@dcloudio/uni-app';
-import { getCategoryTree } from '@/api/category/index';
+import { getCategoryChildren } from '@/api/category/index';
 import { getProductList } from '@/api/product/index';
 import { userInfo, user_token, companyInfo } from '@/store/userStore';
 import PageNavBar from '@/components/PageNavBar.vue';
@@ -136,24 +136,21 @@ const checkPermissions = async () => {
   }
 };
 
-// 加载子分类
+// 加载子分类（按父级 ID 拉取；无子分类时用当前分类 ID 展示该分类下的商品）
 const loadSubCategories = async () => {
   if (!parentId.value) return;
-  
+
   try {
-    // 这里为了简单，重新获取整个分类树并在前端查找
-    // 实际项目中如果有直接获取子分类的 API 会更好
-    const res = await getCategoryTree(companyInfo.value?.id);
+    const res = await getCategoryChildren(parentId.value, companyInfo.value?.id ?? undefined);
     if (res.code === 0 && res.data) {
-      const parent = res.data.find((c: any) => c.id === parentId.value);
-      if (parent && parent.children) {
-        subCategories.value = parent.children;
-        // 默认选中第一个子分类
-        if (subCategories.value.length > 0) {
-          currentCategoryId.value = subCategories.value[0].id;
-          loadProducts(true);
-        }
+      subCategories.value = res.data;
+      if (subCategories.value.length > 0) {
+        currentCategoryId.value = subCategories.value[0].id;
+      } else {
+        // 无子分类：直接展示当前分类（父级）下的商品
+        currentCategoryId.value = parentId.value;
       }
+      loadProducts(true);
     }
   } catch (error) {
     console.error('加载子分类失败:', error);

@@ -15,7 +15,7 @@ export async function getCategoryTree(companyId?: number | null, type?: 'product
     
     // 获取默认公司ID
     const defaultCompanyId = await getDefaultCompanyId();
-    
+
     // 确定要查询的公司ID列表（去重）
     const companyIds: number[] = [];
     if (companyId) {
@@ -24,7 +24,24 @@ export async function getCategoryTree(companyId?: number | null, type?: 'product
     if (defaultCompanyId && defaultCompanyId !== companyId) {
       companyIds.push(defaultCompanyId);
     }
-    
+
+    // 若包含默认公司，获取其隐藏分类 id 列表（展示时过滤）
+    let hiddenCategoryIds: number[] = [];
+    if (defaultCompanyId && companyIds.includes(defaultCompanyId)) {
+      try {
+        const hideRes = await client.execute<{ companies_by_pk: { hidden_category_ids: (string | number)[] | null } | null }>({
+          query: `query GetDefaultCompanyHiddenCategories($id: bigint!) {
+            companies_by_pk(id: $id) { hidden_category_ids }
+          }`,
+          variables: { id: defaultCompanyId },
+        });
+        const arr = hideRes?.companies_by_pk?.hidden_category_ids;
+        hiddenCategoryIds = Array.isArray(arr) ? arr.map((id) => Number(id)) : [];
+      } catch (_) {
+        // 忽略错误，按不隐藏处理
+      }
+    }
+
     // 构建查询条件
     const whereConditions: string[] = [
       '{ parent_categories: { _is_null: true } }',
@@ -283,8 +300,14 @@ export async function getCategoryTree(companyId?: number | null, type?: 'product
       });
     }
 
-    // 组合数据，保持新 schema 的字段结构，只做必要的 UI 适配
-    const categoryList = parentResult.categories.map((parent) => ({
+    // 组合数据，保持新 schema 的字段结构，只做必要的 UI 适配；按默认公司隐藏名单过滤
+    const parentsFiltered = parentResult.categories.filter(
+      (p) => !hiddenCategoryIds.length || !hiddenCategoryIds.includes(Number(p.id))
+    );
+    const childrenFiltered = (childrenResult.categories || []).filter(
+      (c) => !hiddenCategoryIds.length || !hiddenCategoryIds.includes(Number(c.id))
+    );
+    const categoryList = parentsFiltered.map((parent) => ({
       id: parent.id,
       name: parent.name,
       sort_order: parent.sort_order,
@@ -297,7 +320,7 @@ export async function getCategoryTree(companyId?: number | null, type?: 'product
       img: parent.icon_url ? { url: parent.icon_url } : null,
       icon: parent.icon_url,
       image: parent.icon_url,
-      children: (childrenResult.categories || []).filter(
+      children: childrenFiltered.filter(
         (child) => child.parent_categories === parent.id
       ).map((child) => ({
         id: child.id,
@@ -327,6 +350,101 @@ export async function getCategoryTree(companyId?: number | null, type?: 'product
       code: -1,
       data: [],
       message: "获取分类失败: " + (error.message || JSON.stringify(error)),
+    };
+  }
+}
+
+/**
+ * 按父级分类 ID 获取子分类列表（用于分类筛选页：继续展示分类时加载子分类）
+ */
+export async function getCategoryChildren(parentId: number, companyId?: number | null) {
+  try {
+    const defaultCompanyId = await getDefaultCompanyId();
+    const companyIds: number[] = [];
+    if (companyId) companyIds.push(companyId);
+    if (defaultCompanyId && defaultCompanyId !== companyId) companyIds.push(defaultCompanyId);
+
+    let hiddenCategoryIds: number[] = [];
+    if (defaultCompanyId && companyIds.includes(defaultCompanyId)) {
+      try {
+        const hideRes = await client.execute<{ companies_by_pk: { hidden_category_ids: (string | number)[] | null } | null }>({
+          query: `query GetDefaultCompanyHiddenCategories($id: bigint!) {
+            companies_by_pk(id: $id) { hidden_category_ids }
+          }`,
+          variables: { id: defaultCompanyId },
+        });
+        const arr = hideRes?.companies_by_pk?.hidden_category_ids;
+        hiddenCategoryIds = Array.isArray(arr) ? arr.map((id) => Number(id)) : [];
+      } catch (_) {}
+    }
+
+    const whereConditions = [
+      '{ parent_categories: { _eq: $parentId } }',
+      '{ is_deleted: { _eq: false } }',
+    ];
+    if (companyIds.length === 1) {
+      whereConditions.push('{ company_companies: { _eq: $companyId } }');
+    } else if (companyIds.length > 1) {
+      whereConditions.push('{ company_companies: { _in: $companyIds } }');
+    }
+
+    const variableDeclarations = ['$parentId: bigint!'];
+    if (companyIds.length === 1) variableDeclarations.push('$companyId: bigint!');
+    else if (companyIds.length > 1) variableDeclarations.push('$companyIds: [bigint!]!');
+    const varStr = `(${variableDeclarations.join(', ')})`;
+
+    const query = `
+      query GetCategoryChildren${varStr} {
+        categories(
+          where: { _and: [ ${whereConditions.join(', ')} ] }
+          order_by: { sort_order: asc }
+        ) {
+          id
+          name
+          sort_order
+          route_ui_style
+          icon_url
+          parent_categories
+          level
+          type
+        }
+      }
+    `;
+    const variables: any = { parentId };
+    if (companyIds.length === 1) variables.companyId = companyIds[0];
+    else if (companyIds.length > 1) variables.companyIds = companyIds;
+
+    const result = await client.execute<{ categories: any[] }>({
+      query,
+      variables,
+    });
+
+    const list = result?.categories || [];
+    const filtered = list.filter(
+      (c) => !hiddenCategoryIds.length || !hiddenCategoryIds.includes(Number(c.id))
+    );
+    const data = filtered.map((child) => ({
+      id: child.id,
+      name: child.name,
+      sort_order: child.sort_order,
+      route_ui_style: child.route_ui_style,
+      ui_style: child.route_ui_style,
+      icon_url: child.icon_url,
+      parent_categories: child.parent_categories,
+      type: child.type,
+      skip: child.route_ui_style === "products",
+      img: child.icon_url ? { url: child.icon_url } : null,
+      icon: child.icon_url,
+      image: child.icon_url,
+    }));
+
+    return { code: 0, data, message: "获取成功" };
+  } catch (error: any) {
+    console.error("获取子分类失败:", error);
+    return {
+      code: -1,
+      data: [],
+      message: "获取子分类失败: " + (error.message || JSON.stringify(error)),
     };
   }
 }

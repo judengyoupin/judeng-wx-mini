@@ -80,18 +80,39 @@ export async function getProductList(params: {
     };
   }
 
+  // 若包含默认公司，获取其隐藏商品 id 列表（展示时过滤）
+  let hiddenProductIds: number[] = [];
+  if (defaultCompanyId && companyIds.includes(defaultCompanyId)) {
+    try {
+      const hideRes = await client.execute<{ companies_by_pk: { hidden_product_ids: (string | number)[] | null } | null }>({
+        query: `query GetDefaultCompanyHiddenProducts($id: bigint!) {
+          companies_by_pk(id: $id) { hidden_product_ids }
+        }`,
+        variables: { id: defaultCompanyId },
+      });
+      const arr = hideRes?.companies_by_pk?.hidden_product_ids;
+      hiddenProductIds = Array.isArray(arr) ? arr.map((id) => Number(id)) : [];
+    } catch (_) {
+      // 忽略错误，按不隐藏处理
+    }
+  }
+
   // 动态构建 where 条件
   const whereConditions: string[] = [];
-  
+
   // 添加公司过滤条件
   if (companyIds.length === 1) {
     whereConditions.push('{ company_companies: { _eq: $companyId } }');
   } else {
     whereConditions.push('{ company_companies: { _in: $companyIds } }');
   }
-  
+
   whereConditions.push('{ is_deleted: { _eq: false } }');
   whereConditions.push('{ is_shelved: { _eq: false } }');
+
+  if (hiddenProductIds.length > 0) {
+    whereConditions.push('{ id: { _nin: $hiddenProductIds } }');
+  }
 
   if (params.categoryId) {
     whereConditions.push('{ category_categories: { _eq: $categoryId } }');
@@ -118,11 +139,15 @@ export async function getProductList(params: {
   } else {
     variables.companyId = companyIds[0];
   }
+  if (hiddenProductIds.length > 0) {
+    variables.hiddenProductIds = hiddenProductIds;
+  }
+  const hiddenVars = hiddenProductIds.length > 0 ? ', $hiddenProductIds: [bigint!]!' : '';
 
   if (hasCategory && hasKeyword) {
     const queryVars = hasMultipleCompanies
-      ? '$companyIds: [bigint!]!, $categoryId: bigint!, $keyword: String!, $limit: Int, $offset: Int'
-      : '$companyId: bigint!, $categoryId: bigint!, $keyword: String!, $limit: Int, $offset: Int';
+      ? `$companyIds: [bigint!]!, $categoryId: bigint!, $keyword: String!, $limit: Int, $offset: Int${hiddenVars}`
+      : `$companyId: bigint!, $categoryId: bigint!, $keyword: String!, $limit: Int, $offset: Int${hiddenVars}`;
     
     query = `
       query GetProductList(
@@ -171,8 +196,8 @@ export async function getProductList(params: {
     variables.keyword = `%${params.keyword.trim()}%`;
   } else if (hasCategory) {
     const queryVars = hasMultipleCompanies
-      ? '$companyIds: [bigint!]!, $categoryId: bigint!, $limit: Int, $offset: Int'
-      : '$companyId: bigint!, $categoryId: bigint!, $limit: Int, $offset: Int';
+      ? `$companyIds: [bigint!]!, $categoryId: bigint!, $limit: Int, $offset: Int${hiddenVars}`
+      : `$companyId: bigint!, $categoryId: bigint!, $limit: Int, $offset: Int${hiddenVars}`;
     
     query = `
       query GetProductList(
@@ -220,8 +245,8 @@ export async function getProductList(params: {
     variables.categoryId = params.categoryId;
   } else if (hasKeyword) {
     const queryVars = hasMultipleCompanies
-      ? '$companyIds: [bigint!]!, $keyword: String!, $limit: Int, $offset: Int'
-      : '$companyId: bigint!, $keyword: String!, $limit: Int, $offset: Int';
+      ? `$companyIds: [bigint!]!, $keyword: String!, $limit: Int, $offset: Int${hiddenVars}`
+      : `$companyId: bigint!, $keyword: String!, $limit: Int, $offset: Int${hiddenVars}`;
     
     query = `
       query GetProductList(
@@ -269,8 +294,8 @@ export async function getProductList(params: {
     variables.keyword = `%${params.keyword.trim()}%`;
   } else {
     const queryVars = hasMultipleCompanies
-      ? '$companyIds: [bigint!]!, $limit: Int, $offset: Int'
-      : '$companyId: bigint!, $limit: Int, $offset: Int';
+      ? `$companyIds: [bigint!]!, $limit: Int, $offset: Int${hiddenVars}`
+      : `$companyId: bigint!, $limit: Int, $offset: Int${hiddenVars}`;
     
     query = `
       query GetProductList(

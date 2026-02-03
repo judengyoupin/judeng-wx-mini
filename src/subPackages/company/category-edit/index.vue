@@ -28,19 +28,24 @@
           </view>
         </view>
 
-        <view class="form-item">
+        <view class="form-item parent-selector">
           <view class="form-label">父级分类</view>
-          <picker 
-            mode="selector" 
-            :range="parentCategoryOptions" 
-            range-key="name"
-            :value="selectedParentIndex"
-            @change="onParentChange"
-          >
-            <view class="form-picker" :class="{ placeholder: !selectedParent }">
-              {{ selectedParent ? selectedParent.name : '顶级分类（无父级）' }}
+          <view class="parent-current">
+            {{ selectedParentDisplay }}
+          </view>
+          <view class="parent-tree">
+            <view
+              v-for="(opt, idx) in parentCategoryOptions"
+              :key="opt.id ?? 'root'"
+              class="parent-option"
+              :class="{ selected: isParentSelected(opt), 'opt-root': opt.id === null }"
+              :style="{ paddingLeft: (opt._depth ?? 0) * 24 + 24 + 'rpx' }"
+              @click="selectParent(opt)"
+            >
+              <text class="parent-option-icon">{{ isParentSelected(opt) ? '✓' : '' }}</text>
+              <text class="parent-option-name">{{ opt.id === null ? '顶级分类（无父级）' : opt.name }}</text>
             </view>
-          </picker>
+          </view>
         </view>
 
         <view class="form-item">
@@ -113,31 +118,64 @@ const routeUiStyleIndex = ref(0);
 const categoryTypes = ['产品分类', '套餐分类'];
 const categoryTypeIndex = ref(0);
 
+// 按类型筛选分类树（与当前表单类型一致，避免跨类型选父级）
+const filteredCategoryTree = computed(() => {
+  const type = form.value.type;
+  if (!type) return categories.value;
+  function filterByType(cats: any[]): any[] {
+    return cats
+      .filter((cat: any) => cat.type === type)
+      .map((cat: any) => ({
+        ...cat,
+        categories: cat.categories ? filterByType(cat.categories) : [],
+      }));
+  }
+  return filterByType(categories.value);
+});
+
+// 父级选项：顶级 + 按层级展开的列表（带 _depth 便于缩进）
 const parentCategoryOptions = computed(() => {
-  const flatten = (cats: any[], excludeId?: number): any[] => {
+  const flatten = (cats: any[], excludeId?: number, depth = 0): any[] => {
     let result: any[] = [];
     cats.forEach(cat => {
       if (cat.id !== excludeId) {
-        result.push(cat);
+        result.push({ ...cat, _depth: depth });
         if (cat.categories && cat.categories.length > 0) {
-          result = result.concat(flatten(cat.categories, excludeId));
+          result = result.concat(flatten(cat.categories, excludeId, depth + 1));
         }
       }
     });
     return result;
   };
-  return [{ id: null, name: '顶级分类（无父级）' }, ...flatten(categories.value, categoryId.value || undefined)];
+  const list = flatten(filteredCategoryTree.value, categoryId.value || undefined);
+  return [{ id: null, name: '顶级分类（无父级）', _depth: 0 }, ...list];
 });
 
-const selectedParentIndex = computed(() => {
-  if (form.value.parent_categories === undefined) return 0;
-  const index = parentCategoryOptions.value.findIndex(c => c.id === form.value.parent_categories);
-  return index >= 0 ? index : 0;
+// 当前选中的父级展示文案
+const selectedParentDisplay = computed(() => {
+  if (form.value.parent_categories === undefined || form.value.parent_categories === null) {
+    return '顶级分类（无父级）';
+  }
+  const opt = parentCategoryOptions.value.find(c => c.id === form.value.parent_categories);
+  return opt ? opt.name : '顶级分类（无父级）';
 });
 
-const selectedParent = computed(() => {
-  return parentCategoryOptions.value[selectedParentIndex.value];
-});
+function isParentSelected(opt: any): boolean {
+  if (opt.id === null) {
+    return form.value.parent_categories === undefined || form.value.parent_categories === null;
+  }
+  return form.value.parent_categories === opt.id;
+}
+
+function selectParent(opt: any) {
+  if (opt.id === null) {
+    form.value.parent_categories = undefined;
+    form.value.level = 0;
+  } else {
+    form.value.parent_categories = opt.id;
+    form.value.level = (opt.level ?? 0) + 1;
+  }
+}
 
 // 加载分类树
 const loadCategories = async () => {
@@ -198,24 +236,13 @@ const uploadIcon = async () => {
   }
 };
 
-// 父级分类选择（小程序 picker 的 detail.value 是字符串，需转成数字再取选项）
-const onParentChange = (e: any) => {
-  const index = Number(e.detail.value);
-  const parent = parentCategoryOptions.value[index];
-  if (parent.id === null) {
-    form.value.parent_categories = undefined;
-    form.value.level = 0;
-  } else {
-    form.value.parent_categories = parent.id;
-    form.value.level = (parent.level || 0) + 1;
-  }
-};
-
-// 分类类型选择（小程序 picker 的 detail.value 是字符串，需转成数字再比较）
+// 分类类型选择（小程序 picker 的 detail.value 是字符串，需转成数字再比较）；切换类型后父级选项会变，重置为顶级
 const onCategoryTypeChange = (e: any) => {
   const index = Number(e.detail.value);
   categoryTypeIndex.value = index;
   form.value.type = index === 1 ? 'package' : 'product';
+  form.value.parent_categories = undefined;
+  form.value.level = 0;
 };
 
 // 展示方式选择（小程序 picker 的 detail.value 是字符串，需转成数字再比较）
@@ -352,5 +379,58 @@ onLoad((options?: { id?: string }) => {
 .cancel-btn {
   background: #f0f0f0;
   color: #666666;
+}
+
+/* 父级分类树形选择 */
+.parent-selector .parent-current {
+  padding: 20rpx 24rpx;
+  background: #f8f8f8;
+  border-radius: 12rpx;
+  font-size: 28rpx;
+  color: #333;
+  margin-bottom: 20rpx;
+}
+
+.parent-tree {
+  max-height: 400rpx;
+  overflow-y: auto;
+  border: 1rpx solid #eee;
+  border-radius: 12rpx;
+  background: #fff;
+}
+
+.parent-option {
+  display: flex;
+  align-items: center;
+  padding: 20rpx 24rpx;
+  font-size: 28rpx;
+  color: #333;
+  border-bottom: 1rpx solid #f0f0f0;
+  min-height: 44rpx;
+}
+
+.parent-option:last-child {
+  border-bottom: none;
+}
+
+.parent-option.selected {
+  background: #eef1fc;
+  color: #667eea;
+  font-weight: 500;
+}
+
+.parent-option-icon {
+  width: 40rpx;
+  margin-right: 12rpx;
+  font-size: 32rpx;
+  color: #667eea;
+}
+
+.parent-option-name {
+  flex: 1;
+}
+
+.parent-option.opt-root .parent-option-name {
+  color: #666;
 }
 </style>

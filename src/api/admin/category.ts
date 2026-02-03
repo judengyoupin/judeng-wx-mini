@@ -12,7 +12,7 @@ export interface CategoryInput {
 }
 
 /**
- * 获取分类树
+ * 获取分类树（仅查根节点，子节点通过嵌套 relation 获取，避免二级与一级平铺）
  */
 export async function getCategoryTree(companyId: number) {
   const query = `
@@ -21,6 +21,7 @@ export async function getCategoryTree(companyId: number) {
         where: {
           company_companies: { _eq: $companyId }
           is_deleted: { _eq: false }
+          parent_categories: { _is_null: true }
         }
         order_by: { sort_order: asc }
       ) {
@@ -44,6 +45,19 @@ export async function getCategoryTree(companyId: number) {
           route_ui_style
           sort_order
           type
+          categories(
+            where: { is_deleted: { _eq: false } }
+            order_by: { sort_order: asc }
+          ) {
+            id
+            name
+            icon_url
+            parent_categories
+            level
+            route_ui_style
+            sort_order
+            type
+          }
         }
       }
     }

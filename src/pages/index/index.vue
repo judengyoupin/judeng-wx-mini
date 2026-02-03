@@ -441,21 +441,15 @@ export default defineComponent({
       const categoryId = category.id;
       const categoryName = category.name || '';
 
-      // 如果 ui_style 是 "products" 或 skip 为 true，直接跳转到商品列表页面
-      if (category.skip === true || category.ui_style === "products" || category.route_ui_style === "products") {
-        console.log('跳转到商品列表页，分类ID:', categoryId);
+      // 按 route_ui_style 决定：展示商品 → 商品列表；继续展示分类 → 分类筛选页（该页会加载子分类或本分类商品）
+      const showProducts = category.skip === true || category.ui_style === "products" || category.route_ui_style === "products";
+      if (showProducts) {
         const url = `/pages/product/index?categoryId=${categoryId}&categoryName=${encodeURIComponent(categoryName)}`;
-        console.log('跳转URL:', url);
-        
         uni.navigateTo({
-          url: url,
-          success: () => {
-            console.log('跳转成功');
-          },
+          url,
           fail: (err) => {
-            console.error('跳转失败:', err);
             uni.showToast({
-              title: '页面跳转失败: ' + (err.errMsg || '未知错误'),
+              title: '页面跳转失败: ' + (err?.errMsg || '未知错误'),
               icon: 'none',
               duration: 3000,
             });
@@ -464,48 +458,18 @@ export default defineComponent({
         return;
       }
 
-      // 否则检查是否有子分类
-      if (category.children && category.children.length > 0) {
-        // 有子分类，跳转到分类筛选页面
-        console.log('跳转到分类筛选页，分类ID:', categoryId);
-        const url = `/pages/category-filter/index?categoryId=${categoryId}&categoryName=${encodeURIComponent(categoryName)}`;
-        console.log('跳转URL:', url);
-        
-        uni.navigateTo({
-          url: url,
-          success: () => {
-            console.log('跳转成功');
-          },
-          fail: (err) => {
-            console.error('跳转失败:', err);
-            uni.showToast({
-              title: '页面跳转失败: ' + (err.errMsg || '未知错误'),
-              icon: 'none',
-              duration: 3000,
-            });
-          },
-        });
-      } else {
-        // 没有子分类，直接跳转到商品列表
-        console.log('跳转到商品列表页（无子分类），分类ID:', categoryId);
-        const url = `/pages/product/index?categoryId=${categoryId}&categoryName=${encodeURIComponent(categoryName)}`;
-        console.log('跳转URL:', url);
-        
-        uni.navigateTo({
-          url: url,
-          success: () => {
-            console.log('跳转成功');
-          },
-          fail: (err) => {
-            console.error('跳转失败:', err);
-            uni.showToast({
-              title: '页面跳转失败: ' + (err.errMsg || '未知错误'),
-              icon: 'none',
-              duration: 3000,
-            });
-          },
-        });
-      }
+      // route_ui_style 为 categories（或未设置）：跳转分类筛选页，由该页根据是否有子分类展示子分类或本分类商品
+      const url = `/pages/category-filter/index?categoryId=${categoryId}&categoryName=${encodeURIComponent(categoryName)}`;
+      uni.navigateTo({
+        url,
+        fail: (err) => {
+          uni.showToast({
+            title: '页面跳转失败: ' + (err?.errMsg || '未知错误'),
+            icon: 'none',
+            duration: 3000,
+          });
+        },
+      });
     };
 
     // 页面加载时处理

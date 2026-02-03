@@ -224,9 +224,10 @@ const editUser = (user: any) => {
   showEditModal.value = true;
 };
 
-// 角色选择
+// 角色选择（小程序 picker 的 detail.value 可能是字符串，需转为数字）
 const onRoleChange = (e: any) => {
-  selectedRoleIndex.value = e.detail.value;
+  const v = e.detail.value;
+  selectedRoleIndex.value = typeof v === 'number' ? v : Number(v) || 0;
 };
 
 // 保存用户
@@ -235,8 +236,9 @@ const handleSave = async () => {
     return;
   }
 
-  const newRole = selectedRoleIndex.value === 1 ? 'admin' : 'user';
-  
+  const roleIndex = Number(selectedRoleIndex.value);
+  const newRole = roleIndex === 1 ? 'admin' : 'user';
+
   // 如果角色没有变化，直接关闭
   if (editingUser.value.role === newRole) {
     closeModal();

@@ -101,6 +101,26 @@ scalar bigint
 """
 Boolean expression to compare columns of type "bigint". All fields are combined with logical 'AND'.
 """
+input bigint_array_comparison_exp {
+  """is the array contained in the given array value"""
+  _contained_in: [bigint!]
+
+  """does the array contain the given value"""
+  _contains: [bigint!]
+  _eq: [bigint!]
+  _gt: [bigint!]
+  _gte: [bigint!]
+  _in: [[bigint!]!]
+  _is_null: Boolean
+  _lt: [bigint!]
+  _lte: [bigint!]
+  _neq: [bigint!]
+  _nin: [[bigint!]!]
+}
+
+"""
+Boolean expression to compare columns of type "bigint". All fields are combined with logical 'AND'.
+"""
 input bigint_comparison_exp {
   _eq: bigint
   _gt: bigint
@@ -1813,6 +1833,12 @@ type companies {
     where: company_users_bool_exp
   ): company_users_aggregate!
   created_at: timestamptz!
+
+  """隐藏的分类ids"""
+  hidden_category_ids: [bigint!]
+
+  """隐藏的产品id"""
+  hidden_product_ids: [bigint!]
   id: bigint!
 
   """公司logo"""
@@ -1928,9 +1954,6 @@ type companies {
     """filter the rows returned"""
     where: products_bool_exp
   ): products_aggregate!
-
-  """高端定制区域访问密钥"""
-  secret: String!
   updated_at: timestamptz!
 }
 
@@ -1978,6 +2001,8 @@ input companies_bool_exp {
   company_users: company_users_bool_exp
   company_users_aggregate: company_users_aggregate_bool_exp
   created_at: timestamptz_comparison_exp
+  hidden_category_ids: bigint_array_comparison_exp
+  hidden_product_ids: bigint_array_comparison_exp
   id: bigint_comparison_exp
   logo_url: String_comparison_exp
   name: String_comparison_exp
@@ -1987,7 +2012,6 @@ input companies_bool_exp {
   product_skus_aggregate: product_skus_aggregate_bool_exp
   products: products_bool_exp
   products_aggregate: products_aggregate_bool_exp
-  secret: String_comparison_exp
   updated_at: timestamptz_comparison_exp
 }
 
@@ -2029,6 +2053,12 @@ input companies_insert_input {
   categories: categories_arr_rel_insert_input
   company_users: company_users_arr_rel_insert_input
   created_at: timestamptz
+
+  """隐藏的分类ids"""
+  hidden_category_ids: [bigint!]
+
+  """隐藏的产品id"""
+  hidden_product_ids: [bigint!]
   id: bigint
 
   """公司logo"""
@@ -2039,9 +2069,6 @@ input companies_insert_input {
   orders: orders_arr_rel_insert_input
   product_skus: product_skus_arr_rel_insert_input
   products: products_arr_rel_insert_input
-
-  """高端定制区域访问密钥"""
-  secret: String
   updated_at: timestamptz
 }
 
@@ -2057,6 +2084,12 @@ type companies_max_fields {
   """
   banner_top: [json!]
   created_at: timestamptz
+
+  """隐藏的分类ids"""
+  hidden_category_ids: [bigint!]
+
+  """隐藏的产品id"""
+  hidden_product_ids: [bigint!]
   id: bigint
 
   """公司logo"""
@@ -2064,9 +2097,6 @@ type companies_max_fields {
 
   """公司名称"""
   name: String
-
-  """高端定制区域访问密钥"""
-  secret: String
   updated_at: timestamptz
 }
 
@@ -2082,6 +2112,12 @@ type companies_min_fields {
   """
   banner_top: [json!]
   created_at: timestamptz
+
+  """隐藏的分类ids"""
+  hidden_category_ids: [bigint!]
+
+  """隐藏的产品id"""
+  hidden_product_ids: [bigint!]
   id: bigint
 
   """公司logo"""
@@ -2089,9 +2125,6 @@ type companies_min_fields {
 
   """公司名称"""
   name: String
-
-  """高端定制区域访问密钥"""
-  secret: String
   updated_at: timestamptz
 }
 
@@ -2132,13 +2165,14 @@ input companies_order_by {
   categories_aggregate: categories_aggregate_order_by
   company_users_aggregate: company_users_aggregate_order_by
   created_at: order_by
+  hidden_category_ids: order_by
+  hidden_product_ids: order_by
   id: order_by
   logo_url: order_by
   name: order_by
   orders_aggregate: orders_aggregate_order_by
   product_skus_aggregate: product_skus_aggregate_order_by
   products_aggregate: products_aggregate_order_by
-  secret: order_by
   updated_at: order_by
 }
 
@@ -2161,6 +2195,12 @@ enum companies_select_column {
   created_at
 
   """column name"""
+  hidden_category_ids
+
+  """column name"""
+  hidden_product_ids
+
+  """column name"""
   id
 
   """column name"""
@@ -2168,9 +2208,6 @@ enum companies_select_column {
 
   """column name"""
   name
-
-  """column name"""
-  secret
 
   """column name"""
   updated_at
@@ -2190,6 +2227,12 @@ input companies_set_input {
   """
   banner_top: [json!]
   created_at: timestamptz
+
+  """隐藏的分类ids"""
+  hidden_category_ids: [bigint!]
+
+  """隐藏的产品id"""
+  hidden_product_ids: [bigint!]
   id: bigint
 
   """公司logo"""
@@ -2197,9 +2240,6 @@ input companies_set_input {
 
   """公司名称"""
   name: String
-
-  """高端定制区域访问密钥"""
-  secret: String
   updated_at: timestamptz
 }
 
@@ -2241,6 +2281,12 @@ input companies_stream_cursor_value_input {
   """
   banner_top: [json!]
   created_at: timestamptz
+
+  """隐藏的分类ids"""
+  hidden_category_ids: [bigint!]
+
+  """隐藏的产品id"""
+  hidden_product_ids: [bigint!]
   id: bigint
 
   """公司logo"""
@@ -2248,9 +2294,6 @@ input companies_stream_cursor_value_input {
 
   """公司名称"""
   name: String
-
-  """高端定制区域访问密钥"""
-  secret: String
   updated_at: timestamptz
 }
 
@@ -2273,6 +2316,12 @@ enum companies_update_column {
   created_at
 
   """column name"""
+  hidden_category_ids
+
+  """column name"""
+  hidden_product_ids
+
+  """column name"""
   id
 
   """column name"""
@@ -2280,9 +2329,6 @@ enum companies_update_column {
 
   """column name"""
   name
-
-  """column name"""
-  secret
 
   """column name"""
   updated_at
@@ -9986,7 +10032,7 @@ type users {
   mobile: String!
 
   """昵称"""
-  nickname: String!
+  nickname: String
 
   """An array relationship"""
   orders(
