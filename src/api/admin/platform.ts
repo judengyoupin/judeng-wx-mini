@@ -9,6 +9,8 @@ export interface CompanyInput {
   hidden_category_ids?: number[];
   /** 隐藏的商品 id 列表（系统默认公司展示时过滤） */
   hidden_product_ids?: number[];
+  /** 隐藏的套餐 id 列表（系统默认公司展示时过滤） */
+  hidden_package_ids?: number[];
 }
 
 /**
@@ -30,6 +32,7 @@ export async function getCompanyList(params: {
         logo_url
         hidden_category_ids
         hidden_product_ids
+        hidden_package_ids
         created_at
         updated_at
         company_users(
@@ -79,6 +82,7 @@ export async function getCompanyDetail(companyId: number) {
         banner_bottom
         hidden_category_ids
         hidden_product_ids
+        hidden_package_ids
         created_at
         updated_at
         company_users(
@@ -126,6 +130,7 @@ export async function createCompany(company: CompanyInput) {
     banner_bottom: company.banner_bottom ?? [],
     hidden_category_ids: company.hidden_category_ids ?? [],
     hidden_product_ids: company.hidden_product_ids ?? [],
+    hidden_package_ids: company.hidden_package_ids ?? [],
   };
 
   const result = await client.execute({

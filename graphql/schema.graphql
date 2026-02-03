@@ -135,6 +135,8 @@ input bigint_comparison_exp {
 
 """购物车表"""
 type carts {
+  """所属公司id"""
+  company_companies: bigint!
   created_at: timestamptz!
   id: bigint!
 
@@ -239,6 +241,8 @@ input carts_arr_rel_insert_input {
 
 """aggregate avg on columns"""
 type carts_avg_fields {
+  """所属公司id"""
+  company_companies: Float
   id: Float
 
   """产品规格id"""
@@ -255,6 +259,8 @@ type carts_avg_fields {
 order by avg() on columns of table "carts"
 """
 input carts_avg_order_by {
+  """所属公司id"""
+  company_companies: order_by
   id: order_by
 
   """产品规格id"""
@@ -274,6 +280,7 @@ input carts_bool_exp {
   _and: [carts_bool_exp!]
   _not: carts_bool_exp
   _or: [carts_bool_exp!]
+  company_companies: bigint_comparison_exp
   created_at: timestamptz_comparison_exp
   id: bigint_comparison_exp
   product_sku: product_skus_bool_exp
@@ -295,15 +302,17 @@ enum carts_constraint {
   carts_pkey
 
   """
-  unique or primary key constraint on columns "user_users", "product_sku_product_skus"
+  unique or primary key constraint on columns "user_users", "company_companies", "product_sku_product_skus"
   """
-  carts_product_sku_product_skus_user_users_key
+  carts_product_sku_product_skus_user_users_company_companies_key
 }
 
 """
 input type for incrementing numeric columns in table "carts"
 """
 input carts_inc_input {
+  """所属公司id"""
+  company_companies: bigint
   id: bigint
 
   """产品规格id"""
@@ -320,6 +329,8 @@ input carts_inc_input {
 input type for inserting data into table "carts"
 """
 input carts_insert_input {
+  """所属公司id"""
+  company_companies: bigint
   created_at: timestamptz
   id: bigint
   product_sku: product_skus_obj_rel_insert_input
@@ -341,6 +352,8 @@ input carts_insert_input {
 
 """aggregate max on columns"""
 type carts_max_fields {
+  """所属公司id"""
+  company_companies: bigint
   created_at: timestamptz
   id: bigint
 
@@ -359,6 +372,8 @@ type carts_max_fields {
 order by max() on columns of table "carts"
 """
 input carts_max_order_by {
+  """所属公司id"""
+  company_companies: order_by
   created_at: order_by
   id: order_by
 
@@ -375,6 +390,8 @@ input carts_max_order_by {
 
 """aggregate min on columns"""
 type carts_min_fields {
+  """所属公司id"""
+  company_companies: bigint
   created_at: timestamptz
   id: bigint
 
@@ -393,6 +410,8 @@ type carts_min_fields {
 order by min() on columns of table "carts"
 """
 input carts_min_order_by {
+  """所属公司id"""
+  company_companies: order_by
   created_at: order_by
   id: order_by
 
@@ -429,6 +448,7 @@ input carts_on_conflict {
 
 """Ordering options when selecting data from "carts"."""
 input carts_order_by {
+  company_companies: order_by
   created_at: order_by
   id: order_by
   product_sku: product_skus_order_by
@@ -449,6 +469,9 @@ input carts_pk_columns_input {
 select columns of table "carts"
 """
 enum carts_select_column {
+  """column name"""
+  company_companies
+
   """column name"""
   created_at
 
@@ -491,6 +514,8 @@ enum carts_select_column_carts_aggregate_bool_exp_bool_or_arguments_columns {
 input type for updating data in table "carts"
 """
 input carts_set_input {
+  """所属公司id"""
+  company_companies: bigint
   created_at: timestamptz
   id: bigint
 
@@ -510,6 +535,8 @@ input carts_set_input {
 
 """aggregate stddev on columns"""
 type carts_stddev_fields {
+  """所属公司id"""
+  company_companies: Float
   id: Float
 
   """产品规格id"""
@@ -526,6 +553,8 @@ type carts_stddev_fields {
 order by stddev() on columns of table "carts"
 """
 input carts_stddev_order_by {
+  """所属公司id"""
+  company_companies: order_by
   id: order_by
 
   """产品规格id"""
@@ -540,6 +569,8 @@ input carts_stddev_order_by {
 
 """aggregate stddev_pop on columns"""
 type carts_stddev_pop_fields {
+  """所属公司id"""
+  company_companies: Float
   id: Float
 
   """产品规格id"""
@@ -556,6 +587,8 @@ type carts_stddev_pop_fields {
 order by stddev_pop() on columns of table "carts"
 """
 input carts_stddev_pop_order_by {
+  """所属公司id"""
+  company_companies: order_by
   id: order_by
 
   """产品规格id"""
@@ -570,6 +603,8 @@ input carts_stddev_pop_order_by {
 
 """aggregate stddev_samp on columns"""
 type carts_stddev_samp_fields {
+  """所属公司id"""
+  company_companies: Float
   id: Float
 
   """产品规格id"""
@@ -586,6 +621,8 @@ type carts_stddev_samp_fields {
 order by stddev_samp() on columns of table "carts"
 """
 input carts_stddev_samp_order_by {
+  """所属公司id"""
+  company_companies: order_by
   id: order_by
 
   """产品规格id"""
@@ -611,6 +648,8 @@ input carts_stream_cursor_input {
 
 """Initial value of the column from where the streaming should start"""
 input carts_stream_cursor_value_input {
+  """所属公司id"""
+  company_companies: bigint
   created_at: timestamptz
   id: bigint
 
@@ -630,6 +669,8 @@ input carts_stream_cursor_value_input {
 
 """aggregate sum on columns"""
 type carts_sum_fields {
+  """所属公司id"""
+  company_companies: bigint
   id: bigint
 
   """产品规格id"""
@@ -646,6 +687,8 @@ type carts_sum_fields {
 order by sum() on columns of table "carts"
 """
 input carts_sum_order_by {
+  """所属公司id"""
+  company_companies: order_by
   id: order_by
 
   """产品规格id"""
@@ -662,6 +705,9 @@ input carts_sum_order_by {
 update columns of table "carts"
 """
 enum carts_update_column {
+  """column name"""
+  company_companies
+
   """column name"""
   created_at
 
@@ -697,6 +743,8 @@ input carts_updates {
 
 """aggregate var_pop on columns"""
 type carts_var_pop_fields {
+  """所属公司id"""
+  company_companies: Float
   id: Float
 
   """产品规格id"""
@@ -713,6 +761,8 @@ type carts_var_pop_fields {
 order by var_pop() on columns of table "carts"
 """
 input carts_var_pop_order_by {
+  """所属公司id"""
+  company_companies: order_by
   id: order_by
 
   """产品规格id"""
@@ -727,6 +777,8 @@ input carts_var_pop_order_by {
 
 """aggregate var_samp on columns"""
 type carts_var_samp_fields {
+  """所属公司id"""
+  company_companies: Float
   id: Float
 
   """产品规格id"""
@@ -743,6 +795,8 @@ type carts_var_samp_fields {
 order by var_samp() on columns of table "carts"
 """
 input carts_var_samp_order_by {
+  """所属公司id"""
+  company_companies: order_by
   id: order_by
 
   """产品规格id"""
@@ -757,6 +811,8 @@ input carts_var_samp_order_by {
 
 """aggregate variance on columns"""
 type carts_variance_fields {
+  """所属公司id"""
+  company_companies: Float
   id: Float
 
   """产品规格id"""
@@ -773,6 +829,8 @@ type carts_variance_fields {
 order by variance() on columns of table "carts"
 """
 input carts_variance_order_by {
+  """所属公司id"""
+  company_companies: order_by
   id: order_by
 
   """产品规格id"""
@@ -1837,6 +1895,9 @@ type companies {
   """隐藏的分类ids"""
   hidden_category_ids: [bigint!]
 
+  """隐藏的套餐id"""
+  hidden_package_ids: [bigint!]
+
   """隐藏的产品id"""
   hidden_product_ids: [bigint!]
   id: bigint!
@@ -2002,6 +2063,7 @@ input companies_bool_exp {
   company_users_aggregate: company_users_aggregate_bool_exp
   created_at: timestamptz_comparison_exp
   hidden_category_ids: bigint_array_comparison_exp
+  hidden_package_ids: bigint_array_comparison_exp
   hidden_product_ids: bigint_array_comparison_exp
   id: bigint_comparison_exp
   logo_url: String_comparison_exp
@@ -2057,6 +2119,9 @@ input companies_insert_input {
   """隐藏的分类ids"""
   hidden_category_ids: [bigint!]
 
+  """隐藏的套餐id"""
+  hidden_package_ids: [bigint!]
+
   """隐藏的产品id"""
   hidden_product_ids: [bigint!]
   id: bigint
@@ -2088,6 +2153,9 @@ type companies_max_fields {
   """隐藏的分类ids"""
   hidden_category_ids: [bigint!]
 
+  """隐藏的套餐id"""
+  hidden_package_ids: [bigint!]
+
   """隐藏的产品id"""
   hidden_product_ids: [bigint!]
   id: bigint
@@ -2115,6 +2183,9 @@ type companies_min_fields {
 
   """隐藏的分类ids"""
   hidden_category_ids: [bigint!]
+
+  """隐藏的套餐id"""
+  hidden_package_ids: [bigint!]
 
   """隐藏的产品id"""
   hidden_product_ids: [bigint!]
@@ -2166,6 +2237,7 @@ input companies_order_by {
   company_users_aggregate: company_users_aggregate_order_by
   created_at: order_by
   hidden_category_ids: order_by
+  hidden_package_ids: order_by
   hidden_product_ids: order_by
   id: order_by
   logo_url: order_by
@@ -2196,6 +2268,9 @@ enum companies_select_column {
 
   """column name"""
   hidden_category_ids
+
+  """column name"""
+  hidden_package_ids
 
   """column name"""
   hidden_product_ids
@@ -2230,6 +2305,9 @@ input companies_set_input {
 
   """隐藏的分类ids"""
   hidden_category_ids: [bigint!]
+
+  """隐藏的套餐id"""
+  hidden_package_ids: [bigint!]
 
   """隐藏的产品id"""
   hidden_product_ids: [bigint!]
@@ -2285,6 +2363,9 @@ input companies_stream_cursor_value_input {
   """隐藏的分类ids"""
   hidden_category_ids: [bigint!]
 
+  """隐藏的套餐id"""
+  hidden_package_ids: [bigint!]
+
   """隐藏的产品id"""
   hidden_product_ids: [bigint!]
   id: bigint
@@ -2317,6 +2398,9 @@ enum companies_update_column {
 
   """column name"""
   hidden_category_ids
+
+  """column name"""
+  hidden_package_ids
 
   """column name"""
   hidden_product_ids
@@ -5875,6 +5959,11 @@ unique or primary key constraints on table "package_product_skus"
 """
 enum package_product_skus_constraint {
   """
+  unique or primary key constraint on columns "package_packages", "product_sku_product_skus"
+  """
+  package_product_skus_package_packages_product_sku_product_skus_
+
+  """
   unique or primary key constraint on columns "id"
   """
   package_product_skus_pkey
@@ -6342,7 +6431,7 @@ type packages {
   category_categories: bigint
 
   """套餐属于哪个公司"""
-  company_companies: bigint
+  company_companies: bigint!
 
   """套餐封面图"""
   cover_image_url: String!
@@ -6359,7 +6448,7 @@ type packages {
   name: String!
 
   """An object relationship"""
-  package: packages
+  package: packages!
 
   """An array relationship"""
   package_product_skus(
@@ -6432,6 +6521,9 @@ type packages {
     """filter the rows returned"""
     where: packages_bool_exp
   ): packages_aggregate!
+
+  """标签，多个用｜隔开"""
+  tags: String
   updated_at: timestamptz!
 }
 
@@ -6557,6 +6649,7 @@ input packages_bool_exp {
   package_product_skus_aggregate: package_product_skus_aggregate_bool_exp
   packages: packages_bool_exp
   packages_aggregate: packages_aggregate_bool_exp
+  tags: String_comparison_exp
   updated_at: timestamptz_comparison_exp
 }
 
@@ -6610,6 +6703,9 @@ input packages_insert_input {
   package: packages_obj_rel_insert_input
   package_product_skus: package_product_skus_arr_rel_insert_input
   packages: packages_arr_rel_insert_input
+
+  """标签，多个用｜隔开"""
+  tags: String
   updated_at: timestamptz
 }
 
@@ -6631,6 +6727,9 @@ type packages_max_fields {
 
   """套餐名称"""
   name: String
+
+  """标签，多个用｜隔开"""
+  tags: String
   updated_at: timestamptz
 }
 
@@ -6654,6 +6753,9 @@ input packages_max_order_by {
 
   """套餐名称"""
   name: order_by
+
+  """标签，多个用｜隔开"""
+  tags: order_by
   updated_at: order_by
 }
 
@@ -6675,6 +6777,9 @@ type packages_min_fields {
 
   """套餐名称"""
   name: String
+
+  """标签，多个用｜隔开"""
+  tags: String
   updated_at: timestamptz
 }
 
@@ -6698,6 +6803,9 @@ input packages_min_order_by {
 
   """套餐名称"""
   name: order_by
+
+  """标签，多个用｜隔开"""
+  tags: order_by
   updated_at: order_by
 }
 
@@ -6745,6 +6853,7 @@ input packages_order_by {
   package: packages_order_by
   package_product_skus_aggregate: package_product_skus_aggregate_order_by
   packages_aggregate: packages_aggregate_order_by
+  tags: order_by
   updated_at: order_by
 }
 
@@ -6780,6 +6889,9 @@ enum packages_select_column {
 
   """column name"""
   name
+
+  """column name"""
+  tags
 
   """column name"""
   updated_at
@@ -6824,6 +6936,9 @@ input packages_set_input {
 
   """套餐名称"""
   name: String
+
+  """标签，多个用｜隔开"""
+  tags: String
   updated_at: timestamptz
 }
 
@@ -6925,6 +7040,9 @@ input packages_stream_cursor_value_input {
 
   """套餐名称"""
   name: String
+
+  """标签，多个用｜隔开"""
+  tags: String
   updated_at: timestamptz
 }
 
@@ -6977,6 +7095,9 @@ enum packages_update_column {
 
   """column name"""
   name
+
+  """column name"""
+  tags
 
   """column name"""
   updated_at
@@ -8003,10 +8124,10 @@ type products {
   cover_image_url: String!
   created_at: timestamptz!
 
-  """产品介绍，富文本"""
+  """商品介绍，富文本"""
   description: String
 
-  """详细信息媒体内容，jsonb的item项（file_type=video|image、file_url）"""
+  """产品信息媒体内容，jsonb的item项（file_type=video|image、file_url）"""
   detail_medias: [json!]!
   id: bigint!
 
@@ -8055,12 +8176,12 @@ type products {
     where: product_skus_bool_exp
   ): product_skus_aggregate!
 
-  """实拍场景信息媒体内容，jsonb的item项（file_type=video|image、file_url）"""
+  """实景拍摄信息媒体内容，jsonb的item项（file_type=video|image、file_url）"""
   scene_medias: [json!]!
-  updated_at: timestamptz!
 
-  """产品视频url"""
-  video_url: String
+  """标签，多个用｜隔开"""
+  tags: String
+  updated_at: timestamptz!
 }
 
 """
@@ -8186,8 +8307,8 @@ input products_bool_exp {
   product_skus: product_skus_bool_exp
   product_skus_aggregate: product_skus_aggregate_bool_exp
   scene_medias: json_array_comparison_exp
+  tags: String_comparison_exp
   updated_at: timestamptz_comparison_exp
-  video_url: String_comparison_exp
 }
 
 """
@@ -8229,10 +8350,10 @@ input products_insert_input {
   cover_image_url: String
   created_at: timestamptz
 
-  """产品介绍，富文本"""
+  """商品介绍，富文本"""
   description: String
 
-  """详细信息媒体内容，jsonb的item项（file_type=video|image、file_url）"""
+  """产品信息媒体内容，jsonb的item项（file_type=video|image、file_url）"""
   detail_medias: [json!]
   id: bigint
 
@@ -8246,12 +8367,12 @@ input products_insert_input {
   name: String
   product_skus: product_skus_arr_rel_insert_input
 
-  """实拍场景信息媒体内容，jsonb的item项（file_type=video|image、file_url）"""
+  """实景拍摄信息媒体内容，jsonb的item项（file_type=video|image、file_url）"""
   scene_medias: [json!]
-  updated_at: timestamptz
 
-  """产品视频url"""
-  video_url: String
+  """标签，多个用｜隔开"""
+  tags: String
+  updated_at: timestamptz
 }
 
 """aggregate max on columns"""
@@ -8266,22 +8387,22 @@ type products_max_fields {
   cover_image_url: String
   created_at: timestamptz
 
-  """产品介绍，富文本"""
+  """商品介绍，富文本"""
   description: String
 
-  """详细信息媒体内容，jsonb的item项（file_type=video|image、file_url）"""
+  """产品信息媒体内容，jsonb的item项（file_type=video|image、file_url）"""
   detail_medias: [json!]
   id: bigint
 
   """产品名称"""
   name: String
 
-  """实拍场景信息媒体内容，jsonb的item项（file_type=video|image、file_url）"""
+  """实景拍摄信息媒体内容，jsonb的item项（file_type=video|image、file_url）"""
   scene_medias: [json!]
-  updated_at: timestamptz
 
-  """产品视频url"""
-  video_url: String
+  """标签，多个用｜隔开"""
+  tags: String
+  updated_at: timestamptz
 }
 
 """
@@ -8298,22 +8419,22 @@ input products_max_order_by {
   cover_image_url: order_by
   created_at: order_by
 
-  """产品介绍，富文本"""
+  """商品介绍，富文本"""
   description: order_by
 
-  """详细信息媒体内容，jsonb的item项（file_type=video|image、file_url）"""
+  """产品信息媒体内容，jsonb的item项（file_type=video|image、file_url）"""
   detail_medias: order_by
   id: order_by
 
   """产品名称"""
   name: order_by
 
-  """实拍场景信息媒体内容，jsonb的item项（file_type=video|image、file_url）"""
+  """实景拍摄信息媒体内容，jsonb的item项（file_type=video|image、file_url）"""
   scene_medias: order_by
-  updated_at: order_by
 
-  """产品视频url"""
-  video_url: order_by
+  """标签，多个用｜隔开"""
+  tags: order_by
+  updated_at: order_by
 }
 
 """aggregate min on columns"""
@@ -8328,22 +8449,22 @@ type products_min_fields {
   cover_image_url: String
   created_at: timestamptz
 
-  """产品介绍，富文本"""
+  """商品介绍，富文本"""
   description: String
 
-  """详细信息媒体内容，jsonb的item项（file_type=video|image、file_url）"""
+  """产品信息媒体内容，jsonb的item项（file_type=video|image、file_url）"""
   detail_medias: [json!]
   id: bigint
 
   """产品名称"""
   name: String
 
-  """实拍场景信息媒体内容，jsonb的item项（file_type=video|image、file_url）"""
+  """实景拍摄信息媒体内容，jsonb的item项（file_type=video|image、file_url）"""
   scene_medias: [json!]
-  updated_at: timestamptz
 
-  """产品视频url"""
-  video_url: String
+  """标签，多个用｜隔开"""
+  tags: String
+  updated_at: timestamptz
 }
 
 """
@@ -8360,22 +8481,22 @@ input products_min_order_by {
   cover_image_url: order_by
   created_at: order_by
 
-  """产品介绍，富文本"""
+  """商品介绍，富文本"""
   description: order_by
 
-  """详细信息媒体内容，jsonb的item项（file_type=video|image、file_url）"""
+  """产品信息媒体内容，jsonb的item项（file_type=video|image、file_url）"""
   detail_medias: order_by
   id: order_by
 
   """产品名称"""
   name: order_by
 
-  """实拍场景信息媒体内容，jsonb的item项（file_type=video|image、file_url）"""
+  """实景拍摄信息媒体内容，jsonb的item项（file_type=video|image、file_url）"""
   scene_medias: order_by
-  updated_at: order_by
 
-  """产品视频url"""
-  video_url: order_by
+  """标签，多个用｜隔开"""
+  tags: order_by
+  updated_at: order_by
 }
 
 """
@@ -8424,8 +8545,8 @@ input products_order_by {
   name: order_by
   product_skus_aggregate: product_skus_aggregate_order_by
   scene_medias: order_by
+  tags: order_by
   updated_at: order_by
-  video_url: order_by
 }
 
 """primary key columns input for table: products"""
@@ -8471,10 +8592,10 @@ enum products_select_column {
   scene_medias
 
   """column name"""
-  updated_at
+  tags
 
   """column name"""
-  video_url
+  updated_at
 }
 
 """
@@ -8513,10 +8634,10 @@ input products_set_input {
   cover_image_url: String
   created_at: timestamptz
 
-  """产品介绍，富文本"""
+  """商品介绍，富文本"""
   description: String
 
-  """详细信息媒体内容，jsonb的item项（file_type=video|image、file_url）"""
+  """产品信息媒体内容，jsonb的item项（file_type=video|image、file_url）"""
   detail_medias: [json!]
   id: bigint
 
@@ -8529,12 +8650,12 @@ input products_set_input {
   """产品名称"""
   name: String
 
-  """实拍场景信息媒体内容，jsonb的item项（file_type=video|image、file_url）"""
+  """实景拍摄信息媒体内容，jsonb的item项（file_type=video|image、file_url）"""
   scene_medias: [json!]
-  updated_at: timestamptz
 
-  """产品视频url"""
-  video_url: String
+  """标签，多个用｜隔开"""
+  tags: String
+  updated_at: timestamptz
 }
 
 """aggregate stddev on columns"""
@@ -8626,10 +8747,10 @@ input products_stream_cursor_value_input {
   cover_image_url: String
   created_at: timestamptz
 
-  """产品介绍，富文本"""
+  """商品介绍，富文本"""
   description: String
 
-  """详细信息媒体内容，jsonb的item项（file_type=video|image、file_url）"""
+  """产品信息媒体内容，jsonb的item项（file_type=video|image、file_url）"""
   detail_medias: [json!]
   id: bigint
 
@@ -8642,12 +8763,12 @@ input products_stream_cursor_value_input {
   """产品名称"""
   name: String
 
-  """实拍场景信息媒体内容，jsonb的item项（file_type=video|image、file_url）"""
+  """实景拍摄信息媒体内容，jsonb的item项（file_type=video|image、file_url）"""
   scene_medias: [json!]
-  updated_at: timestamptz
 
-  """产品视频url"""
-  video_url: String
+  """标签，多个用｜隔开"""
+  tags: String
+  updated_at: timestamptz
 }
 
 """aggregate sum on columns"""
@@ -8710,10 +8831,10 @@ enum products_update_column {
   scene_medias
 
   """column name"""
-  updated_at
+  tags
 
   """column name"""
-  video_url
+  updated_at
 }
 
 input products_updates {

@@ -11,40 +11,16 @@
 
     <!-- 商品详情 -->
     <scroll-view v-else-if="productDetail" scroll-y class="scroll-content">
-      <!-- 商品轮播图 -->
-      <view class="swiper-section">
-        <swiper
-          class="product-swiper"
-          circular
-          :indicator-dots="true"
-          :autoplay="true"
-          :interval="3000"
-          :duration="500"
-          indicator-color="rgba(255, 255, 255, 0.3)"
-          indicator-active-color="#ffffff"
-        >
-          <!-- 封面图 -->
-          <swiper-item v-if="productDetail.cover_image_url">
-            <image
-              class="swiper-image"
-              :src="productDetail.cover_image_url"
-              mode="aspectFill"
-              @click="previewImages([productDetail.cover_image_url], 0)"
-            ></image>
-          </swiper-item>
-          <!-- 详细信息媒体 -->
-          <swiper-item
-            v-for="(media, index) in detailImages"
-            :key="`detail-${index}`"
-          >
-            <image
-              class="swiper-image"
-              :src="media.file_url"
-              mode="aspectFill"
-              @click="previewImages(detailImageUrls, index + (productDetail.cover_image_url ? 1 : 0))"
-            ></image>
-          </swiper-item>
-        </swiper>
+      <!-- 顶部仅展示封面图 -->
+      <view class="cover-section">
+        <image
+          v-if="productDetail.cover_image_url"
+          class="cover-image"
+          :src="productDetail.cover_image_url"
+          mode="aspectFill"
+          @click="previewImages([productDetail.cover_image_url], 0)"
+        />
+        <view v-else class="cover-placeholder">暂无封面</view>
       </view>
 
       <!-- 商品基本信息 -->
@@ -69,17 +45,6 @@
         <view class="description-content">
           <rich-text :nodes="productDetail.description"></rich-text>
         </view>
-      </view>
-
-      <!-- 商品视频 -->
-      <view v-if="productDetail.video_url" class="video-section">
-        <view class="section-title">商品视频</view>
-        <video
-          class="product-video"
-          :src="productDetail.video_url"
-          controls
-          :show-center-play-btn="true"
-        ></video>
       </view>
 
       <!-- 规格选择 -->
@@ -115,33 +80,59 @@
         </view>
       </view>
 
-      <!-- 详细信息媒体 -->
-      <view v-if="detailImages.length > 0" class="detail-media-section">
-        <view class="section-title">详细信息</view>
-        <view class="detail-images">
-          <image
-            v-for="(media, index) in detailImages"
-            :key="`detail-img-${index}`"
-            class="detail-image"
-            :src="media.file_url"
-            mode="widthFix"
-            @click="previewImages(detailImageUrls, index)"
-          ></image>
+      <!-- 产品详情 / 实景拍摄 两个媒体内容 Tab -->
+      <view class="media-tabs-section">
+        <view class="media-tabs">
+          <view
+            class="media-tab"
+            :class="{ active: mediaTab === 'detail' }"
+            @click="mediaTab = 'detail'"
+          >
+            <text>产品详情</text>
+          </view>
+          <view
+            class="media-tab"
+            :class="{ active: mediaTab === 'scene' }"
+            @click="mediaTab = 'scene'"
+          >
+            <text>实景拍摄</text>
+          </view>
         </view>
-      </view>
-
-      <!-- 实拍场景媒体 -->
-      <view v-if="sceneImages.length > 0" class="scene-media-section">
-        <view class="section-title">实拍场景</view>
-        <view class="scene-images">
-          <image
-            v-for="(media, index) in sceneImages"
-            :key="`scene-img-${index}`"
-            class="scene-image"
-            :src="media.file_url"
-            mode="aspectFill"
-            @click="previewImages(sceneImageUrls, index)"
-          ></image>
+        <!-- 产品详情内容 -->
+        <view v-show="mediaTab === 'detail'" class="media-tab-content">
+          <view v-if="detailMediaList.length === 0" class="media-empty">暂无产品详情媒体</view>
+          <view v-else class="detail-media-list">
+            <template v-for="(media, index) in detailMediaList" :key="`detail-${index}`">
+              <image
+                v-if="media.file_type !== 'video'"
+                class="detail-media-item img"
+                :src="media.file_url"
+                mode="widthFix"
+                @click="previewImages(detailImageUrls, getDetailImageIndex(index))"
+              />
+              <view v-else class="detail-media-item video-wrap">
+                <video :src="media.file_url" class="detail-video" controls :show-center-play-btn="true" object-fit="contain" />
+              </view>
+            </template>
+          </view>
+        </view>
+        <!-- 实景拍摄内容：与产品详情一致，一行一个、高度自适应 -->
+        <view v-show="mediaTab === 'scene'" class="media-tab-content">
+          <view v-if="sceneMediaList.length === 0" class="media-empty">暂无实景拍摄媒体</view>
+          <view v-else class="scene-media-list">
+            <template v-for="(media, index) in sceneMediaList" :key="`scene-${index}`">
+              <image
+                v-if="media.file_type !== 'video'"
+                class="scene-media-item img"
+                :src="media.file_url"
+                mode="widthFix"
+                @click="previewImages(sceneImageUrls, getSceneImageIndex(index))"
+              />
+              <view v-else class="scene-media-item video-wrap">
+                <video :src="media.file_url" class="scene-video" controls :show-center-play-btn="true" object-fit="contain" />
+              </view>
+            </template>
+          </view>
         </view>
       </view>
 
@@ -149,34 +140,41 @@
       <view class="footer-placeholder"></view>
     </scroll-view>
 
-    <!-- 底部操作栏 -->
+    <!-- 底部操作栏：左侧导航 + 右侧主按钮；内层固定高度，外层保留安全区 -->
     <view class="footer-bar">
-      <view class="footer-left">
-        <view class="icon-btn" @click="goHome">
-          <text class="icon-text">🏠</text>
-          <text class="icon-label">首页</text>
+      <view class="footer-bar-inner">
+        <view class="footer-nav">
+          <view class="footer-nav-item" @click="goHome">
+            <image class="footer-nav-icon" src="/static/navbar/shouye.png" mode="aspectFit" />
+            <text class="footer-nav-label">首页</text>
+          </view>
+          <view class="footer-nav-item" @click="goCart">
+            <view class="footer-nav-icon-wrap">
+              <image class="footer-nav-icon" src="/static/navbar/gouwuche.png" mode="aspectFit" />
+              <view v-if="cartCount > 0" class="footer-nav-badge">{{ cartCount > 99 ? '99+' : cartCount }}</view>
+            </view>
+            <text class="footer-nav-label">购物车</text>
+          </view>
         </view>
-        <view class="icon-btn" @click="goCart">
-          <text class="icon-text">🛒</text>
-          <text class="icon-label">购物车</text>
+        <view class="footer-action">
+          <button
+            class="footer-btn"
+            :class="{ 'footer-btn--disabled': selectedSkuIds.length === 0 || !canAddToCart }"
+            @click="handleAddToCart"
+          >
+            加入购物车
+          </button>
         </view>
       </view>
-      <button
-        class="add-to-cart-btn"
-        :class="{ disabled: selectedSkuIds.length === 0 || !canAddToCart }"
-        @click="handleAddToCart"
-      >
-        {{ selectedSkuIds.length > 0 ? `加入购物车(${selectedSkuIds.length})` : '选择规格' }}
-      </button>
     </view>
   </view>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
-import { onLoad } from '@dcloudio/uni-app';
+import { onLoad, onShow } from '@dcloudio/uni-app';
 import { getProductDetail } from '@/api/product/index';
-import { addToCart } from '@/api/cart/index';
+import { addToCart, getCartList } from '@/api/cart/index';
 import { user_token, userInfo, companyInfo } from '@/store/userStore';
 import { getCompanyUserRole } from '@/utils/auth';
 import PageNavBar from '@/components/PageNavBar.vue';
@@ -185,6 +183,7 @@ const productId = ref<number | null>(null);
 const productDetail = ref<any>(null);
 const loading = ref(false);
 const selectedSkuIds = ref<number[]>([]);
+const cartCount = ref(0);
 
 // 用户权限和价格系数
 const canViewPrice = ref(false);
@@ -196,30 +195,54 @@ const skus = computed(() => {
   return productDetail.value?.product_skus || [];
 });
 
+// 产品详情 / 实景拍摄 Tab 当前选中的是哪个
+const mediaTab = ref<'detail' | 'scene'>('detail');
+
+// 产品详情媒体列表（图片+视频，保持顺序）
+const detailMediaList = computed(() => {
+  return productDetail.value?.detail_medias || [];
+});
+
+// 实景拍摄媒体列表（图片+视频）
+const sceneMediaList = computed(() => {
+  return productDetail.value?.scene_medias || [];
+});
+
 const detailImages = computed(() => {
-  if (!productDetail.value?.detail_medias) return [];
-  return productDetail.value.detail_medias.filter((m: any) => m.file_type === 'image');
+  return detailMediaList.value.filter((m: any) => m.file_type === 'image');
 });
 
 const sceneImages = computed(() => {
-  if (!productDetail.value?.scene_medias) return [];
-  return productDetail.value.scene_medias.filter((m: any) => m.file_type === 'image');
+  return sceneMediaList.value.filter((m: any) => m.file_type === 'image');
 });
 
+// 产品详情里仅图片的 URL 列表（用于预览）
 const detailImageUrls = computed(() => {
-  const urls: string[] = [];
-  if (productDetail.value?.cover_image_url) {
-    urls.push(productDetail.value.cover_image_url);
-  }
-  detailImages.value.forEach((img: any) => {
-    if (img.file_url) urls.push(img.file_url);
-  });
-  return urls;
+  return detailMediaList.value.filter((m: any) => m.file_type === 'image').map((m: any) => m.file_url).filter(Boolean);
 });
 
 const sceneImageUrls = computed(() => {
-  return sceneImages.value.map((img: any) => img.file_url).filter(Boolean);
+  return sceneMediaList.value.filter((m: any) => m.file_type === 'image').map((m: any) => m.file_url).filter(Boolean);
 });
+
+// 在详情媒体列表中，第 index 项在「仅图片」列表中的下标（用于预览）
+const getDetailImageIndex = (index: number | string) => {
+  const i = Number(index);
+  let n = 0;
+  for (let j = 0; j < i && j < detailMediaList.value.length; j++) {
+    if (detailMediaList.value[j].file_type !== 'video') n++;
+  }
+  return n;
+};
+
+const getSceneImageIndex = (index: number | string) => {
+  const i = Number(index);
+  let n = 0;
+  for (let j = 0; j < i && j < sceneMediaList.value.length; j++) {
+    if (sceneMediaList.value[j].file_type !== 'video') n++;
+  }
+  return n;
+};
 
 const navTitle = computed(() => {
   const name = companyInfo.value?.name;
@@ -232,13 +255,13 @@ const minPrice = computed(() => {
   const prices = skus.value.map((sku: any) => {
     const basePrice = sku.price || 0;
     return basePrice > 0 ? basePrice * priceFactor.value : 0;
-  }).filter(p => p > 0);
+  }).filter((p: number) => p > 0);
   return prices.length > 0 ? Math.min(...prices) : null;
 });
 
 const hasMultiplePrices = computed(() => {
   if (!skus.value.length) return false;
-  const prices = skus.value.map((sku: any) => sku.price || 0).filter(p => p > 0);
+  const prices = skus.value.map((sku: any) => sku.price || 0).filter((p: number) => p > 0);
   return new Set(prices).size > 1;
 });
 
@@ -357,8 +380,8 @@ const handleAddToCart = async () => {
       icon: 'success',
     });
 
-    // 清空选择
     selectedSkuIds.value = [];
+    loadCartCount();
   } catch (error: any) {
     uni.showToast({
       title: error.message || '加入购物车失败',
@@ -397,36 +420,55 @@ const goCart = () => {
   });
 };
 
+// 加载购物车数量（用于角标：展示加购项数）
+const loadCartCount = async () => {
+  if (!user_token.value || !companyInfo.value?.id) {
+    cartCount.value = 0;
+    return;
+  }
+  try {
+    const list = await getCartList();
+    cartCount.value = Array.isArray(list) ? list.length : 0;
+  } catch {
+    cartCount.value = 0;
+  }
+};
+
 // 格式化价格
 const formatPrice = (price: number) => {
   return Number(price).toFixed(2);
 };
 
-onLoad((options) => {
-  if (options.id) {
+onLoad((options?: { id?: string }) => {
+  if (options?.id) {
     productId.value = Number(options.id);
     loadProductDetail();
   }
+  loadCartCount();
+});
+
+onShow(() => {
+  loadCartCount();
 });
 </script>
 
 <style scoped>
+/* 参考图：主色深青绿、主文黑、次文深灰、背景白 */
 .product-detail-page {
   min-height: 100vh;
   background: #f5f5f5;
   padding-bottom: 120rpx;
 }
 
-/* 内容区高度：扣除底部占位，导航栏由 PageNavBar 占位 */
 .scroll-content {
-  height: calc(100vh - 120rpx);
+  height: calc(100vh - 100rpx - env(safe-area-inset-bottom));
   min-height: 0;
 }
 
 .loading-container {
   padding: 200rpx 0;
   text-align: center;
-  color: #999999;
+  color: #666666;
   font-size: 28rpx;
 }
 
@@ -434,7 +476,7 @@ onLoad((options) => {
   width: 40rpx;
   height: 40rpx;
   border: 4rpx solid #e0e0e0;
-  border-top-color: #667eea;
+  border-top-color: #0d9488;
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin: 0 auto 20rpx;
@@ -444,20 +486,122 @@ onLoad((options) => {
   to { transform: rotate(360deg); }
 }
 
-.swiper-section {
+.cover-section {
+  width: 100%;
+  height: 750rpx;
   background: #ffffff;
   margin-bottom: 20rpx;
 }
 
-.product-swiper {
-  width: 100%;
-  height: 750rpx;
-}
-
-.swiper-image {
+.cover-image {
   width: 100%;
   height: 100%;
-  background: #f0f0f0;
+  display: block;
+}
+
+.cover-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #666666;
+  font-size: 28rpx;
+}
+
+/* 产品详情 / 实景拍摄 Tab：选中用主色深青绿 */
+.media-tabs-section {
+  background: #ffffff;
+  padding: 0 30rpx 30rpx;
+  margin-bottom: 20rpx;
+}
+
+.media-tabs {
+  display: flex;
+  border-bottom: 2rpx solid #e8e8e8;
+  margin-bottom: 24rpx;
+}
+
+.media-tab {
+  flex: 1;
+  text-align: center;
+  padding: 24rpx 0;
+  font-size: 30rpx;
+  color: #666666;
+  position: relative;
+  font-weight: 400;
+}
+
+.media-tab.active {
+  color: #0d9488;
+  font-weight: bold;
+}
+
+.media-tab.active::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  transform: translateX(-50%);
+  width: 60rpx;
+  height: 4rpx;
+  background: #0d9488;
+  border-radius: 2rpx;
+}
+
+.media-tab-content {
+  min-height: 120rpx;
+}
+
+.media-empty {
+  text-align: center;
+  color: #666666;
+  font-size: 28rpx;
+  padding: 48rpx 0;
+}
+
+.detail-media-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20rpx;
+}
+
+.detail-media-item.img {
+  width: 100%;
+  border-radius: 12rpx;
+}
+
+.detail-media-item.video-wrap,
+.scene-media-item.video-wrap {
+  width: 100%;
+  border-radius: 12rpx;
+  overflow: hidden;
+  background: #000;
+}
+
+.detail-video,
+.scene-video {
+  width: 100%;
+  height: 400rpx;
+  display: block;
+}
+
+/* 实景拍摄：一行一个，高度自适应（与产品详情一致） */
+.scene-media-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20rpx;
+}
+
+.scene-media-item.img {
+  width: 100%;
+  border-radius: 12rpx;
+}
+
+.scene-video {
+  width: 100%;
+  min-height: 300rpx;
+  display: block;
 }
 
 .product-info-section {
@@ -469,7 +613,7 @@ onLoad((options) => {
 .product-name {
   font-size: 36rpx;
   font-weight: bold;
-  color: #333333;
+  color: #000000;
   margin-bottom: 20rpx;
   line-height: 1.5;
 }
@@ -493,40 +637,39 @@ onLoad((options) => {
 
 .price-range {
   font-size: 24rpx;
-  color: #999999;
+  color: #666666;
 }
 
 .price-tip {
   padding: 20rpx;
-  background: #fff7e6;
+  background: #f5f5f5;
   border-radius: 8rpx;
   text-align: center;
   font-size: 28rpx;
-  color: #fa8c16;
+  color: #666666;
 }
 
 .description-section,
 .video-section,
-.sku-section,
-.detail-media-section,
-.scene-media-section {
+.sku-section {
   background: #ffffff;
   padding: 30rpx;
   margin-bottom: 20rpx;
 }
 
+/* 区块标题：主色深青绿、加粗，参考图「商品介绍」「规格」 */
 .section-title {
   font-size: 32rpx;
   font-weight: bold;
-  color: #333333;
+  color: #0d9488;
   margin-bottom: 24rpx;
   padding-bottom: 16rpx;
-  border-bottom: 2rpx solid #f0f0f0;
+  border-bottom: 2rpx solid #e8e8e8;
 }
 
 .description-content {
   font-size: 28rpx;
-  color: #666666;
+  color: #333333;
   line-height: 1.8;
 }
 
@@ -549,13 +692,13 @@ onLoad((options) => {
   padding: 20rpx;
   background: #f8f8f8;
   border-radius: 12rpx;
-  border: 2rpx solid transparent;
+  border: 2rpx solid #e8e8e8;
   transition: all 0.3s;
 }
 
 .sku-item.selected {
-  border-color: #667eea;
-  background: #f0f4ff;
+  border-color: #0d9488;
+  background: #f0fdfa;
 }
 
 .sku-item.disabled {
@@ -576,8 +719,8 @@ onLoad((options) => {
 }
 
 .sku-checkbox.checked {
-  background: #667eea;
-  border-color: #667eea;
+  background: #0d9488;
+  border-color: #0d9488;
   color: #ffffff;
   font-size: 24rpx;
   font-weight: bold;
@@ -600,8 +743,8 @@ onLoad((options) => {
 
 .sku-name {
   font-size: 28rpx;
-  font-weight: 500;
-  color: #333333;
+  font-weight: 400;
+  color: #000000;
 }
 
 .sku-meta {
@@ -618,40 +761,17 @@ onLoad((options) => {
 
 .sku-stock {
   font-size: 24rpx;
-  color: #999999;
+  color: #666666;
 }
 
 .sku-stock.stock-zero {
   color: #ff6b6b;
 }
 
-.detail-images,
-.scene-images {
-  display: flex;
-  flex-direction: column;
-  gap: 20rpx;
-}
 
-.detail-image {
-  width: 100%;
-  border-radius: 12rpx;
-}
-
-.scene-images {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 16rpx;
-}
-
-.scene-image {
-  width: 100%;
-  height: 300rpx;
-  border-radius: 12rpx;
-  background: #f0f0f0;
-}
-
+/* ---------- 底部栏重构：左右分区、统一比例 ---------- */
 .footer-placeholder {
-  height: 120rpx;
+  height: calc(100rpx + env(safe-area-inset-bottom));
 }
 
 .footer-bar {
@@ -659,50 +779,96 @@ onLoad((options) => {
   bottom: 0;
   left: 0;
   right: 0;
-  height: 120rpx;
+  padding-bottom: env(safe-area-inset-bottom);
   background: #ffffff;
-  border-top: 1rpx solid #e0e0e0;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 30rpx;
+  border-top: 1rpx solid #e8e8e8;
   z-index: 1000;
 }
 
-.footer-left {
+.footer-bar-inner {
+  height: 100rpx;
+  padding: 0 24rpx;
   display: flex;
-  gap: 40rpx;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24rpx;
+  box-sizing: border-box;
 }
 
-.icon-btn {
+.footer-nav {
+  display: flex;
+  align-items: center;
+  gap: 48rpx;
+  flex-shrink: 0;
+}
+
+.footer-nav-item {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4rpx;
+  gap: 6rpx;
 }
 
-.icon-text {
-  font-size: 40rpx;
+.footer-nav-icon-wrap {
+  position: relative;
 }
 
-.icon-label {
-  font-size: 20rpx;
+.footer-nav-icon {
+  width: 44rpx;
+  height: 44rpx;
+  display: block;
+}
+
+.footer-nav-label {
+  font-size: 24rpx;
   color: #666666;
 }
 
-.add-to-cart-btn {
-  flex: 1;
-  margin-left: 40rpx;
-  padding: 24rpx;
-  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
-  color: #ffffff;
-  border-radius: 50rpx;
-  font-size: 28rpx;
-  border: none;
+.footer-nav-badge {
+  position: absolute;
+  top: -6rpx;
+  right: -10rpx;
+  min-width: 28rpx;
+  height: 28rpx;
+  padding: 0 6rpx;
+  background: #e53935;
+  color: #fff;
+  font-size: 18rpx;
+  font-weight: 600;
+  border-radius: 14rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
 }
 
-.add-to-cart-btn.disabled {
-  background: #cccccc;
-  color: #999999;
+.footer-action {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  margin-left: 48rpx;
+}
+
+.footer-btn {
+  height: 72rpx;
+  padding: 0 48rpx;
+  background: #0d9488;
+  color: #ffffff;
+  font-size: 30rpx;
+  font-weight: 600;
+  border-radius: 36rpx;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.footer-btn--disabled {
+  background: #f0f0f0;
+  color: #aaa;
+  font-weight: 500;
 }
 </style>

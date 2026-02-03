@@ -4,12 +4,12 @@ export interface ProductInput {
   name: string;
   cover_image_url: string;
   description?: string;
-  video_url?: string;
   detail_medias?: Array<{ file_type: string; file_url: string }>;
   scene_medias?: Array<{ file_type: string; file_url: string }>;
   category_categories?: number;
   company_companies: number;
   is_shelved?: boolean;
+  tags?: string;
 }
 
 export interface ProductSkuInput {
@@ -64,7 +64,7 @@ export async function getProductList(params: {
           name
           cover_image_url
           description
-          video_url
+          tags
           detail_medias
           scene_medias
           category_categories
@@ -114,7 +114,7 @@ export async function getProductList(params: {
           name
           cover_image_url
           description
-          video_url
+          tags
           detail_medias
           scene_medias
           category_categories
@@ -177,7 +177,7 @@ export async function getProductDetail(productId: number) {
         name
         cover_image_url
         description
-        video_url
+        tags
         detail_medias
         scene_medias
         category_categories
@@ -242,10 +242,9 @@ export async function createProduct(product: ProductInput) {
     productData.description = product.description;
   }
   
-  if (product.video_url !== undefined && product.video_url !== null && product.video_url !== '') {
-    productData.video_url = product.video_url;
+  if (product.tags !== undefined && product.tags !== null) {
+    productData.tags = product.tags;
   }
-  
   if (product.category_categories !== undefined && product.category_categories !== null) {
     productData.category_categories = product.category_categories;
   }
@@ -284,8 +283,8 @@ export async function updateProduct(productId: number, product: Partial<ProductI
   if (product.description !== undefined && product.description !== null && product.description !== '') {
     productData.description = product.description;
   }
-  if (product.video_url !== undefined && product.video_url !== null && product.video_url !== '') {
-    productData.video_url = product.video_url;
+  if (product.tags !== undefined && product.tags !== null) {
+    productData.tags = product.tags;
   }
   if (product.category_categories !== undefined && product.category_categories !== null) {
     productData.category_categories = product.category_categories;

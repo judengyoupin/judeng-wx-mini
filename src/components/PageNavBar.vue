@@ -6,7 +6,9 @@
       :style="{ paddingTop: statusBarHeight + 'px' }"
     >
       <view class="navbar-content">
-        <view v-if="showBack" class="navbar-back" @click="onBack">‹</view>
+        <view v-if="showBack" class="navbar-back" @click="onBack">
+          <text class="navbar-back-icon">←</text>
+        </view>
         <view v-else class="navbar-back-placeholder"></view>
         <view class="navbar-title">{{ title }}</view>
         <view class="navbar-right">
@@ -82,11 +84,18 @@ defineExpose({
 
 .navbar-back,
 .navbar-back-placeholder {
-  width: 60rpx;
-  font-size: 48rpx;
+  width: 80rpx;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.navbar-back-icon {
+  font-size: 40rpx;
   color: #333;
   line-height: 1;
-  flex-shrink: 0;
+  font-weight: 300;
 }
 
 .navbar-back-placeholder {

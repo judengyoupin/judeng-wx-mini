@@ -13,7 +13,7 @@ export async function getProductDetail(productId: number) {
         name
         cover_image_url
         description
-        video_url
+        tags
         detail_medias
         scene_medias
         category_categories
@@ -80,15 +80,15 @@ export async function getProductList(params: {
     };
   }
 
-  // 若包含默认公司，获取其隐藏商品 id 列表（展示时过滤）
+  // 获取当前用户所属公司的隐藏商品 id 列表（该公司管理员隐藏的商品，其用户端不可见）
   let hiddenProductIds: number[] = [];
-  if (defaultCompanyId && companyIds.includes(defaultCompanyId)) {
+  if (currentCompanyId) {
     try {
       const hideRes = await client.execute<{ companies_by_pk: { hidden_product_ids: (string | number)[] | null } | null }>({
-        query: `query GetDefaultCompanyHiddenProducts($id: bigint!) {
+        query: `query GetCompanyHiddenProducts($id: bigint!) {
           companies_by_pk(id: $id) { hidden_product_ids }
         }`,
-        variables: { id: defaultCompanyId },
+        variables: { id: currentCompanyId },
       });
       const arr = hideRes?.companies_by_pk?.hidden_product_ids;
       hiddenProductIds = Array.isArray(arr) ? arr.map((id) => Number(id)) : [];
@@ -167,6 +167,7 @@ export async function getProductList(params: {
           name
           cover_image_url
           description
+          tags
           category_categories
           product_skus(
             where: { 
@@ -217,6 +218,7 @@ export async function getProductList(params: {
           name
           cover_image_url
           description
+          tags
           category_categories
           product_skus(
             where: { 
@@ -266,6 +268,7 @@ export async function getProductList(params: {
           name
           cover_image_url
           description
+          tags
           category_categories
           product_skus(
             where: { 
@@ -315,6 +318,7 @@ export async function getProductList(params: {
           name
           cover_image_url
           description
+          tags
           category_categories
           product_skus(
             where: { 

@@ -5,6 +5,9 @@ export interface PackageInput {
   cover_image_url: string;
   description?: string;
   category_categories?: number;
+  tags?: string;
+  /** 公司 ID，创建套餐时必传 */
+  company_companies?: number;
 }
 
 export interface PackageProductSkuInput {
@@ -94,6 +97,7 @@ export async function getPackageDetail(packageId: number) {
         name
         cover_image_url
         description
+        tags
         category_categories
         category {
           id

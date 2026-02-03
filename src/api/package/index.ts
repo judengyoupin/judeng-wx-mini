@@ -9,6 +9,7 @@ import { getDefaultCompanyId } from '@/api/config/index';
 export async function getPackageList(params: {
   companyId?: number;
   categoryId?: number;
+  keyword?: string;
   limit?: number;
   offset?: number;
 }) {
@@ -34,6 +35,23 @@ export async function getPackageList(params: {
     };
   }
 
+  // 获取当前用户所属公司的隐藏套餐 id 列表（该公司管理员隐藏的套餐，其用户端不可见）
+  let hiddenPackageIds: number[] = [];
+  if (currentCompanyId) {
+    try {
+      const hideRes = await client.execute<{ companies_by_pk: { hidden_package_ids: (string | number)[] | null } | null }>({
+        query: `query GetCompanyHiddenPackages($id: bigint!) {
+          companies_by_pk(id: $id) { hidden_package_ids }
+        }`,
+        variables: { id: currentCompanyId },
+      });
+      const arr = hideRes?.companies_by_pk?.hidden_package_ids;
+      hiddenPackageIds = Array.isArray(arr) ? arr.map((id) => Number(id)) : [];
+    } catch (_) {
+      // 忽略错误，按不隐藏处理
+    }
+  }
+
   // 构建公司过滤条件
   const companyFilter = companyIds.length === 1
     ? 'company_companies: { _eq: $companyId }'
@@ -55,6 +73,15 @@ export async function getPackageList(params: {
     whereConditions.push(`category_categories: { _eq: $categoryId }`);
   }
 
+  // 当前公司已隐藏的套餐 id 不展示
+  if (hiddenPackageIds.length > 0) {
+    whereConditions.push('id: { _nin: $hiddenPackageIds }');
+  }
+
+  if (params.keyword && params.keyword.trim()) {
+    whereConditions.push('name: { _ilike: $keyword }');
+  }
+
   // 构建where子句（_and 的每一项必须是对象，需用 {} 包裹）
   const whereClause = whereConditions.length > 1
     ? `_and: [
@@ -62,9 +89,11 @@ export async function getPackageList(params: {
           ]`
     : whereConditions[0];
 
+  const hiddenVars = hiddenPackageIds.length > 0 ? ', $hiddenPackageIds: [bigint!]!' : '';
+  const keywordVar = params.keyword?.trim() ? ', $keyword: String!' : '';
   const query = companyIds.length === 1
     ? `
-      query GetPackageList($companyId: bigint!, $limit: Int, $offset: Int${params.categoryId ? ', $categoryId: bigint!' : ''}) {
+      query GetPackageList($companyId: bigint!, $limit: Int, $offset: Int${params.categoryId ? ', $categoryId: bigint!' : ''}${keywordVar}${hiddenVars}) {
         packages(
           where: {
             ${whereClause}
@@ -77,6 +106,7 @@ export async function getPackageList(params: {
           name
           cover_image_url
           description
+          tags
           created_at
           package_product_skus(
             where: {
@@ -113,7 +143,7 @@ export async function getPackageList(params: {
       }
     `
     : `
-      query GetPackageList($companyIds: [bigint!]!, $limit: Int, $offset: Int${params.categoryId ? ', $categoryId: bigint!' : ''}) {
+      query GetPackageList($companyIds: [bigint!]!, $limit: Int, $offset: Int${params.categoryId ? ', $categoryId: bigint!' : ''}${keywordVar}${hiddenVars}) {
         packages(
           where: {
             ${whereClause}
@@ -126,6 +156,7 @@ export async function getPackageList(params: {
           name
           cover_image_url
           description
+          tags
           created_at
           package_product_skus(
             where: {
@@ -176,6 +207,12 @@ export async function getPackageList(params: {
   // 如果指定了分类ID，添加到变量中
   if (params.categoryId) {
     variables.categoryId = params.categoryId;
+  }
+  if (params.keyword?.trim()) {
+    variables.keyword = `%${params.keyword.trim()}%`;
+  }
+  if (hiddenPackageIds.length > 0) {
+    variables.hiddenPackageIds = hiddenPackageIds;
   }
 
   const result = await client.execute({

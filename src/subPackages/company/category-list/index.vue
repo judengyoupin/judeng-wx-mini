@@ -2,27 +2,45 @@
   <view class="category-list-page">
     <!-- 顶部操作栏 -->
     <view class="header-bar">
-      <view class="filter-tabs">
-        <view 
-          class="filter-tab" 
-          :class="{ active: selectedType === null }"
-          @click="selectType(null)"
-        >
-          全部
+      <view class="filter-row">
+        <view class="filter-tabs">
+          <view 
+            class="filter-tab" 
+            :class="{ active: selectedType === null }"
+            @click="selectType(null)"
+          >
+            全部
+          </view>
+          <view 
+            class="filter-tab" 
+            :class="{ active: selectedType === 'product' }"
+            @click="selectType('product')"
+          >
+            产品
+          </view>
+          <view 
+            class="filter-tab" 
+            :class="{ active: selectedType === 'package' }"
+            @click="selectType('package')"
+          >
+            套餐
+          </view>
         </view>
-        <view 
-          class="filter-tab" 
-          :class="{ active: selectedType === 'product' }"
-          @click="selectType('product')"
-        >
-          产品
-        </view>
-        <view 
-          class="filter-tab" 
-          :class="{ active: selectedType === 'package' }"
-          @click="selectType('package')"
-        >
-          套餐
+        <view class="scope-tabs">
+          <view 
+            class="scope-tab" 
+            :class="{ active: selectedScope === 'all' }"
+            @click="selectScope('all')"
+          >
+            全部
+          </view>
+          <view 
+            class="scope-tab" 
+            :class="{ active: selectedScope === 'mine' }"
+            @click="selectScope('mine')"
+          >
+            只看自己公司
+          </view>
         </view>
       </view>
       <button class="add-btn" @click="goToAddCategory">+ 添加分类</button>
@@ -67,11 +85,19 @@
                 {{ getTypeText(item.node.type) }}
               </text>
               <text class="row-level">L{{ item.node.level }}</text>
+              <text v-if="isFromDefaultCompany(item.node)" class="row-tag-system">系统配置</text>
+              <text v-if="isFromDefaultCompany(item.node) && isCategoryHidden(item.node)" class="row-tag-hidden">已隐藏</text>
             </view>
           </view>
           <view class="row-actions" @click.stop>
-            <view class="action-btn" @click="goToEditCategory(item.node)">编辑</view>
-            <view class="action-btn delete" @click="handleDelete(item.node)">删除</view>
+            <template v-if="isFromDefaultCompany(item.node)">
+              <view v-if="isCategoryHidden(item.node)" class="action-btn unhide" @click="handleUnhideCategory(item.node)">取消隐藏</view>
+              <view v-else class="action-btn hide" @click="handleHideCategory(item.node)">隐藏</view>
+            </template>
+            <template v-else>
+              <view class="action-btn" @click="goToEditCategory(item.node)">编辑</view>
+              <view class="action-btn delete" @click="handleDelete(item.node)">删除</view>
+            </template>
           </view>
         </view>
       </view>
@@ -98,11 +124,38 @@ import { ref, computed } from 'vue';
 import { onPullDownRefresh, onShow } from '@dcloudio/uni-app';
 import { companyInfo } from '@/store/userStore';
 import { getCategoryTree, deleteCategory } from '@/api/admin/category';
+import { getDefaultCompanyId } from '@/api/config/index';
+import { getCompanyDetail, updateCompany } from '@/api/admin/platform';
 
 const categories = ref<any[]>([]);
 const allCategories = ref<any[]>([]);
 const loading = ref(false);
 const selectedType = ref<'product' | 'package' | null>(null);
+const selectedScope = ref<'all' | 'mine'>('all');
+const defaultCompanyId = ref<number | null>(null);
+/** 当前公司的隐藏分类 id 列表（用于展示已隐藏状态与取消隐藏） */
+const hiddenCategoryIds = ref<number[]>([]);
+
+/** 给树节点递归打上 _companyId */
+function tagTree(nodes: any[], companyId: number): any[] {
+  return nodes.map((node) => ({
+    ...node,
+    _companyId: companyId,
+    categories: node.categories ? tagTree(node.categories, companyId) : [],
+  }));
+}
+
+/** 是否来自系统配置公司（且当前不是自己公司） */
+function isFromDefaultCompany(node: any): boolean {
+  const myId = companyInfo.value?.id;
+  const defaultId = defaultCompanyId.value;
+  return !!(defaultId && myId && defaultId !== myId && node._companyId === defaultId);
+}
+
+/** 是否已隐藏（仅对系统配置公司的分类有效） */
+function isCategoryHidden(node: any): boolean {
+  return hiddenCategoryIds.value.includes(Number(node.id));
+}
 
 // 确保每个节点都有 expanded，并只保留当前类型
 function ensureExpanded(nodes: any[]): any[] {
@@ -147,10 +200,25 @@ function selectType(type: 'product' | 'package' | null) {
   filterCategories();
 }
 
-// 筛选分类
+// 按范围筛选：只看自己公司时只保留 _companyId === 当前公司 的节点
+function filterByScope(cats: any[], myId: number): any[] {
+  return cats
+    .filter((cat: any) => cat._companyId === myId)
+    .map((cat: any) => ({
+      ...cat,
+      categories: cat.categories ? filterByScope(cat.categories, myId) : [],
+    }));
+}
+
+// 筛选分类（类型 + 范围）
 function filterCategories() {
+  let list = allCategories.value;
+  const myId = companyInfo.value?.id;
+  if (selectedScope.value === 'mine' && myId) {
+    list = filterByScope(list, myId);
+  }
   if (!selectedType.value) {
-    categories.value = allCategories.value.map((cat: any) => ({
+    categories.value = list.map((cat: any) => ({
       ...cat,
       expanded: false,
       categories: cat.categories ? ensureExpanded(cat.categories) : [],
@@ -165,20 +233,39 @@ function filterCategories() {
           categories: cat.categories ? filterByType(cat.categories) : [],
         }));
     }
-    categories.value = filterByType(allCategories.value);
+    categories.value = filterByType(list);
   }
 }
 
-// 加载分类树
+function selectScope(scope: 'all' | 'mine') {
+  selectedScope.value = scope;
+  filterCategories();
+}
+
+// 加载分类树（当前公司 + 系统配置公司，并打上 _companyId）
 async function loadCategories() {
-  if (!companyInfo.value?.id) {
+  const myId = companyInfo.value?.id;
+  if (!myId) {
     uni.showToast({ title: '公司信息不存在', icon: 'none' });
     return;
   }
   loading.value = true;
   try {
-    const result = await getCategoryTree(companyInfo.value.id);
-    allCategories.value = Array.isArray(result) ? result : [];
+    defaultCompanyId.value = await getDefaultCompanyId();
+    const [companyDetail, myTree] = await Promise.all([
+      getCompanyDetail(myId),
+      getCategoryTree(myId),
+    ]);
+    const hidden = companyDetail?.hidden_category_ids;
+    hiddenCategoryIds.value = Array.isArray(hidden) ? hidden.map((id: any) => Number(id)) : [];
+    const myTagged = tagTree(Array.isArray(myTree) ? myTree : [], myId);
+    if (defaultCompanyId.value && defaultCompanyId.value !== myId) {
+      const defaultTree = await getCategoryTree(defaultCompanyId.value);
+      const defaultTagged = tagTree(Array.isArray(defaultTree) ? defaultTree : [], defaultCompanyId.value);
+      allCategories.value = [...myTagged, ...defaultTagged];
+    } else {
+      allCategories.value = myTagged;
+    }
     filterCategories();
   } catch (error: any) {
     uni.showToast({ title: error.message || '加载失败', icon: 'none' });
@@ -221,6 +308,45 @@ function handleDelete(category: any) {
   });
 }
 
+// 隐藏系统配置公司的分类（写入当前公司的 hidden_category_ids）
+async function handleHideCategory(category: any) {
+  const myId = companyInfo.value?.id;
+  if (!myId) return;
+  try {
+    const company = await getCompanyDetail(myId);
+    const cur = (company?.hidden_category_ids || []).map((id: any) => Number(id));
+    if (cur.includes(Number(category.id))) {
+      uni.showToast({ title: '已隐藏', icon: 'none' });
+      return;
+    }
+    await updateCompany(myId, { hidden_category_ids: [...cur, Number(category.id)] });
+    uni.showToast({ title: '已加入隐藏名单', icon: 'success' });
+    loadCategories();
+  } catch (error: any) {
+    uni.showToast({ title: (error as any)?.message || '操作失败', icon: 'none' });
+  }
+}
+
+// 取消隐藏系统配置公司的分类
+async function handleUnhideCategory(category: any) {
+  const myId = companyInfo.value?.id;
+  if (!myId) return;
+  try {
+    const company = await getCompanyDetail(myId);
+    const cur = (company?.hidden_category_ids || []).map((id: any) => Number(id));
+    const next = cur.filter((id: number) => id !== Number(category.id));
+    if (next.length === cur.length) {
+      uni.showToast({ title: '未在隐藏名单中', icon: 'none' });
+      return;
+    }
+    await updateCompany(myId, { hidden_category_ids: next });
+    uni.showToast({ title: '已取消隐藏', icon: 'success' });
+    loadCategories();
+  } catch (error: any) {
+    uni.showToast({ title: (error as any)?.message || '操作失败', icon: 'none' });
+  }
+}
+
 onShow(() => {
   loadCategories();
 });
@@ -247,10 +373,35 @@ onPullDownRefresh(() => {
   box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.04);
 }
 
-.filter-tabs {
+.filter-row {
   flex: 1;
   display: flex;
+  flex-direction: column;
   gap: 12rpx;
+}
+
+.filter-tabs {
+  display: flex;
+  gap: 12rpx;
+}
+
+.scope-tabs {
+  display: flex;
+  gap: 12rpx;
+}
+
+.scope-tab {
+  padding: 8rpx 16rpx;
+  font-size: 24rpx;
+  color: #666;
+  background: #f0f2f5;
+  border-radius: 8rpx;
+}
+
+.scope-tab.active {
+  background: #e8ebf7;
+  color: #667eea;
+  font-weight: 500;
 }
 
 .filter-tab {
@@ -393,6 +544,35 @@ onPullDownRefresh(() => {
   padding: 2rpx 8rpx;
   background: #f5f5f5;
   border-radius: 4rpx;
+}
+
+.row-tag-system {
+  font-size: 20rpx;
+  color: #999;
+  padding: 2rpx 8rpx;
+  background: #fff7e6;
+  color: #d48806;
+  border-radius: 4rpx;
+  margin-left: 8rpx;
+}
+
+.row-tag-hidden {
+  font-size: 20rpx;
+  color: #999;
+  padding: 2rpx 8rpx;
+  background: #f5f5f5;
+  border-radius: 4rpx;
+  margin-left: 8rpx;
+}
+
+.action-btn.hide {
+  background: #fff7e6;
+  color: #d48806;
+}
+
+.action-btn.unhide {
+  background: #e6f7ff;
+  color: #1890ff;
 }
 
 .row-actions {

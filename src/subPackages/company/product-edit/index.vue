@@ -52,66 +52,135 @@
         </view>
 
         <view class="form-item">
-          <view class="form-label">商品视频</view>
-          <view class="video-url-row">
-            <input 
-              class="form-input video-input" 
-              v-model="form.video_url" 
-              placeholder="请输入视频URL或点击上传"
-            />
-            <button class="upload-video-btn" type="button" @click="uploadProductVideo">上传视频</button>
+          <view class="form-label">标签</view>
+          <input 
+            class="form-input" 
+            v-model="form.tags" 
+            placeholder="多个标签用｜分隔，如：新品｜热卖"
+          />
+        </view>
+      </view>
+
+      <!-- 产品详情媒体（可选）：批次样式，支持多选、进度条、图片/视频/微信聊天 -->
+      <view class="section batch-media-section">
+        <view class="batch-media-header">
+          <text class="batch-media-title">产品详情媒体（可选）</text>
+          <view class="batch-media-add-btn" @click.stop="showDetailMediaSourceSheet">+ 添加</view>
+        </view>
+        <view v-if="form.detail_medias.length === 0 && uploadingDetailMedias.length === 0" class="batch-media-empty">
+          暂无媒体文件，点击上方「添加」按钮上传
+        </view>
+        <view v-else class="batch-media-list">
+          <!-- 已上传完成的项 -->
+          <view
+            v-for="(media, index) in form.detail_medias"
+            :key="'done-' + index"
+            class="batch-media-card"
+          >
+            <view class="batch-media-thumb">
+              <image v-if="media.file_type !== 'video'" :src="media.file_url" class="batch-media-img" mode="aspectFill" />
+              <view v-else class="batch-media-video-thumb">
+                <image :src="media.file_url" class="batch-media-img" mode="aspectFill" />
+                <view class="batch-media-play-icon">▶</view>
+              </view>
+            </view>
+            <view class="batch-media-meta">
+              <view class="batch-media-row">
+                <text class="batch-media-label">类型：</text>
+                <text class="batch-media-value">{{ media.file_type === 'video' ? '视频' : '图片' }}</text>
+              </view>
+              <view class="batch-media-progress-wrap" v-if="false">
+                <view class="batch-media-progress-bar"><view class="batch-media-progress-fill" style="width: 100%"></view></view>
+                <text class="batch-media-progress-text">100%</text>
+              </view>
+            </view>
+            <view class="batch-media-delete" @click="removeMedia('detail', index)">删除</view>
+          </view>
+          <!-- 上传中的项（带进度条） -->
+          <view
+            v-for="item in uploadingDetailMedias"
+            :key="item.id"
+            class="batch-media-card"
+          >
+            <view class="batch-media-thumb">
+              <image v-if="item.file_type === 'image'" :src="item.tempPath" class="batch-media-img" mode="aspectFill" />
+              <view v-else class="batch-media-video-thumb">
+                <image :src="item.tempPath" class="batch-media-img" mode="aspectFill" />
+                <view class="batch-media-play-icon">▶</view>
+              </view>
+            </view>
+            <view class="batch-media-meta">
+              <view class="batch-media-row">
+                <text class="batch-media-label">类型：</text>
+                <text class="batch-media-value">{{ item.file_type === 'video' ? '视频' : '图片' }}</text>
+              </view>
+              <view class="batch-media-progress-wrap">
+                <view class="batch-media-progress-bar">
+                  <view class="batch-media-progress-fill" :style="{ width: item.progress + '%' }"></view>
+                </view>
+                <text class="batch-media-progress-text">{{ item.progress }}%</text>
+              </view>
+            </view>
+            <view class="batch-media-delete disabled">上传中</view>
           </view>
         </view>
       </view>
 
-      <!-- 详细信息媒体（可上传图片或视频） -->
-      <view class="section">
-        <view class="section-title">详细信息媒体</view>
-        <view class="media-list">
-          <view 
-            v-for="(media, index) in form.detail_medias" 
-            :key="index"
-            class="media-item"
-          >
-            <image v-if="media.file_type !== 'video'" :src="media.file_url" class="media-image" mode="aspectFill" />
-            <view v-else class="media-video-wrap">
-              <video :src="media.file_url" class="media-video" controls :show-center-play-btn="true" object-fit="contain" />
-              <view class="media-video-tag">视频</view>
-            </view>
-            <view class="media-actions">
-              <view class="media-btn" @click="editMedia('detail', index)">编辑</view>
-              <view class="media-btn delete" @click="removeMedia('detail', index)">删除</view>
-            </view>
-          </view>
-          <view class="add-media" @click="addMedia('detail')">
-            <text class="add-icon">+</text>
-            <text>添加图片/视频</text>
-          </view>
+      <!-- 实景拍摄媒体（可选）：批次样式，与产品详情媒体一致 -->
+      <view class="section batch-media-section">
+        <view class="batch-media-header">
+          <text class="batch-media-title">实景拍摄媒体（可选）</text>
+          <view class="batch-media-add-btn" @click.stop="showSceneMediaSourceSheet">+ 添加</view>
         </view>
-      </view>
-
-      <!-- 实拍场景媒体（可上传图片或视频） -->
-      <view class="section">
-        <view class="section-title">实拍场景媒体</view>
-        <view class="media-list">
-          <view 
-            v-for="(media, index) in form.scene_medias" 
-            :key="index"
-            class="media-item"
+        <view v-if="form.scene_medias.length === 0 && uploadingSceneMedias.length === 0" class="batch-media-empty">
+          暂无媒体文件，点击上方「添加」按钮上传
+        </view>
+        <view v-else class="batch-media-list">
+          <view
+            v-for="(media, index) in form.scene_medias"
+            :key="'scene-done-' + index"
+            class="batch-media-card"
           >
-            <image v-if="media.file_type !== 'video'" :src="media.file_url" class="media-image" mode="aspectFill" />
-            <view v-else class="media-video-wrap">
-              <video :src="media.file_url" class="media-video" controls :show-center-play-btn="true" object-fit="contain" />
-              <view class="media-video-tag">视频</view>
+            <view class="batch-media-thumb">
+              <image v-if="media.file_type !== 'video'" :src="media.file_url" class="batch-media-img" mode="aspectFill" />
+              <view v-else class="batch-media-video-thumb">
+                <image :src="media.file_url" class="batch-media-img" mode="aspectFill" />
+                <view class="batch-media-play-icon">▶</view>
+              </view>
             </view>
-            <view class="media-actions">
-              <view class="media-btn" @click="editMedia('scene', index)">编辑</view>
-              <view class="media-btn delete" @click="removeMedia('scene', index)">删除</view>
+            <view class="batch-media-meta">
+              <view class="batch-media-row">
+                <text class="batch-media-label">类型：</text>
+                <text class="batch-media-value">{{ media.file_type === 'video' ? '视频' : '图片' }}</text>
+              </view>
             </view>
+            <view class="batch-media-delete" @click="removeMedia('scene', index)">删除</view>
           </view>
-          <view class="add-media" @click="addMedia('scene')">
-            <text class="add-icon">+</text>
-            <text>添加图片/视频</text>
+          <view
+            v-for="item in uploadingSceneMedias"
+            :key="item.id"
+            class="batch-media-card"
+          >
+            <view class="batch-media-thumb">
+              <image v-if="item.file_type === 'image'" :src="item.tempPath" class="batch-media-img" mode="aspectFill" />
+              <view v-else class="batch-media-video-thumb">
+                <image :src="item.tempPath" class="batch-media-img" mode="aspectFill" />
+                <view class="batch-media-play-icon">▶</view>
+              </view>
+            </view>
+            <view class="batch-media-meta">
+              <view class="batch-media-row">
+                <text class="batch-media-label">类型：</text>
+                <text class="batch-media-value">{{ item.file_type === 'video' ? '视频' : '图片' }}</text>
+              </view>
+              <view class="batch-media-progress-wrap">
+                <view class="batch-media-progress-bar">
+                  <view class="batch-media-progress-fill" :style="{ width: item.progress + '%' }"></view>
+                </view>
+                <text class="batch-media-progress-text">{{ item.progress }}%</text>
+              </view>
+            </view>
+            <view class="batch-media-delete disabled">上传中</view>
           </view>
         </view>
       </view>
@@ -280,7 +349,7 @@ const form = ref({
   name: '',
   cover_image_url: '',
   description: '',
-  video_url: '',
+  tags: '',
   category_categories: undefined as number | undefined,
   detail_medias: [] as Array<{ file_type: string; file_url: string }>,
   scene_medias: [] as Array<{ file_type: string; file_url: string }>,
@@ -290,6 +359,8 @@ const skus = ref<any[]>([]);
 const categories = ref<any[]>([]);
 const loading = ref(false);
 const showCategoryPicker = ref(false);
+// 选择器选中时带出的分类信息，用于选择框展示（避免与页面分类树数据源不一致导致不显示）
+const selectedCategoryInfo = ref<{ id: number; name: string } | null>(null);
 
 // SKU编辑相关
 const showSkuModal = ref(false);
@@ -312,14 +383,29 @@ const mediaForm = ref({
   typeIndex: 0,
 });
 
+// 产品详情媒体：上传中列表（每项带独立进度）
+interface UploadingDetailItem {
+  id: string;
+  file_type: 'image' | 'video';
+  tempPath: string;
+  progress: number;
+}
+const uploadingDetailMedias = ref<UploadingDetailItem[]>([]);
+
+// 实景拍摄媒体：上传中列表
+const uploadingSceneMedias = ref<UploadingDetailItem[]>([]);
+
 const selectedCategory = computed(() => {
-  if (!form.value.category_categories) return null;
-  // 从分类树中查找选中的分类（包括子分类）
+  const id = form.value.category_categories;
+  if (id == null) return null;
+  // 优先用选择器带回的信息，保证选择后选择框立即显示名称
+  if (selectedCategoryInfo.value && selectedCategoryInfo.value.id === id) {
+    return { name: selectedCategoryInfo.value.name };
+  }
+  // 再从页面分类树中查找（编辑时或与当前公司一致时）
   const findCategory = (cats: any[]): any => {
     for (const cat of cats) {
-      if (cat.id === form.value.category_categories) {
-        return cat;
-      }
+      if (cat.id === id) return cat;
       if (cat.categories && cat.categories.length > 0) {
         const found = findCategory(cat.categories);
         if (found) return found;
@@ -327,7 +413,7 @@ const selectedCategory = computed(() => {
     }
     return null;
   };
-  return findCategory(categories.value);
+  return findCategory(categories.value) || null;
 });
 
 // 加载分类树
@@ -351,12 +437,13 @@ const loadProductDetail = async () => {
         name: product.name,
         cover_image_url: product.cover_image_url,
         description: product.description || '',
-        video_url: product.video_url || '',
+        tags: product.tags || '',
         category_categories: product.category_categories || undefined,
         detail_medias: product.detail_medias || [],
         scene_medias: product.scene_medias || [],
         is_shelved: product.is_shelved,
       };
+      selectedCategoryInfo.value = null; // 编辑时用分类树查找展示名称
       skus.value = product.product_skus || [];
     }
   } catch (error: any) {
@@ -427,40 +514,10 @@ const uploadSkuImage = async () => {
   }
 };
 
-// 上传商品视频（上传成功后自动同步到 form.video_url）
-const uploadProductVideo = async () => {
-  try {
-    uni.chooseMedia({
-      count: 1,
-      mediaType: ['video'],
-      success: async (res) => {
-        const tempFilePath = res.tempFiles[0].tempFilePath;
-        try {
-          isUploading.value = true;
-          uploadProgress.value = 0;
-          const url = await uploadFile(tempFilePath, (progress) => {
-            uploadProgress.value = progress;
-          }, '.mp4');
-          form.value.video_url = url;
-          uni.showToast({ title: '视频已上传', icon: 'success' });
-        } catch (error: any) {
-          uni.showToast({
-            title: error.message || '上传失败',
-            icon: 'none',
-          });
-        } finally {
-          isUploading.value = false;
-        }
-      },
-    });
-  } catch (error) {
-    console.error('选择视频失败:', error);
-  }
-};
-
 // 分类选择
 const onCategorySelect = (category: any) => {
   form.value.category_categories = category.id;
+  selectedCategoryInfo.value = { id: category.id, name: category.name || '' };
 };
 
 // 添加媒体
@@ -495,6 +552,202 @@ const removeMedia = (type: 'detail' | 'scene', index: number) => {
   } else {
     form.value.scene_medias.splice(index, 1);
   }
+};
+
+// ---------- 产品详情媒体：选择来源（图片 / 视频 / 微信聊天）----------
+const showDetailMediaSourceSheet = () => {
+  uni.showActionSheet({
+    itemList: ['选择图片', '选择视频', '从微信聊天选择'],
+    success: (res) => {
+      if (res.tapIndex === 0) chooseDetailImages();
+      else if (res.tapIndex === 1) chooseDetailVideos();
+      else if (res.tapIndex === 2) chooseDetailFromWechat();
+    },
+  });
+};
+
+// 选择图片（多选）
+const chooseDetailImages = () => {
+  uni.chooseMedia({
+    count: 9 - form.value.detail_medias.length - uploadingDetailMedias.value.length,
+    mediaType: ['image'],
+    success: (res) => {
+      const files = res.tempFiles || [];
+      if (files.length === 0) return;
+      for (const f of files) {
+        addAndUploadDetailMedia('image', f.tempFilePath);
+      }
+    },
+  });
+};
+
+// 选择视频（多选，一般 1～3 个）
+const chooseDetailVideos = () => {
+  uni.chooseMedia({
+    count: Math.min(3, 9 - form.value.detail_medias.length - uploadingDetailMedias.value.length),
+    mediaType: ['video'],
+    success: (res) => {
+      const files = res.tempFiles || [];
+      if (files.length === 0) return;
+      for (const f of files) {
+        addAndUploadDetailMedia('video', f.tempFilePath);
+      }
+    },
+  });
+};
+
+// 从微信聊天选择（图片/视频）
+const chooseDetailFromWechat = () => {
+  // #ifdef MP-WEIXIN
+  const total = form.value.detail_medias.length + uploadingDetailMedias.value.length;
+  const count = Math.min(9, 9 - total);
+  if (count <= 0) {
+    uni.showToast({ title: '最多添加 9 个媒体', icon: 'none' });
+    return;
+  }
+  uni.chooseMessageFile({
+    count,
+    type: 'file',
+    extension: ['jpg', 'jpeg', 'png', 'gif', 'webp', 'mp4', 'mov'],
+    success: (res: any) => {
+      let list: any[] = [];
+      if (res.tempFiles && Array.isArray(res.tempFiles)) {
+        list = res.tempFiles;
+      } else if (res.tempFilePaths && Array.isArray(res.tempFilePaths)) {
+        list = res.tempFilePaths.map((p: string) => ({ path: p }));
+      }
+      for (const f of list) {
+        const path = typeof f === 'string' ? f : (f.path || f.tempFilePath);
+        if (!path) continue;
+        const lower = String(path).toLowerCase();
+        const isVideo = lower.endsWith('.mp4') || lower.endsWith('.mov');
+        addAndUploadDetailMedia(isVideo ? 'video' : 'image', path);
+      }
+    },
+    fail: (err: any) => {
+      if (err.errMsg && !err.errMsg.includes('cancel')) {
+        uni.showToast({ title: err.errMsg || '选择失败', icon: 'none' });
+      }
+    },
+  });
+  // #endif
+  // #ifndef MP-WEIXIN
+  uni.showToast({ title: '仅微信小程序支持从聊天选择', icon: 'none' });
+  // #endif
+};
+
+// 添加一项到“上传中”列表并开始上传，完成后写入 form.detail_medias
+const addAndUploadDetailMedia = (fileType: 'image' | 'video', tempPath: string) => {
+  const id = `upload-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+  const ext = fileType === 'video' ? '.mp4' : '.jpg';
+  uploadingDetailMedias.value.push({
+    id,
+    file_type: fileType,
+    tempPath,
+    progress: 0,
+  });
+
+  const updateProgress = (p: number) => {
+    const item = uploadingDetailMedias.value.find((x) => x.id === id);
+    if (item) item.progress = p;
+  };
+
+  uploadFile(tempPath, updateProgress, ext)
+    .then((url) => {
+      form.value.detail_medias.push({ file_type: fileType, file_url: url });
+      uploadingDetailMedias.value = uploadingDetailMedias.value.filter((x) => x.id !== id);
+    })
+    .catch((err: any) => {
+      uploadingDetailMedias.value = uploadingDetailMedias.value.filter((x) => x.id !== id);
+      uni.showToast({ title: err.message || '上传失败', icon: 'none' });
+    });
+};
+
+// ---------- 实景拍摄媒体：选择来源（与产品详情媒体一致）----------
+const showSceneMediaSourceSheet = () => {
+  uni.showActionSheet({
+    itemList: ['选择图片', '选择视频', '从微信聊天选择'],
+    success: (res) => {
+      if (res.tapIndex === 0) chooseSceneImages();
+      else if (res.tapIndex === 1) chooseSceneVideos();
+      else if (res.tapIndex === 2) chooseSceneFromWechat();
+    },
+  });
+};
+
+const chooseSceneImages = () => {
+  uni.chooseMedia({
+    count: 9 - form.value.scene_medias.length - uploadingSceneMedias.value.length,
+    mediaType: ['image'],
+    success: (res) => {
+      const files = res.tempFiles || [];
+      for (const f of files) addAndUploadSceneMedia('image', f.tempFilePath);
+    },
+  });
+};
+
+const chooseSceneVideos = () => {
+  uni.chooseMedia({
+    count: Math.min(3, 9 - form.value.scene_medias.length - uploadingSceneMedias.value.length),
+    mediaType: ['video'],
+    success: (res) => {
+      const files = res.tempFiles || [];
+      for (const f of files) addAndUploadSceneMedia('video', f.tempFilePath);
+    },
+  });
+};
+
+const chooseSceneFromWechat = () => {
+  // #ifdef MP-WEIXIN
+  const total = form.value.scene_medias.length + uploadingSceneMedias.value.length;
+  const count = Math.min(9, 9 - total);
+  if (count <= 0) {
+    uni.showToast({ title: '最多添加 9 个媒体', icon: 'none' });
+    return;
+  }
+  uni.chooseMessageFile({
+    count,
+    type: 'file',
+    extension: ['jpg', 'jpeg', 'png', 'gif', 'webp', 'mp4', 'mov'],
+    success: (res: any) => {
+      let list: any[] = [];
+      if (res.tempFiles && Array.isArray(res.tempFiles)) list = res.tempFiles;
+      else if (res.tempFilePaths && Array.isArray(res.tempFilePaths)) list = res.tempFilePaths.map((p: string) => ({ path: p }));
+      for (const f of list) {
+        const path = typeof f === 'string' ? f : (f.path || f.tempFilePath);
+        if (!path) continue;
+        const lower = String(path).toLowerCase();
+        const isVideo = lower.endsWith('.mp4') || lower.endsWith('.mov');
+        addAndUploadSceneMedia(isVideo ? 'video' : 'image', path);
+      }
+    },
+    fail: (err: any) => {
+      if (err.errMsg && !err.errMsg.includes('cancel')) uni.showToast({ title: err.errMsg || '选择失败', icon: 'none' });
+    },
+  });
+  // #endif
+  // #ifndef MP-WEIXIN
+  uni.showToast({ title: '仅微信小程序支持从聊天选择', icon: 'none' });
+  // #endif
+};
+
+const addAndUploadSceneMedia = (fileType: 'image' | 'video', tempPath: string) => {
+  const id = `scene-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+  const ext = fileType === 'video' ? '.mp4' : '.jpg';
+  uploadingSceneMedias.value.push({ id, file_type: fileType, tempPath, progress: 0 });
+  const updateProgress = (p: number) => {
+    const item = uploadingSceneMedias.value.find((x) => x.id === id);
+    if (item) item.progress = p;
+  };
+  uploadFile(tempPath, updateProgress, ext)
+    .then((url) => {
+      form.value.scene_medias.push({ file_type: fileType, file_url: url });
+      uploadingSceneMedias.value = uploadingSceneMedias.value.filter((x) => x.id !== id);
+    })
+    .catch((err: any) => {
+      uploadingSceneMedias.value = uploadingSceneMedias.value.filter((x) => x.id !== id);
+      uni.showToast({ title: err.message || '上传失败', icon: 'none' });
+    });
 };
 
 // 媒体类型选择（picker 的 e.detail.value 可能是字符串，需转为数字）
@@ -689,9 +942,11 @@ const handleSave = async () => {
       scene_medias: form.value.scene_medias || [],
     };
     
-    // 如果 category_categories 是 undefined，不传递该字段
     if (productData.category_categories === undefined) {
       delete productData.category_categories;
+    }
+    if ('video_url' in productData) {
+      delete (productData as Record<string, unknown>).video_url;
     }
 
     let savedProductId: number;
@@ -749,8 +1004,8 @@ const handleCancel = () => {
   uni.navigateBack();
 };
 
-onLoad((options) => {
-  if (options.id) {
+onLoad((options?: { id?: string }) => {
+  if (options?.id) {
     productId.value = Number(options.id);
   }
   loadCategories();
@@ -813,6 +1068,154 @@ onLoad((options) => {
 .upload-text {
   font-size: 24rpx;
   color: #94a3b8;
+}
+
+/* 产品详情媒体 / 实景拍摄媒体 - 批次样式（参考图示） */
+.batch-media-section {
+  padding: 24rpx 30rpx;
+}
+
+.batch-media-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24rpx;
+}
+
+.batch-media-title {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #333;
+}
+
+.batch-media-add-btn {
+  padding: 12rpx 28rpx;
+  background: #22c55e;
+  color: #fff;
+  border: none;
+  border-radius: 12rpx;
+  font-size: 28rpx;
+  line-height: 1.4;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.batch-media-empty {
+  text-align: center;
+  color: #999;
+  font-size: 26rpx;
+  padding: 48rpx 0;
+}
+
+.batch-media-list {
+  display: flex;
+  flex-direction: column;
+  gap: 24rpx;
+}
+
+.batch-media-card {
+  display: flex;
+  align-items: center;
+  background: #fff;
+  border: 1rpx solid #e8e8e8;
+  border-radius: 16rpx;
+  padding: 20rpx;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
+}
+
+.batch-media-thumb {
+  width: 140rpx;
+  height: 140rpx;
+  flex-shrink: 0;
+  border-radius: 12rpx;
+  overflow: hidden;
+  background: #f0f0f0;
+}
+
+.batch-media-img {
+  width: 100%;
+  height: 100%;
+}
+
+.batch-media-video-thumb {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.batch-media-play-icon {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 56rpx;
+  height: 56rpx;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.5);
+  color: #fff;
+  font-size: 24rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.batch-media-meta {
+  flex: 1;
+  margin-left: 24rpx;
+  min-width: 0;
+}
+
+.batch-media-row {
+  margin-bottom: 12rpx;
+}
+
+.batch-media-label {
+  font-size: 26rpx;
+  color: #666;
+}
+
+.batch-media-value {
+  font-size: 26rpx;
+  color: #333;
+}
+
+.batch-media-progress-wrap {
+  margin-top: 12rpx;
+}
+
+.batch-media-progress-bar {
+  height: 12rpx;
+  background: #e8e8e8;
+  border-radius: 6rpx;
+  overflow: hidden;
+  margin-bottom: 8rpx;
+}
+
+.batch-media-progress-fill {
+  height: 100%;
+  background: #22c55e;
+  border-radius: 6rpx;
+  transition: width 0.2s;
+}
+
+.batch-media-progress-text {
+  font-size: 22rpx;
+  color: #999;
+}
+
+.batch-media-delete {
+  flex-shrink: 0;
+  padding: 12rpx 24rpx;
+  background: #ef4444;
+  color: #fff;
+  border-radius: 8rpx;
+  font-size: 24rpx;
+}
+
+.batch-media-delete.disabled {
+  background: #ccc;
+  color: #fff;
 }
 
 .media-list {

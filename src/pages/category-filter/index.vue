@@ -1,25 +1,52 @@
 <template>
   <view class="category-filter-page">
-    <!-- 统一导航栏（含状态栏高度） -->
-    <PageNavBar :title="companyInfo?.name || pageTitle" :show-back="true" @back="goBack" />
+    <!-- 统一导航栏：公司名称-上级分类名称 -->
+    <PageNavBar :title="navTitle" :show-back="true" @back="goBack" />
+
+    <!-- 搜索框：点击跳转商品搜索页，带上当前分类则只在该分类下搜索 -->
+    <SearchBox
+      type="product"
+      placeholder="请输入商品名称"
+      :category-id="parentId"
+      :category-name="pageTitle !== '分类筛选' ? pageTitle : ''"
+    />
 
     <view class="content-container">
-      <!-- 左侧子分类导航（有子分类时显示） -->
-      <scroll-view v-if="subCategories.length > 0" scroll-y class="sidebar">
-        <view
-          v-for="(item, index) in subCategories"
-          :key="item.id"
-          class="sidebar-item"
-          :class="{ active: currentCategoryId === item.id }"
-          @click="switchCategory(item)"
-        >
-          <view class="sidebar-text">{{ item.name }}</view>
-          <view class="active-indicator" v-if="currentCategoryId === item.id"></view>
+      <!-- 有子分类时：三列分类网格（图片绿框 + 名称） -->
+      <scroll-view
+        v-if="subCategories.length > 0"
+        scroll-y
+        class="main-content category-grid-wrap"
+        refresher-enabled
+        :refresher-triggered="isRefreshing"
+        @refresherrefresh="onRefresh"
+      >
+        <view class="category-grid">
+          <view
+            v-for="item in subCategories"
+            :key="item.id"
+            class="category-card"
+            @click="onCategoryTap(item)"
+          >
+            <view class="category-card-image-wrap">
+              <image
+                class="category-card-image"
+                :src="item.icon_url || item.icon || item.image || '/static/empty.png'"
+                mode="aspectFill"
+              />
+            </view>
+            <text class="category-card-name">{{ item.name }}</text>
+          </view>
         </view>
+        <view v-if="subCategories.length === 0 && !loading" class="empty-state">
+          <text class="empty-text">暂无分类</text>
+        </view>
+        <view class="footer-placeholder"></view>
       </scroll-view>
 
-      <!-- 右侧商品列表 -->
+      <!-- 无子分类时：当前分类下的商品列表 -->
       <scroll-view
+        v-else
         scroll-y
         class="main-content"
         @scrolltolower="loadMore"
@@ -27,28 +54,29 @@
         :refresher-triggered="isRefreshing"
         @refresherrefresh="onRefresh"
       >
-        <!-- 当前分类标题：有子分类时显示选中的子分类名，无子分类时显示当前分类名 -->
         <view class="category-header">
           <text class="category-title">{{ currentCategory ? currentCategory.name : pageTitle }}</text>
         </view>
 
-        <!-- 商品网格 -->
         <view class="product-grid" v-if="products.length > 0">
           <view
             v-for="product in products"
             :key="product.id"
-            class="product-item"
+            class="product-card"
             @click="goDetail(product)"
           >
-            <image
-              class="product-image"
-              :src="product.cover_image_url"
-              mode="aspectFill"
-              lazy-load
-            ></image>
-            <view class="product-info">
-              <view class="product-name">{{ product.name }}</view>
-              <view class="product-bottom">
+            <view class="product-card-image-wrap">
+              <image
+                class="product-card-image"
+                :src="product.cover_image_url"
+                mode="aspectFill"
+                lazy-load
+              />
+              <view v-if="getFirstTag(product.tags)" class="product-tag">{{ getFirstTag(product.tags) }}</view>
+            </view>
+            <view class="product-card-info">
+              <view class="product-card-name">{{ product.name }}</view>
+              <view class="product-card-bottom">
                 <view v-if="canViewPrice" class="product-price">
                   <text class="currency">¥</text>
                   <text class="amount">{{ getMinPrice(product) }}</text>
@@ -59,13 +87,11 @@
           </view>
         </view>
 
-        <!-- 空状态 -->
         <view v-else-if="!loading" class="empty-state">
           <image src="/static/empty.png" mode="aspectFit" class="empty-icon" />
           <text class="empty-text">该分类暂无商品</text>
         </view>
 
-        <!-- 加载更多 -->
         <view v-if="loading" class="loading-more">
           <view class="loading-spinner"></view>
           <text>加载中...</text>
@@ -73,8 +99,6 @@
         <view v-else-if="products.length > 0 && !hasMore" class="no-more">
           <text>没有更多了</text>
         </view>
-        
-        <!-- 底部占位 -->
         <view class="footer-placeholder"></view>
       </scroll-view>
     </view>
@@ -88,6 +112,7 @@ import { getCategoryChildren } from '@/api/category/index';
 import { getProductList } from '@/api/product/index';
 import { userInfo, user_token, companyInfo } from '@/store/userStore';
 import PageNavBar from '@/components/PageNavBar.vue';
+import SearchBox from '@/components/SearchBox.vue';
 import { getCompanyUserRole } from '@/utils/auth';
 
 const parentId = ref<number | null>(null);
@@ -107,11 +132,23 @@ const currentCategory = computed(() => {
   return subCategories.value.find(c => c.id === currentCategoryId.value);
 });
 
-// 计算最低价格（应用价格系数）
+// 导航栏标题：公司名称-上级分类名称
+const navTitle = computed(() => {
+  const company = companyInfo.value?.name || '';
+  const parentName = pageTitle.value && pageTitle.value !== '分类筛选' ? pageTitle.value : '';
+  if (company && parentName) return `${company}-${parentName}`;
+  return company || pageTitle.value || '分类筛选';
+});
+
 const getMinPrice = (product: any) => {
   if (!product.product_skus || product.product_skus.length === 0) return '0.00';
   const prices = product.product_skus.map((sku: any) => (sku.price || 0) * priceFactor.value);
   return Math.min(...prices).toFixed(2);
+};
+
+const getFirstTag = (tagsStr: string | null | undefined) => {
+  if (!tagsStr || !String(tagsStr).trim()) return '';
+  return String(tagsStr).split(/[,，|｜]/)[0].trim() || '';
 };
 
 // 检查权限
@@ -153,7 +190,9 @@ const loadSubCategories = async () => {
       loadProducts(true);
     }
   } catch (error) {
-    console.error('加载子分类失败:', error);
+    console.error('加载子分类失败', error);
+  } finally {
+    isRefreshing.value = false;
   }
 };
 
@@ -200,7 +239,14 @@ const loadProducts = async (refresh = false) => {
   }
 };
 
-// 切换分类
+// 点击分类卡片：进入该分类（继续看子分类或商品列表）
+const onCategoryTap = (category: any) => {
+  uni.navigateTo({
+    url: `/pages/category-filter/index?categoryId=${category.id}&categoryName=${encodeURIComponent(category.name || '')}`,
+  });
+};
+
+// 切换分类（无子分类时内部使用）
 const switchCategory = (category: any) => {
   if (currentCategoryId.value === category.id) return;
   currentCategoryId.value = category.id;
@@ -209,7 +255,11 @@ const switchCategory = (category: any) => {
 
 const onRefresh = () => {
   isRefreshing.value = true;
-  loadProducts(true);
+  if (parentId.value) {
+    loadSubCategories();
+  } else {
+    loadProducts(true);
+  }
 };
 
 const loadMore = () => {
@@ -251,63 +301,73 @@ onLoad(async (options) => {
 
 .content-container {
   flex: 1;
-  display: flex;
   overflow: hidden;
+  background: #f5f5f5;
 }
 
-/* 左侧导航 */
-.sidebar {
-  width: 180rpx;
-  background: #f8f8f8;
-  height: 100%;
-}
-
-.sidebar-item {
-  height: 100rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-  font-size: 26rpx;
-  color: #666;
-  padding: 0 20rpx;
-  text-align: center;
-}
-
-.sidebar-item.active {
-  background: #ffffff;
-  color: #333;
-  font-weight: bold;
-}
-
-.active-indicator {
-  position: absolute;
-  left: 0;
-  top: 30rpx;
-  bottom: 30rpx;
-  width: 6rpx;
-  background: #667eea;
-  border-radius: 0 4rpx 4rpx 0;
-}
-
-.sidebar-text {
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-/* 右侧内容 */
 .main-content {
-  flex: 1;
   height: 100%;
-  background: #ffffff;
-  padding: 20rpx;
+  background: #f5f5f5;
+  padding: 24rpx;
   box-sizing: border-box;
 }
 
+.category-grid-wrap {
+  padding: 20rpx 24rpx;
+}
+
+/* 双列分类网格（图片绿框 + 名称） */
+.category-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24rpx;
+}
+
+.category-card {
+  background: #fff;
+  border-radius: 16rpx;
+  overflow: hidden;
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.06);
+}
+
+.category-card-image-wrap {
+  width: 100%;
+  aspect-ratio: 1;
+  padding: 8rpx;
+  box-sizing: border-box;
+  border: 4rpx solid #22c55e;
+  border-radius: 12rpx 12rpx 0 0;
+  background: #fff;
+}
+
+.category-card-image {
+  width: 100%;
+  height: 100%;
+  border-radius: 8rpx;
+  display: block;
+  background: #f0f0f0;
+}
+
+.category-card-name {
+  display: block;
+  padding: 20rpx 16rpx;
+  font-size: 26rpx;
+  color: #333;
+  text-align: center;
+  line-height: 1.4;
+  min-height: 72rpx;
+}
+
+/* 无子分类时的右侧内容 */
+.main-content .category-header {
+  background: #fff;
+  border-radius: 12rpx;
+  padding: 24rpx;
+  margin-bottom: 20rpx;
+}
+
 .category-header {
-  padding: 20rpx 0;
+  padding: 20rpx 24rpx;
   margin-bottom: 20rpx;
 }
 
@@ -321,44 +381,62 @@ onLoad(async (options) => {
 
 .product-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 20rpx;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24rpx;
 }
 
-.product-item {
-  background: #ffffff;
-  border-radius: 12rpx;
+.product-card {
+  background: #fff;
+  border-radius: 20rpx;
   overflow: hidden;
-  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
-  border: 1rpx solid #f0f0f0;
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.06);
 }
 
-.product-image {
+.product-card-image-wrap {
+  position: relative;
   width: 100%;
-  height: 260rpx; /* 稍微缩小图片高度以适应双列 */
-  background: #f0f0f0;
+  aspect-ratio: 1;
+  background: #f5f5f5;
+  border-radius: 20rpx 20rpx 0 0;
+  overflow: hidden;
 }
 
-.product-info {
-  padding: 16rpx;
+.product-card-image {
+  width: 100%;
+  height: 100%;
+  display: block;
 }
 
-.product-name {
+.product-tag {
+  position: absolute;
+  left: 12rpx;
+  bottom: 12rpx;
+  background: #22c55e;
+  color: #fff;
+  padding: 6rpx 14rpx;
+  border-radius: 24rpx;
+  font-size: 22rpx;
+}
+
+.product-card-info {
+  padding: 20rpx 16rpx;
+}
+
+.product-card-name {
   font-size: 26rpx;
-  font-weight: bold;
+  font-weight: 600;
   color: #333;
   margin-bottom: 12rpx;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  height: 72rpx;
 }
 
-.product-bottom {
+.product-card-bottom {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-end;
 }
 
 .product-price {

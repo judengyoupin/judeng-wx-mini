@@ -28,15 +28,20 @@
         </view>
         <button class="add-btn" @click="goToAddProduct">+ 添加商品</button>
       </view>
-      <!-- 管理入口 -->
-      <view class="management-tabs">
-        <view class="management-item" @click="goToCategoryManagement">
-          <text class="management-icon">📁</text>
-          <text class="management-text">分类管理</text>
+      <view class="scope-row">
+        <view 
+          class="scope-tab" 
+          :class="{ active: selectedScope === 'all' }"
+          @click="selectScope('all')"
+        >
+          全部
         </view>
-        <view class="management-item" @click="goToPackageManagement">
-          <text class="management-icon">📦</text>
-          <text class="management-text">套餐管理</text>
+        <view 
+          class="scope-tab" 
+          :class="{ active: selectedScope === 'mine' }"
+          @click="selectScope('mine')"
+        >
+          只看自己公司
         </view>
       </view>
     </view>
@@ -47,7 +52,7 @@
         v-for="product in products" 
         :key="product.id"
         class="product-item"
-        @click="goToEditProduct(product.id)"
+        @click="onProductClick(product)"
       >
         <image 
           class="product-image" 
@@ -61,15 +66,23 @@
             <text class="status" :class="{ 'status-shelved': !product.is_shelved }">
               {{ product.is_shelved ? '已下架' : '已上架' }}
             </text>
+            <text v-if="isFromDefaultCompany(product)" class="tag-system">系统配置</text>
+            <text v-if="isFromDefaultCompany(product) && isProductHidden(product)" class="tag-hidden">已隐藏</text>
           </view>
         </view>
         <view class="product-actions">
-          <view class="action-btn" @click.stop="toggleShelve(product)">
-            {{ product.is_shelved ? '上架' : '下架' }}
-          </view>
-          <view class="action-btn delete" @click.stop="handleDelete(product)">
-            删除
-          </view>
+          <template v-if="isFromDefaultCompany(product)">
+            <view v-if="isProductHidden(product)" class="action-btn unhide" @click.stop="handleUnhideProduct(product)">取消隐藏</view>
+            <view v-else class="action-btn hide" @click.stop="handleHideProduct(product)">隐藏</view>
+          </template>
+          <template v-else>
+            <view class="action-btn" @click.stop="toggleShelve(product)">
+              {{ product.is_shelved ? '上架' : '下架' }}
+            </view>
+            <view class="action-btn delete" @click.stop="handleDelete(product)">
+              删除
+            </view>
+          </template>
         </view>
       </view>
 
@@ -92,6 +105,8 @@ import { ref, watch } from 'vue';
 import { onLoad, onPullDownRefresh, onReachBottom, onShow } from '@dcloudio/uni-app';
 import { companyInfo } from '@/store/userStore';
 import { getProductList, deleteProduct, updateProduct } from '@/api/admin/product';
+import { getDefaultCompanyId } from '@/api/config/index';
+import { getCompanyDetail, updateCompany } from '@/api/admin/platform';
 
 const products = ref<any[]>([]);
 const loading = ref(false);
@@ -99,73 +114,100 @@ const currentTab = ref<'all' | 'shelved' | 'unshelved'>('all');
 const page = ref(1);
 const pageSize = 20;
 const hasMore = ref(true);
+const selectedScope = ref<'all' | 'mine'>('all');
+const defaultCompanyId = ref<number | null>(null);
+const hiddenProductIds = ref<number[]>([]);
 
 // 超级管理员从公司管理点进来时传入的 companyId（仅查看，不编辑时用）
 const viewCompanyId = ref<number | null>(null);
 const effectiveCompanyId = () => viewCompanyId.value ?? companyInfo.value?.id ?? null;
 
-// 加载商品列表
+function isFromDefaultCompany(product: any): boolean {
+  const myId = companyInfo.value?.id;
+  const defaultId = defaultCompanyId.value;
+  return !!(defaultId && myId && defaultId !== myId && product._companyId === defaultId);
+}
+
+function isProductHidden(product: any): boolean {
+  return hiddenProductIds.value.includes(Number(product.id));
+}
+
+function selectScope(scope: 'all' | 'mine') {
+  selectedScope.value = scope;
+  loadProducts(true);
+}
+
+function onProductClick(product: any) {
+  if (isFromDefaultCompany(product)) return;
+  goToEditProduct(product.id);
+}
+
+// 加载商品列表（支持「全部」= 当前公司 + 系统配置公司；「只看自己公司」= 仅当前公司）
 const loadProducts = async (reset = false) => {
   if (loading.value || (!hasMore.value && !reset)) {
+    return;
+  }
+
+  const myId = effectiveCompanyId();
+  if (!myId) {
+    uni.showToast({ title: '公司信息不存在', icon: 'none' });
     return;
   }
 
   if (reset) {
     page.value = 1;
     hasMore.value = true;
-  }
-
-  const companyId = effectiveCompanyId();
-  if (!companyId) {
-    uni.showToast({
-      title: '公司信息不存在',
-      icon: 'none',
-    });
-    return;
+    defaultCompanyId.value = await getDefaultCompanyId();
+    const companyDetail = await getCompanyDetail(myId);
+    const hidden = companyDetail?.hidden_product_ids;
+    hiddenProductIds.value = Array.isArray(hidden) ? hidden.map((id: any) => Number(id)) : [];
   }
 
   loading.value = true;
 
   try {
-    const where: any = {
-      companyId,
-      limit: pageSize,
-      offset: (page.value - 1) * pageSize,
-    };
-
-    if (currentTab.value === 'shelved') {
-      // 已上架的商品需要额外过滤，这里先获取全部，前端过滤
-    } else if (currentTab.value === 'unshelved') {
-      // 已下架的商品需要额外过滤
-    }
-
-    const result = await getProductList(where);
-
-    if (reset) {
-      products.value = [];
-    }
-
-    // 根据tab过滤
-    // is_shelved = false 表示已上架，is_shelved = true 表示已下架
-    let filteredProducts = result.products || [];
-    if (currentTab.value === 'shelved') {
-      filteredProducts = filteredProducts.filter((p: any) => !p.is_shelved);
-    } else if (currentTab.value === 'unshelved') {
-      filteredProducts = filteredProducts.filter((p: any) => p.is_shelved);
-    }
-
-    products.value = [...products.value, ...filteredProducts];
-
-    if (result.total <= products.value.length) {
-      hasMore.value = false;
+    if (selectedScope.value === 'all' && defaultCompanyId.value && defaultCompanyId.value !== myId) {
+      // 全部：拉取当前公司 + 系统配置公司，合并并打标（每边最多 pageSize 条）
+      const [myRes, defaultRes] = await Promise.all([
+        getProductList({
+          companyId: myId,
+          limit: pageSize,
+          offset: reset ? 0 : (page.value - 1) * pageSize,
+        }),
+        getProductList({
+          companyId: defaultCompanyId.value,
+          limit: pageSize,
+          offset: reset ? 0 : (page.value - 1) * pageSize,
+        }),
+      ]);
+      const myList = (myRes.products || []).map((p: any) => ({ ...p, _companyId: myId }));
+      const defaultList = (defaultRes.products || []).map((p: any) => ({ ...p, _companyId: defaultCompanyId.value }));
+      let merged = [...myList, ...defaultList];
+      if (currentTab.value === 'shelved') merged = merged.filter((p: any) => !p.is_shelved);
+      else if (currentTab.value === 'unshelved') merged = merged.filter((p: any) => p.is_shelved);
+      if (reset) products.value = merged;
+      else products.value = [...products.value, ...merged];
+      hasMore.value = (myRes.products?.length === pageSize) || (defaultRes.products?.length === pageSize);
+      if (merged.length > 0) page.value++;
     } else {
-      page.value++;
+      // 只看自己公司：仅当前公司，保持原有分页
+      const where: any = {
+        companyId: myId,
+        limit: pageSize,
+        offset: (page.value - 1) * pageSize,
+      };
+      const result = await getProductList(where);
+      let filteredProducts = result.products || [];
+      if (currentTab.value === 'shelved') filteredProducts = filteredProducts.filter((p: any) => !p.is_shelved);
+      else if (currentTab.value === 'unshelved') filteredProducts = filteredProducts.filter((p: any) => p.is_shelved);
+      const tagged = filteredProducts.map((p: any) => ({ ...p, _companyId: myId }));
+      if (reset) products.value = tagged;
+      else products.value = [...products.value, ...tagged];
+      if (result.total <= products.value.length) hasMore.value = false;
+      else page.value++;
     }
   } catch (error: any) {
-    uni.showToast({
-      title: error.message || '加载失败',
-      icon: 'none',
-    });
+    uni.showToast({ title: error.message || '加载失败', icon: 'none' });
   } finally {
     loading.value = false;
     uni.stopPullDownRefresh();
@@ -203,21 +245,53 @@ const handleDelete = (product: any) => {
       if (res.confirm) {
         try {
           await deleteProduct(product.id);
-          uni.showToast({
-            title: '删除成功',
-            icon: 'success',
-          });
+          uni.showToast({ title: '删除成功', icon: 'success' });
           loadProducts(true);
         } catch (error: any) {
-          uni.showToast({
-            title: error.message || '删除失败',
-            icon: 'none',
-          });
+          uni.showToast({ title: error.message || '删除失败', icon: 'none' });
         }
       }
     },
   });
 };
+
+// 隐藏系统配置公司的商品（写入当前公司的 hidden_product_ids）
+async function handleHideProduct(product: any) {
+  const myId = companyInfo.value?.id;
+  if (!myId) return;
+  try {
+    const company = await getCompanyDetail(myId);
+    const cur = (company?.hidden_product_ids || []).map((id: any) => Number(id));
+    if (cur.includes(Number(product.id))) {
+      uni.showToast({ title: '已隐藏', icon: 'none' });
+      return;
+    }
+    await updateCompany(myId, { hidden_product_ids: [...cur, Number(product.id)] });
+    uni.showToast({ title: '已加入隐藏名单', icon: 'success' });
+    loadProducts(true);
+  } catch (error: any) {
+    uni.showToast({ title: (error as any)?.message || '操作失败', icon: 'none' });
+  }
+}
+
+async function handleUnhideProduct(product: any) {
+  const myId = companyInfo.value?.id;
+  if (!myId) return;
+  try {
+    const company = await getCompanyDetail(myId);
+    const cur = (company?.hidden_product_ids || []).map((id: any) => Number(id));
+    const next = cur.filter((id) => id !== Number(product.id));
+    if (next.length === cur.length) {
+      uni.showToast({ title: '未在隐藏名单中', icon: 'none' });
+      return;
+    }
+    await updateCompany(myId, { hidden_product_ids: next });
+    uni.showToast({ title: '已取消隐藏', icon: 'success' });
+    loadProducts(true);
+  } catch (error: any) {
+    uni.showToast({ title: (error as any)?.message || '操作失败', icon: 'none' });
+  }
+}
 
 // 跳转到添加商品
 const goToAddProduct = () => {
@@ -230,20 +304,6 @@ const goToAddProduct = () => {
 const goToEditProduct = (productId: number) => {
   uni.navigateTo({
     url: `/subPackages/company/product-edit/index?id=${productId}`,
-  });
-};
-
-// 跳转到分类管理
-const goToCategoryManagement = () => {
-  uni.navigateTo({
-    url: '/subPackages/company/category-list/index',
-  });
-};
-
-// 跳转到套餐管理
-const goToPackageManagement = () => {
-  uni.navigateTo({
-    url: '/subPackages/company/package-list/index',
   });
 };
 
@@ -316,29 +376,50 @@ onReachBottom(() => {
   border: none;
 }
 
-.management-tabs {
+.scope-row {
   display: flex;
-  justify-content: space-around;
-  padding: 20rpx 0;
-  border-top: 1rpx solid #e0e0e0;
-  margin-top: 20rpx;
+  gap: 12rpx;
+  margin-top: 12rpx;
 }
 
-.management-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8rpx;
-  padding: 10rpx;
-}
-
-.management-icon {
-  font-size: 40rpx;
-}
-
-.management-text {
+.scope-tab {
+  padding: 8rpx 16rpx;
   font-size: 24rpx;
-  color: #666666;
+  color: #666;
+  background: #f0f2f5;
+  border-radius: 8rpx;
+}
+
+.scope-tab.active {
+  background: #e8ebf7;
+  color: #667eea;
+  font-weight: 500;
+}
+
+.tag-system {
+  font-size: 20rpx;
+  padding: 2rpx 8rpx;
+  background: #fff7e6;
+  color: #d48806;
+  border-radius: 4rpx;
+}
+
+.tag-hidden {
+  font-size: 20rpx;
+  color: #999;
+  padding: 2rpx 8rpx;
+  background: #f5f5f5;
+  border-radius: 4rpx;
+}
+
+.action-btn.hide {
+  background: #fff7e6;
+  color: #d48806;
+}
+
+.action-btn.unhide {
+  background: #e6f7ff;
+  color: #1890ff;
 }
 
 .product-list {

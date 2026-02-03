@@ -42,6 +42,15 @@
         </view>
 
         <view class="form-item">
+          <view class="form-label">标签</view>
+          <input 
+            class="form-input" 
+            v-model="form.tags" 
+            placeholder="多个标签用｜分隔，如：新品｜热卖"
+          />
+        </view>
+
+        <view class="form-item">
           <view class="form-label">套餐分类</view>
           <view class="category-selector" @click="showCategoryPicker = true">
             <text v-if="selectedCategory" class="selected-category">
@@ -192,6 +201,8 @@ import { onLoad } from '@dcloudio/uni-app';
 import { companyInfo } from '@/store/userStore';
 import { getPackageDetail, createPackage, updatePackage, addPackageSku, updatePackageSku, deletePackageSku } from '@/api/admin/package';
 import { getProductList } from '@/api/admin/product';
+import { getCompanyDetail } from '@/api/admin/platform';
+import { getDefaultCompanyId } from '@/api/config/index';
 import { getCategoryTree } from '@/api/category/index';
 import { uploadFile } from '@/api/upload';
 
@@ -200,6 +211,7 @@ const form = ref({
   name: '',
   cover_image_url: '',
   description: '',
+  tags: '',
   category_categories: undefined as number | undefined,
 });
 const packageSkus = ref<any[]>([]);
@@ -219,25 +231,53 @@ const editingSkuIndex = ref(-1);
 const editingSkuItem = ref<any>(null);
 const skuQuantity = ref('');
 
-// 加载所有商品SKU
+// 加载所有商品SKU（系统默认公司 + 当前公司，并过滤当前公司已隐藏的商品）
 const loadAllSkus = async () => {
-  if (!companyInfo.value?.id) return;
+  const currentCompanyId = companyInfo.value?.id;
+  if (!currentCompanyId) return;
   try {
-    const result = await getProductList({
-      companyId: companyInfo.value.id,
-      limit: 1000,
-    });
+    const defaultCompanyId = await getDefaultCompanyId();
+    const productIds = new Set<number>();
+    const products: any[] = [];
+
+    const appendProducts = (list: any[]) => {
+      (list || []).forEach((p: any) => {
+        if (p.id && !productIds.has(Number(p.id))) {
+          productIds.add(Number(p.id));
+          products.push(p);
+        }
+      });
+    };
+
+    const [currentRes, defaultRes] = await Promise.all([
+      getProductList({ companyId: currentCompanyId, limit: 1000 }),
+      defaultCompanyId && defaultCompanyId !== currentCompanyId
+        ? getProductList({ companyId: defaultCompanyId, limit: 1000 })
+        : Promise.resolve({ products: [] }),
+    ]);
+    appendProducts(currentRes.products);
+    appendProducts(defaultRes.products);
+
+    let hiddenIds: number[] = [];
+    try {
+      const company = await getCompanyDetail(currentCompanyId);
+      const raw = company?.hidden_product_ids;
+      hiddenIds = Array.isArray(raw) ? raw.map((id: any) => Number(id)) : [];
+    } catch (_) {}
+
     const skus: any[] = [];
-    result.products.forEach((product: any) => {
-      if (product.product_skus) {
-        product.product_skus.forEach((sku: any) => {
-          skus.push({
-            ...sku,
-            product_name: product.name,
+    products
+      .filter((p) => !hiddenIds.length || !hiddenIds.includes(Number(p.id)))
+      .forEach((product: any) => {
+        if (product.product_skus) {
+          product.product_skus.forEach((sku: any) => {
+            skus.push({
+              ...sku,
+              product_name: product.name,
+            });
           });
-        });
-      }
-    });
+        }
+      });
     allSkus.value = skus;
     availableSkus.value = skus;
   } catch (error) {
@@ -393,6 +433,7 @@ const loadPackageDetail = async () => {
         name: pkg.name,
         cover_image_url: pkg.cover_image_url,
         description: pkg.description || '',
+        tags: pkg.tags || '',
         category_categories: pkg.category_categories || undefined,
       };
       packageSkus.value = pkg.package_product_skus || [];
@@ -435,8 +476,17 @@ const handleSave = async () => {
       await updatePackage(packageId.value, form.value);
       savedPackageId = packageId.value;
     } else {
-      // 创建套餐
-      const result = await createPackage(form.value);
+      // 创建套餐：传入当前公司 ID
+      const companyId = companyInfo.value?.id;
+      if (companyId == null) {
+        uni.showToast({ title: '请先选择公司', icon: 'none' });
+        loading.value = false;
+        return;
+      }
+      const result = await createPackage({
+        ...form.value,
+        company_companies: companyId,
+      });
       savedPackageId = result.id;
     }
 
@@ -739,9 +789,10 @@ onLoad((options: any) => {
 
 .search-input {
   width: 100%;
-  padding: 20rpx;
+  min-height: 88rpx;
+  padding: 24rpx 28rpx;
   background: #f8f8f8;
-  border-radius: 8rpx;
+  border-radius: 12rpx;
   font-size: 28rpx;
   box-sizing: border-box;
 }

@@ -3,23 +3,8 @@
     <!-- 统一导航栏（含状态栏高度） -->
     <PageNavBar :title="companyInfo?.name || '聚灯优品'" />
 
-    <!-- 搜索框 -->
-    <view class="search-box">
-      <view class="search-input">
-        <image
-          class="search-icon"
-          src="/static/index/srch.png"
-          mode="aspectFit"
-        ></image>
-        <input
-          type="text"
-          confirm-type="search"
-          v-model="searchKeyword"
-          placeholder="请输入商品名称"
-          @confirm="onSearchConfirm"
-        />
-      </view>
-    </view>
+    <!-- 搜索框：点击跳转搜索页并自动聚焦 -->
+    <SearchBox type="product" placeholder="请输入商品名称" search-icon="/static/index/srch.png" />
 
     <!-- 骨架屏 - 在加载中显示 -->
     <view v-if="loading" class="skeleton-container">
@@ -176,6 +161,7 @@ import { onLoad, onShow, onShareAppMessage } from "@dcloudio/uni-app";
 import type { BannerArray } from "@/types/companies";
 
 import PageNavBar from '@/components/PageNavBar.vue';
+import SearchBox from '@/components/SearchBox.vue';
 
 /** 首页分类项（含子分类） */
 interface CategoryItem {
@@ -194,51 +180,21 @@ interface CategoryItem {
 }
 
 export default defineComponent({
-  components: { PageNavBar },
+  components: { PageNavBar, SearchBox },
   setup() {
     // 定义数据
     const categoryList = ref<CategoryItem[]>([]);
     const loading = ref(true);
     const topBanners = ref<BannerArray>([]);
     const bottomBanners = ref<BannerArray>([]);
-    const searchKeyword = ref("");
-
-    // 搜索确认处理
-    const onSearchConfirm = () => {
-      const trimmedKeyword = searchKeyword.value.trim();
-      if (trimmedKeyword) {
-        console.log("搜索关键词:", trimmedKeyword);
-
-        uni.navigateTo({
-          url: `/pages/product/index?keyword=${encodeURIComponent(
-            trimmedKeyword
-          )}`,
-          success: () => {
-            // 跳转成功后清空搜索框
-            searchKeyword.value = "";
-          },
-          fail: (err) => {
-            console.error("页面跳转失败:", err);
-            uni.showToast({
-              title: "页面跳转失败，请重试",
-              icon: "none",
-            });
-          },
-        });
-      } else {
-        uni.showToast({
-          title: "请输入搜索关键词",
-          icon: "none",
-        });
-      }
-    };
 
     // 获取分类数据
     const fetchCategories = async () => {
       loading.value = true;
 
       try {
-        const res = await getCategoryTree(companyInfo?.value?.id || null);
+        // 首页只展示商品分类，不展示套餐分类
+        const res = await getCategoryTree(companyInfo?.value?.id || null, 'product');
 
         if (res && res.code === 0 && res.data) {
           categoryList.value = res.data;
@@ -528,8 +484,6 @@ export default defineComponent({
       companyInfo,
       isLastCategory,
       userInfo,
-      searchKeyword,
-      onSearchConfirm,
     };
   },
   onShareAppMessage(res: { from?: string; target?: unknown }) {

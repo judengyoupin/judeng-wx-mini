@@ -12,7 +12,7 @@ export interface CategoryInput {
 }
 
 /**
- * 获取分类树（仅查根节点，子节点通过嵌套 relation 获取，避免二级与一级平铺）
+ * 获取分类树（一次请求返回三层：根 → 二级 → 三级，仅查根节点，子节点通过嵌套 relation 获取）
  */
 export async function getCategoryTree(companyId: number) {
   const query = `
@@ -194,4 +194,36 @@ export async function deleteCategory(categoryId: number) {
   });
 
   return result?.update_categories_by_pk;
+}
+
+/**
+ * 按父级 ID 获取子分类列表（仅当前公司，用于分类选择器按需加载第三层等）
+ */
+export async function getCategoryChildren(parentId: number, companyId: number) {
+  const query = `
+    query GetCategoryChildren($parentId: bigint!, $companyId: bigint!) {
+      categories(
+        where: {
+          parent_categories: { _eq: $parentId }
+          company_companies: { _eq: $companyId }
+          is_deleted: { _eq: false }
+        }
+        order_by: { sort_order: asc }
+      ) {
+        id
+        name
+        icon_url
+        parent_categories
+        level
+        route_ui_style
+        sort_order
+        type
+      }
+    }
+  `;
+  const result = await client.execute({
+    query,
+    variables: { parentId, companyId },
+  });
+  return result?.categories || [];
 }

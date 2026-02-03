@@ -2,18 +2,24 @@ import client from '@/config-lib/hasura-graphql-client/hasura-graphql-client';
 import { userInfo, companyInfo } from '@/store/userStore';
 
 /**
- * 获取购物车列表
+ * 获取购物车列表（严格按当前所属公司，不同公司看到不同购物车数据）
  */
 export async function getCartList() {
   if (!userInfo.value?.id) {
     throw new Error('未登录，请先登录');
   }
 
+  const companyId = companyInfo.value?.id;
+  if (!companyId) {
+    return [];
+  }
+
   const query = `
-    query GetCartList($userId: bigint!) {
+    query GetCartList($userId: bigint!, $companyId: bigint!) {
       carts(
         where: {
           user_users: { _eq: $userId }
+          company_companies: { _eq: $companyId }
         }
         order_by: { created_at: desc }
       ) {
@@ -40,14 +46,14 @@ export async function getCartList() {
 
   const result = await client.execute({
     query,
-    variables: { userId: Number(userInfo.value.id) },
+    variables: { userId: Number(userInfo.value.id), companyId: Number(companyId) },
   });
 
   return result?.carts || [];
 }
 
 /**
- * 添加商品到购物车
+ * 添加商品到购物车（归属当前所属公司，不同公司购物车隔离）
  */
 export async function addToCart(params: {
   skuId: number;
@@ -57,12 +63,17 @@ export async function addToCart(params: {
     throw new Error('未登录，请先登录');
   }
 
+  const companyId = companyInfo.value?.id;
+  if (!companyId) {
+    throw new Error('请先选择或进入公司');
+  }
+
   const mutation = `
     mutation AddToCart($cart: carts_insert_input!) {
       insert_carts_one(
         object: $cart
         on_conflict: {
-          constraint: carts_product_sku_product_skus_user_users_key
+          constraint: carts_product_sku_product_skus_user_users_company_companies_key
           update_columns: [quantity]
         }
       ) {
@@ -83,6 +94,7 @@ export async function addToCart(params: {
     variables: {
       cart: {
         user_users: Number(userInfo.value.id),
+        company_companies: Number(companyId),
         product_sku_product_skus: params.skuId,
         quantity: params.quantity || 1,
         selected: false,

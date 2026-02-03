@@ -1,13 +1,18 @@
 <template>
   <view class="cart-page">
     <!-- 统一导航栏（含状态栏高度） -->
-    <PageNavBar title="购物车">
-      <template #right>
-        <text v-if="cartItems.length > 0" class="manage-btn" @click="toggleManageMode">
-          {{ isManageMode ? '完成' : '管理' }}
-        </text>
-      </template>
-    </PageNavBar>
+    <PageNavBar title="购物车" />
+
+    <!-- 当前公司与管理按钮同一行（避免被小程序关闭按钮遮挡） -->
+    <view v-if="companyInfo?.name || cartItems.length > 0" class="company-bar">
+      <view class="company-left">
+        <text v-if="companyInfo?.name" class="company-label">当前公司：</text>
+        <text class="company-name">{{ companyInfo?.name || '' }}</text>
+      </view>
+      <text v-if="cartItems.length > 0" class="manage-btn" @click="toggleManageMode">
+        {{ isManageMode ? '完成' : '管理' }}
+      </text>
+    </view>
 
     <!-- 加载状态 -->
     <view v-if="loading" class="loading-container">
@@ -71,14 +76,10 @@
             </view>
           </view>
 
-          <!-- 删除按钮（管理模式） -->
-          <view v-if="isManageMode" class="delete-btn" @click="deleteItem(index)">
-            <text>删除</text>
-          </view>
         </view>
       </scroll-view>
 
-      <!-- 底部结算栏 -->
+      <!-- 底部栏：管理模式显示「删除选中」，否则显示「结算」 -->
       <view class="cart-footer">
         <view class="footer-left">
           <view class="checkbox-wrapper" @click="toggleSelectAll">
@@ -86,13 +87,26 @@
               <text v-if="isAllSelected">✓</text>
             </view>
             <text class="select-all-text">全选</text>
+            <text class="no-pay-hint">（无需支付）</text>
           </view>
-          <view class="total-info">
-            <text class="total-label">合计：</text>
-            <text class="total-price">¥{{ formatPrice(totalPrice) }}</text>
-          </view>
+          <template v-if="!isManageMode">
+            <view class="total-info">
+              <text class="total-label">合计：</text>
+              <text class="total-price">¥{{ formatPrice(totalPrice) }}</text>
+            </view>
+          </template>
         </view>
+        <template v-if="isManageMode">
+          <button
+            class="delete-selected-btn"
+            :class="{ disabled: selectedCount === 0 }"
+            @click="deleteSelectedItems"
+          >
+            删除选中({{ selectedCount }})
+          </button>
+        </template>
         <button
+          v-else
           class="checkout-btn"
           :class="{ disabled: selectedCount === 0 }"
           @click="handleCheckout"
@@ -286,28 +300,26 @@ const decreaseQuantity = async (index: number) => {
   }
 };
 
-// 删除商品
-const deleteItem = async (index: number) => {
-  const item = cartItems.value[index];
-  
+// 管理模式：批量删除选中的商品
+const deleteSelectedItems = async () => {
+  const selected = cartItems.value.filter(item => item.selected);
+  if (selected.length === 0) {
+    uni.showToast({ title: '请先勾选要删除的商品', icon: 'none' });
+    return;
+  }
   uni.showModal({
     title: '确认删除',
-    content: '确定要删除这个商品吗？',
+    content: `确定要删除选中的 ${selected.length} 件商品吗？`,
     success: async (res) => {
-      if (res.confirm) {
-        try {
-          await deleteCartItem(item.id);
-          cartItems.value.splice(index, 1);
-          uni.showToast({
-            title: '删除成功',
-            icon: 'success',
-          });
-        } catch (error: any) {
-          uni.showToast({
-            title: error.message || '删除失败',
-            icon: 'none',
-          });
-        }
+      if (!res.confirm) return;
+      try {
+        await Promise.all(selected.map(item => deleteCartItem(item.id)));
+        const ids = new Set(selected.map(item => item.id));
+        cartItems.value = cartItems.value.filter(item => !ids.has(item.id));
+        isManageMode.value = false;
+        uni.showToast({ title: '删除成功', icon: 'success' });
+      } catch (error: any) {
+        uni.showToast({ title: error.message || '删除失败', icon: 'none' });
       }
     },
   });
@@ -377,12 +389,47 @@ onPullDownRefresh(() => {
 .cart-page {
   min-height: 100vh;
   background: #f5f5f5;
-  padding-bottom: 120rpx;
+  padding-bottom: 100rpx;
+}
+
+.company-bar {
+  background: #f0f2f5;
+  padding: 16rpx 30rpx;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12rpx;
+  border-bottom: 1rpx solid #e8e8e8;
+}
+
+.company-left {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  flex: 1;
+  min-width: 0;
+}
+
+.company-label {
+  font-size: 24rpx;
+  color: #999;
+  flex-shrink: 0;
+}
+
+.company-name {
+  font-size: 28rpx;
+  color: #333;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .manage-btn {
   font-size: 28rpx;
-  color: #667eea;
+  color: #0d9488;
+  flex-shrink: 0;
+  padding: 8rpx 0;
 }
 
 .loading-container {
@@ -396,7 +443,7 @@ onPullDownRefresh(() => {
   width: 40rpx;
   height: 40rpx;
   border: 4rpx solid #e0e0e0;
-  border-top-color: #667eea;
+  border-top-color: #0d9488;
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin: 0 auto 20rpx;
@@ -407,7 +454,7 @@ onPullDownRefresh(() => {
 }
 
 .cart-content {
-  height: calc(100vh - 120rpx);
+  height: calc(100vh - 100rpx);
   display: flex;
   flex-direction: column;
 }
@@ -447,8 +494,8 @@ onPullDownRefresh(() => {
 }
 
 .checkbox.checked {
-  background: #667eea;
-  border-color: #667eea;
+  background: #0d9488;
+  border-color: #0d9488;
   color: #ffffff;
   font-size: 24rpx;
   font-weight: bold;
@@ -530,12 +577,19 @@ onPullDownRefresh(() => {
   color: #333333;
 }
 
-.delete-btn {
-  padding: 16rpx 24rpx;
-  background: #ff6b6b;
+.delete-selected-btn {
+  padding: 16rpx 28rpx;
+  background: #ef4444;
   color: #ffffff;
-  border-radius: 8rpx;
+  border-radius: 999rpx;
   font-size: 26rpx;
+  font-weight: 500;
+  border: none;
+}
+
+.delete-selected-btn.disabled {
+  background: #e5e7eb;
+  color: #9ca3af;
 }
 
 .cart-footer {
@@ -543,56 +597,66 @@ onPullDownRefresh(() => {
   bottom: 0;
   left: 0;
   right: 0;
-  height: 120rpx;
+  height: 100rpx;
   background: #ffffff;
-  border-top: 1rpx solid #e0e0e0;
+  border-top: 1rpx solid #e8e8e8;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 30rpx;
+  padding: 0 24rpx;
+  padding-bottom: env(safe-area-inset-bottom);
   z-index: 1000;
 }
 
 .footer-left {
   display: flex;
   align-items: center;
-  gap: 20rpx;
+  gap: 16rpx;
 }
 
 .select-all-text {
-  font-size: 28rpx;
+  font-size: 26rpx;
   color: #333333;
+}
+
+.no-pay-hint {
+  font-size: 24rpx;
+  color: #999999;
+  margin-left: 4rpx;
 }
 
 .total-info {
   display: flex;
   align-items: baseline;
-  gap: 8rpx;
+  gap: 6rpx;
 }
 
 .total-label {
-  font-size: 28rpx;
+  font-size: 26rpx;
   color: #666666;
 }
 
 .total-price {
-  font-size: 36rpx;
-  font-weight: bold;
-  color: #ff6b6b;
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #f97316;
 }
 
+/* 结算按钮：参考图 圆角矩形、绿色底、白字 */
 .checkout-btn {
-  padding: 20rpx 40rpx;
-  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+  padding: 18rpx 36rpx;
+  background: #22c55e;
   color: #ffffff;
-  border-radius: 50rpx;
+  border-radius: 999rpx;
   font-size: 28rpx;
+  font-weight: bold;
   border: none;
 }
 
 .checkout-btn.disabled {
-  background: #cccccc;
-  color: #999999;
+  background: #e5e7eb;
+  color: #9ca3af;
+  font-weight: 500;
 }
 
 .empty-state {
@@ -614,11 +678,12 @@ onPullDownRefresh(() => {
 
 .login-btn,
 .go-shopping-btn {
-  padding: 20rpx 60rpx;
-  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+  padding: 16rpx 48rpx;
+  background: #0d9488;
   color: #ffffff;
-  border-radius: 50rpx;
+  border-radius: 12rpx;
   font-size: 28rpx;
+  font-weight: 500;
   border: none;
 }
 </style>

@@ -73,6 +73,7 @@ import { getPackageDetail } from '@/api/package/index';
 import { addToCart } from '@/api/cart/index';
 import { user_token, userInfo, companyInfo } from '@/store/userStore';
 import { getCompanyUserRole } from '@/utils/auth';
+import PageNavBar from '@/components/PageNavBar.vue';
 
 const packageId = ref<number | null>(null);
 const packageDetail = ref<any>(null);
