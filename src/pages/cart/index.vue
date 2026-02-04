@@ -219,7 +219,9 @@ const loadCart = async () => {
     });
   } finally {
     loading.value = false;
-    uni.stopPullDownRefresh();
+    if (typeof uni !== 'undefined' && uni.stopPullDownRefresh) {
+      uni.stopPullDownRefresh();
+    }
   }
 };
 
