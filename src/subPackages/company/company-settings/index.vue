@@ -311,7 +311,7 @@ const uploadResourceFile = () => {
   uni.chooseMessageFile({
     count: 1,
     type: 'file',
-    extensionFilter: ['.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx'],
+    extension: ['.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx'],
     success: async (res) => {
       const file = res.tempFiles[0];
       if (!file?.path) return;

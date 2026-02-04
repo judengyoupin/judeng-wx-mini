@@ -194,7 +194,7 @@ export async function getProductList(params: {
       }
     `;
     variables.categoryId = params.categoryId;
-    variables.keyword = `%${params.keyword.trim()}%`;
+    variables.keyword = `%${(params.keyword ?? '').trim()}%`;
   } else if (hasCategory) {
     const queryVars = hasMultipleCompanies
       ? `$companyIds: [bigint!]!, $categoryId: bigint!, $limit: Int, $offset: Int${hiddenVars}`
@@ -294,7 +294,7 @@ export async function getProductList(params: {
         }
       }
     `;
-    variables.keyword = `%${params.keyword.trim()}%`;
+    variables.keyword = `%${(params.keyword ?? '').trim()}%`;
   } else {
     const queryVars = hasMultipleCompanies
       ? `$companyIds: [bigint!]!, $limit: Int, $offset: Int${hiddenVars}`

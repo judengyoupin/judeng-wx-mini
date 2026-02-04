@@ -34,8 +34,8 @@ export async function getBanners(companyId?: number | null): Promise<{ code: num
       variables: { companyId },
     });
     const row = result?.companies_by_pk;
-    const top: BannerArray = Array.isArray(row?.banner_top) ? row.banner_top : [];
-    const bottom: BannerArray = Array.isArray(row?.banner_bottom) ? row.banner_bottom : [];
+    const top: BannerArray = row && Array.isArray(row.banner_top) ? row.banner_top : [];
+    const bottom: BannerArray = row && Array.isArray(row.banner_bottom) ? row.banner_bottom : [];
     return {
       code: 0,
       data: { top, bottom },

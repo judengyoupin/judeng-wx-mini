@@ -25,15 +25,16 @@ export const passwordLogin = async (params: {
     },
   });
 
-  if (response.statusCode !== 200 || !response.data) {
-    throw new Error(response.data?.error || '登录失败');
+  const data = response.data as Record<string, unknown> | null | undefined;
+  if (response.statusCode !== 200 || !data) {
+    throw new Error((data && typeof data.error === 'string' ? data.error : null) || '登录失败');
   }
 
-  if (response.data.error) {
-    throw new Error(response.data.error);
+  if (data.error) {
+    throw new Error(String(data.error));
   }
 
-  return response.data;
+  return data as { userId: number; token: string; user: any };
 };
 
 /**
@@ -59,15 +60,16 @@ export const wechatLogin = async (params: {
     },
   });
 
-  if (response.statusCode !== 200 || !response.data) {
-    throw new Error(response.data?.error || '登录失败');
+  const data = response.data as Record<string, unknown> | null | undefined;
+  if (response.statusCode !== 200 || !data) {
+    throw new Error((data && typeof data.error === 'string' ? data.error : null) || '登录失败');
   }
 
-  if (response.data.error) {
-    throw new Error(response.data.error);
+  if (data.error) {
+    throw new Error(String(data.error));
   }
 
-  return response.data;
+  return data as { userId: number; token: string; user: any };
 };
 
 /**

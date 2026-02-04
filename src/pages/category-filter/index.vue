@@ -278,11 +278,11 @@ const goBack = () => {
   uni.navigateBack();
 };
 
-onLoad(async (options) => {
-  if (options.categoryId) {
+onLoad(async (options?) => {
+  if (options?.categoryId) {
     parentId.value = Number(options.categoryId);
   }
-  if (options.categoryName) {
+  if (options?.categoryName) {
     pageTitle.value = decodeURIComponent(options.categoryName);
   }
 

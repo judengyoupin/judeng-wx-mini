@@ -20,7 +20,7 @@
       </view>
       <view class="form-item row">
         <text class="form-label">设为默认地址</text>
-        <switch :checked="form.is_default" @change="form.is_default = $event.detail.value" color="#667eea" />
+        <switch :checked="form.is_default" @change="onDefaultChange" color="#667eea" />
       </view>
     </view>
     <view class="footer-actions">
@@ -46,6 +46,10 @@ const form = reactive<AddressInput & { is_default?: boolean }>({
   receiver_district: '',
   is_default: false,
 });
+
+function onDefaultChange(e: Event) {
+  form.is_default = (e as unknown as { detail: { value: boolean } }).detail.value;
+}
 
 onLoad((options?: { id?: string }) => {
   if (options?.id) {

@@ -9,7 +9,7 @@
         <view class="detail-footer-nav-item" @click="emit('cart')">
           <view class="detail-footer-nav-icon-wrap">
             <image class="detail-footer-nav-icon" src="/static/navbar/gouwuche.png" mode="aspectFit" />
-            <view v-if="cartCount > 0" class="detail-footer-nav-badge">{{ cartCount > 99 ? '99+' : cartCount }}</view>
+            <view v-if="(cartCount ?? 0) > 0" class="detail-footer-nav-badge">{{ (cartCount ?? 0) > 99 ? '99+' : (cartCount ?? 0) }}</view>
           </view>
           <text class="detail-footer-nav-label">购物车</text>
         </view>

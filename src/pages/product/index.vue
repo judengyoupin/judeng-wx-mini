@@ -218,14 +218,14 @@ const goBack = () => {
   uni.navigateBack();
 };
 
-onLoad(async (options) => {
-  if (options.keyword) {
+onLoad(async (options?) => {
+  if (options?.keyword) {
     keyword.value = decodeURIComponent(options.keyword);
   }
-  if (options.categoryId) {
+  if (options?.categoryId) {
     categoryId.value = Number(options.categoryId);
   }
-  if (options.categoryName) {
+  if (options?.categoryName) {
     categoryName.value = decodeURIComponent(options.categoryName);
   }
 

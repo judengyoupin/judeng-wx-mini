@@ -162,7 +162,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import { onLoad } from '@dcloudio/uni-app';
-import { getCompanyDetailCached, createCompany, updateCompany, authorizeCompanyAdmin, searchUserByMobileForPlatform } from '@/subPackages/admin/api/platform';
+import { getCompanyDetailCached, createCompany, updateCompany, authorizeCompanyAdmin, searchUserByMobileForPlatform, type CompanyInput } from '@/subPackages/admin/api/platform';
 import { uploadFile } from '@/api/upload';
 
 const companyId = ref<number | null>(null);
@@ -252,7 +252,7 @@ const uploadResourceFile = () => {
   uni.chooseMessageFile({
     count: 1,
     type: 'file',
-    extensionFilter: ['.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx'],
+    extension: ['.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx'],
     success: async (res) => {
       const file = res.tempFiles[0];
       if (!file?.path) return;
@@ -403,7 +403,7 @@ const handleSave = async () => {
 
   loading.value = true;
 
-  const payload: Record<string, any> = {
+  const payload: CompanyInput = {
     name: form.value.name,
   };
   if (form.value.logo_url) payload.logo_url = form.value.logo_url;
@@ -455,8 +455,8 @@ const handleCancel = () => {
   uni.navigateBack();
 };
 
-onLoad((options) => {
-  if (options.id) {
+onLoad((options?) => {
+  if (options?.id) {
     companyId.value = Number(options.id);
     loadCompanyDetail();
   }
