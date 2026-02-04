@@ -14,7 +14,8 @@
       <view class="info-row">
         <text class="info-label">订单金额</text>
         <text v-if="loadingAmount" class="info-value amount placeholder">加载中...</text>
-        <text v-else class="info-value amount">¥{{ orderAmount }}</text>
+        <text v-else-if="canViewPrice" class="info-value amount">¥{{ orderAmount }}</text>
+        <text v-else class="info-value amount amount-hidden">--</text>
       </view>
     </view>
 
@@ -39,12 +40,14 @@
 import { ref, onMounted } from 'vue';
 import { onLoad, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app';
 import { getOrderDetailById } from '@/api/order/index';
+import { getCompanyUserRole } from '@/utils/auth';
 
 const orderId = ref<number | null>(null);
 const orderAmount = ref<string>('');
 const loadingAmount = ref(true);
 const companyWechatCode = ref<string | null>(null);
 const companyName = ref<string>('');
+const canViewPrice = ref(false);
 
 onLoad((options: any) => {
   if (options?.orderId) {
@@ -53,6 +56,9 @@ onLoad((options: any) => {
 });
 
 onMounted(async () => {
+  getCompanyUserRole().then((r) => {
+    canViewPrice.value = r?.canViewPrice ?? false;
+  });
   if (orderId.value) {
     loadingAmount.value = true;
     try {
@@ -182,6 +188,11 @@ function goHome() {
 }
 
 .info-value.amount.placeholder {
+  color: #999;
+  font-weight: normal;
+}
+
+.info-value.amount.amount-hidden {
   color: #999;
   font-weight: normal;
 }

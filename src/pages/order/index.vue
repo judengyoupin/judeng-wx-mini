@@ -36,7 +36,8 @@
               <view class="goods-name">{{ item.product_sku?.product?.name || '商品' }}</view>
               <view class="goods-spec">{{ item.product_sku?.name || '规格' }}</view>
               <view class="goods-row">
-                <text class="goods-price">¥{{ formatPrice((item.product_sku?.price || 0) * priceFactor) }}</text>
+                <text v-if="canViewPrice" class="goods-price">¥{{ formatPrice((item.product_sku?.price || 0) * priceFactor) }}</text>
+                <text v-else class="goods-price goods-price-hidden">--</text>
                 <text class="goods-quantity">x{{ item.quantity }}</text>
               </view>
             </view>
@@ -64,9 +65,13 @@
 
       <!-- 底部合计与提交 -->
       <view class="footer-bar">
-        <view class="footer-total">
-          <text class="total-label">合计：</text>
-          <text class="total-price">¥{{ formatPrice(totalAmount) }}</text>
+        <view class="footer-total-wrap">
+          <view class="footer-total">
+            <text class="total-label">合计：</text>
+            <text v-if="canViewPrice" class="total-price">¥{{ formatPrice(totalAmount) }}</text>
+            <text v-else class="total-price total-price-hidden">--</text>
+          </view>
+          <text class="footer-hint">无需支付，提交后联系公司付款</text>
         </view>
         <button
           class="submit-btn"
@@ -101,6 +106,7 @@ const cartIds = ref<number[]>([]);
 const orderItems = ref<any[]>([]);
 const loading = ref(true);
 const priceFactor = ref(1);
+const canViewPrice = ref(false);
 const addressList = ref<AddressItem[]>([]);
 const selectedAddress = ref<AddressItem | null>(null);
 const remark = ref('');
@@ -135,8 +141,10 @@ async function loadPriceFactor() {
   try {
     const roleInfo = await getCompanyUserRole();
     priceFactor.value = roleInfo?.priceFactor ?? 1;
+    canViewPrice.value = roleInfo?.canViewPrice ?? false;
   } catch {
     priceFactor.value = 1;
+    canViewPrice.value = false;
   }
 }
 
@@ -499,10 +507,21 @@ defineExpose({ onAddressSelected });
   justify-content: space-between;
 }
 
+.footer-total-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 6rpx;
+}
+
 .footer-total {
   display: flex;
   align-items: baseline;
   gap: 8rpx;
+}
+
+.footer-hint {
+  font-size: 22rpx;
+  color: #999;
 }
 
 .total-label {

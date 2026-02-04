@@ -72,6 +72,7 @@ export async function getOrderList(params: {
         payment_status
         total_price
         total_amount
+        actual_amount
         price_factor
         remark
         created_at
@@ -189,10 +190,17 @@ export async function confirmOrder(orderId: number) {
   return updated;
 }
 
-/** 确认收款（支付状态 pending -> approved；可选同时完成订单 order_status -> completed） */
-export async function approvePayment(orderId: number, completeOrder = true) {
-  const set: { payment_status: string; order_status?: string } = { payment_status: 'approved' };
+/** 确认收款（支付状态 pending -> approved；可传实际收款金额；completeOrder=false 时不改订单状态） */
+export async function approvePayment(
+  orderId: number,
+  completeOrder = true,
+  actualAmount?: number
+) {
+  const set: { payment_status: string; order_status?: string; actual_amount?: number } = {
+    payment_status: 'approved',
+  };
   if (completeOrder) set.order_status = 'completed';
+  if (actualAmount != null && !Number.isNaN(actualAmount)) set.actual_amount = actualAmount;
   const mutation = `
     mutation ApprovePayment($orderId: bigint!, $set: orders_set_input!) {
       update_orders_by_pk(
@@ -230,6 +238,30 @@ export async function completeOrder(orderId: number) {
   const result = await client.execute({
     query: mutation,
     variables: { orderId, set: { order_status: 'completed' } },
+  });
+  return result?.update_orders_by_pk;
+}
+
+/** 修改订单实际收款金额（仅更新 actual_amount，订单未完成时管理员可用） */
+export async function updateOrderActualAmount(orderId: number, actualAmount: number) {
+  const mutation = `
+    mutation UpdateOrderActualAmount($orderId: bigint!, $set: orders_set_input!) {
+      update_orders_by_pk(
+        pk_columns: { id: $orderId }
+        _set: $set
+      ) {
+        id
+        actual_amount
+        updated_at
+      }
+    }
+  `;
+  const result = await client.execute({
+    query: mutation,
+    variables: {
+      orderId: Number(orderId),
+      set: { actual_amount: actualAmount },
+    },
   });
   return result?.update_orders_by_pk;
 }

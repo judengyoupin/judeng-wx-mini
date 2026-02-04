@@ -75,6 +75,7 @@ export async function getMyOrderList(params: {
         payment_status
         total_price
         total_amount
+        actual_amount
         price_factor
         remark
         created_at
@@ -83,6 +84,14 @@ export async function getMyOrderList(params: {
         company {
           id
           name
+        }
+        order_items {
+          id
+          product_name
+          product_image_url
+          product_price
+          quantity
+          remark
         }
       }
       orders_aggregate(
@@ -158,6 +167,7 @@ export async function getOrderDetailById(orderId: number) {
         payment_status
         total_price
         total_amount
+        actual_amount
         price_factor
         remark
         receiver_name
@@ -182,6 +192,9 @@ export async function getOrderDetailById(orderId: number) {
           product_price
           quantity
           remark
+          product_sku {
+            product_products
+          }
         }
       }
     }
@@ -191,6 +204,40 @@ export async function getOrderDetailById(orderId: number) {
     variables: { orderId },
   });
   return result?.orders_by_pk ?? null;
+}
+
+/**
+ * 获取订单下单用户在该公司的权限信息（供公司管理员查看，便于报价）
+ * 需调用方确认当前用户为公司管理员后再调用
+ */
+export async function getOrderUserCompanyInfo(
+  userId: number,
+  companyId: number
+): Promise<{ can_view_price: boolean; price_factor: number } | null> {
+  const query = `
+    query GetOrderUserCompanyInfo($userId: bigint!, $companyId: bigint!) {
+      company_users(
+        where: {
+          user_users: { _eq: $userId }
+          company_companies: { _eq: $companyId }
+        }
+        limit: 1
+      ) {
+        can_view_price
+        price_factor
+      }
+    }
+  `;
+  const result = await client.execute({
+    query,
+    variables: { userId: Number(userId), companyId: Number(companyId) },
+  });
+  const row = result?.company_users?.[0];
+  if (!row) return null;
+  return {
+    can_view_price: !!row.can_view_price,
+    price_factor: Number(row.price_factor),
+  };
 }
 
 /** 订单项输入（从购物车生成） */
@@ -265,4 +312,109 @@ export async function createOrder(params: {
     variables: { object },
   });
   return result?.insert_orders_one;
+}
+
+/** 确认订单（订单状态 pending -> confirmed，主包订单详情页管理员操作用） */
+export async function confirmOrder(orderId: number) {
+  const mutation = `
+    mutation ConfirmOrder($orderId: bigint!, $set: orders_set_input!) {
+      update_orders_by_pk(
+        pk_columns: { id: $orderId }
+        _set: $set
+      ) {
+        id
+        order_status
+        updated_at
+      }
+    }
+  `;
+  const result = await client.execute({
+    query: mutation,
+    variables: {
+      orderId: Number(orderId),
+      set: { order_status: 'confirmed' },
+    },
+  });
+  const updated = result?.update_orders_by_pk;
+  if (!updated && result?.errors) {
+    const err = result.errors[0];
+    throw new Error(err?.message || '更新失败');
+  }
+  return updated;
+}
+
+/** 确认收款（支付状态 pending -> approved；可设置实际收款金额；completeOrder=false 时不改订单状态，归档单独操作） */
+export async function approvePayment(
+  orderId: number,
+  completeOrder = false,
+  actualAmount?: number
+) {
+  const set: { payment_status: string; order_status?: string; actual_amount?: number } = {
+    payment_status: 'approved',
+  };
+  if (completeOrder) set.order_status = 'completed';
+  if (actualAmount != null && !Number.isNaN(actualAmount)) set.actual_amount = actualAmount;
+  const mutation = `
+    mutation ApprovePayment($orderId: bigint!, $set: orders_set_input!) {
+      update_orders_by_pk(
+        pk_columns: { id: $orderId }
+        _set: $set
+      ) {
+        id
+        order_status
+        payment_status
+        updated_at
+      }
+    }
+  `;
+  const result = await client.execute({
+    query: mutation,
+    variables: { orderId, set },
+  });
+  return result?.update_orders_by_pk;
+}
+
+/** 归档订单：order_status -> completed（已确认且已支付后使用） */
+export async function completeOrder(orderId: number) {
+  const mutation = `
+    mutation CompleteOrder($orderId: bigint!, $set: orders_set_input!) {
+      update_orders_by_pk(
+        pk_columns: { id: $orderId }
+        _set: $set
+      ) {
+        id
+        order_status
+        updated_at
+      }
+    }
+  `;
+  const result = await client.execute({
+    query: mutation,
+    variables: { orderId, set: { order_status: 'completed' } },
+  });
+  return result?.update_orders_by_pk;
+}
+
+/** 修改订单实际收款金额（仅更新 actual_amount，订单未完成时管理员可用） */
+export async function updateOrderActualAmount(orderId: number, actualAmount: number) {
+  const mutation = `
+    mutation UpdateOrderActualAmount($orderId: bigint!, $set: orders_set_input!) {
+      update_orders_by_pk(
+        pk_columns: { id: $orderId }
+        _set: $set
+      ) {
+        id
+        actual_amount
+        updated_at
+      }
+    }
+  `;
+  const result = await client.execute({
+    query: mutation,
+    variables: {
+      orderId: Number(orderId),
+      set: { actual_amount: actualAmount },
+    },
+  });
+  return result?.update_orders_by_pk;
 }

@@ -185,8 +185,8 @@
     <view v-if="user_token && companyInfo?.id && !isCompanyUser" class="register-tip">
       <view class="tip-icon">⚠️</view>
       <view class="tip-content">
-        <text class="tip-title">暂无该公司账号</text>
-        <text class="tip-text">您在该公司尚未注册账号，无法下单或查看价格。请联系管理员为您注册后再使用。</text>
+        <text class="tip-title">提示</text>
+        <text class="tip-text">您在公司尚未注册账号或开通价格访问权限，请联系客服管理员为您注册或开通后使用</text>
       </view>
     </view>
 

@@ -110,10 +110,45 @@
             <text class="company-name">{{ order.company.name }}</text>
           </view>
 
+          <view class="order-items" v-if="order.order_items && order.order_items.length > 0">
+            <view
+              v-for="item in order.order_items"
+              :key="item.id"
+              class="order-item-row"
+            >
+              <image
+                v-if="item.product_image_url"
+                :src="item.product_image_url"
+                class="item-image"
+                mode="aspectFill"
+              />
+              <view v-else class="item-image item-image-placeholder"></view>
+              <view class="item-info">
+                <text class="item-name">{{ item.product_name || '商品' }}</text>
+                <text class="item-quantity">×{{ item.quantity }}</text>
+                <text v-if="item.remark" class="item-remark">备注: {{ item.remark }}</text>
+              </view>
+              <text v-if="canViewPrice" class="item-price">¥{{ item.product_price }}</text>
+              <text v-else class="item-price item-price-hidden">--</text>
+            </view>
+          </view>
+
           <view class="order-footer">
-            <view class="order-total">
-              <text class="total-label">实付:</text>
-              <text class="total-price">¥{{ order.total_amount }}</text>
+            <view class="order-totals">
+              <view class="order-total-row">
+                <text class="total-label">总价:</text>
+                <text v-if="canViewPrice" class="total-price">¥{{ order.total_price }}</text>
+                <text v-else class="total-price total-price-hidden">--</text>
+              </view>
+              <view class="order-total-row">
+                <text class="total-label">总金额:</text>
+                <text v-if="canViewPrice" class="total-price">¥{{ order.total_amount }}</text>
+                <text v-else class="total-price total-price-hidden">--</text>
+              </view>
+              <view class="order-total-row">
+                <text class="total-label">实收:</text>
+                <text class="total-price">¥{{ order.actual_amount != null ? order.actual_amount : '--' }}</text>
+              </view>
             </view>
             <view class="order-arrow">›</view>
           </view>
@@ -141,10 +176,12 @@ import { ref, watch } from 'vue';
 import { onLoad, onShow, onPullDownRefresh, onReachBottom } from '@dcloudio/uni-app';
 import { user_token, userInfo } from '@/store/userStore';
 import { getMyOrderList } from '@/api/order/index';
+import { getCompanyUserRole } from '@/utils/auth';
 import PageNavBar from '@/components/PageNavBar.vue';
 import SkeletonScreen from '@/components/SkeletonScreen.vue';
 
 const orders = ref<any[]>([]);
+const canViewPrice = ref(false);
 const loading = ref(false);
 const isRefreshing = ref(false);
 const searchKeyword = ref('');
@@ -267,7 +304,12 @@ watch(paymentStatusFilter, () => {
 
 onShow(() => {
   if (user_token.value && userInfo.value?.id) {
+    getCompanyUserRole().then((r) => {
+      canViewPrice.value = r?.canViewPrice ?? false;
+    });
     loadOrders(true);
+  } else {
+    canViewPrice.value = false;
   }
 });
 
@@ -282,10 +324,11 @@ onReachBottom(() => {
 
 <style scoped>
 .order-list-page {
-  min-height: 100vh;
+  height: 100vh;
   background: #f5f5f5;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .need-login {
@@ -385,7 +428,7 @@ onReachBottom(() => {
 
 .order-scroll {
   flex: 1;
-  height: 0;
+  min-height: 0;
 }
 
 .order-item {
@@ -474,12 +517,85 @@ onReachBottom(() => {
   margin-left: 8rpx;
 }
 
+.order-items {
+  margin-bottom: 16rpx;
+}
+
+.order-item-row {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  padding: 12rpx 0;
+  border-bottom: 1rpx solid #f0f0f0;
+}
+
+.order-item-row:last-child {
+  border-bottom: none;
+}
+
+.item-image,
+.item-image-placeholder {
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 8rpx;
+  background: #f0f0f0;
+  flex-shrink: 0;
+}
+
+.item-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4rpx;
+}
+
+.item-name {
+  font-size: 26rpx;
+  color: #333;
+}
+
+.item-quantity {
+  font-size: 24rpx;
+  color: #666;
+}
+
+.item-remark {
+  font-size: 22rpx;
+  color: #999;
+  display: block;
+}
+
+.item-price {
+  font-size: 26rpx;
+  color: #ff6b6b;
+  font-weight: bold;
+  flex-shrink: 0;
+}
+
+.item-price-hidden {
+  color: #999;
+  font-weight: normal;
+}
+
 .order-footer {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding-top: 16rpx;
   border-top: 1rpx solid #eee;
+}
+
+.order-totals {
+  display: flex;
+  flex-direction: column;
+  gap: 6rpx;
+}
+
+.order-total-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8rpx;
 }
 
 .order-total {
@@ -497,6 +613,11 @@ onReachBottom(() => {
   font-size: 32rpx;
   color: #ff6b6b;
   font-weight: bold;
+}
+
+.total-price-hidden {
+  color: #999;
+  font-weight: normal;
 }
 
 .order-arrow {

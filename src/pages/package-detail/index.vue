@@ -29,7 +29,8 @@
       <!-- 套餐总价（入口即见） -->
       <view v-if="packageDetail?.package_product_skus?.length" class="package-total-bar">
         <text class="total-label">套餐总价：</text>
-        <text class="total-amount">¥{{ formatPrice(totalPackagePrice) }}</text>
+        <text v-if="canViewPrice" class="total-amount">¥{{ formatPrice(totalPackagePrice) }}</text>
+        <text v-else class="total-amount total-amount-hidden">--</text>
       </view>
 
       <!-- 包含商品 -->
@@ -50,7 +51,8 @@
             <view class="product-name">{{ item.product_sku?.product?.name || '商品' }}</view>
             <view class="product-spec">{{ item.product_sku?.name || '规格' }}</view>
             <view class="product-price-row">
-              <text class="product-price">¥{{ formatPrice((item.product_sku?.price || 0) * priceFactor) }}</text>
+              <text v-if="canViewPrice" class="product-price">¥{{ formatPrice((item.product_sku?.price || 0) * priceFactor) }}</text>
+              <text v-else class="product-price product-price-hidden">--</text>
               <text class="product-quantity">×{{ item.quantity }}</text>
             </view>
           </view>
@@ -83,6 +85,7 @@ const packageId = ref<number | null>(null);
 const packageDetail = ref<any>(null);
 const loading = ref(false);
 const priceFactor = ref(1); // 价格系数，默认为1
+const canViewPrice = ref(false);
 const cartCount = ref(0);
 
 // 计算套餐总价（应用价格系数）
@@ -112,12 +115,15 @@ const loadPriceFactor = async () => {
     const roleInfo = await getCompanyUserRole();
     if (roleInfo) {
       priceFactor.value = roleInfo.priceFactor || 1;
+      canViewPrice.value = roleInfo.canViewPrice ?? false;
     } else {
       priceFactor.value = 1;
+      canViewPrice.value = false;
     }
   } catch (error) {
     console.error('加载价格系数失败:', error);
     priceFactor.value = 1;
+    canViewPrice.value = false;
   }
 };
 
@@ -418,6 +424,16 @@ onShareTimeline(() => ({
   font-size: 40rpx;
   font-weight: bold;
   color: #ff6b6b;
+}
+
+.package-total-bar .total-amount-hidden {
+  color: #999;
+  font-weight: normal;
+}
+
+.product-price-hidden {
+  color: #999;
+  font-weight: normal;
 }
 
 .footer-placeholder {

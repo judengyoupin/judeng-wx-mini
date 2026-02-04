@@ -94,11 +94,28 @@
         </view>
 
         <view class="order-footer">
-          <view class="order-total">
-            <text class="total-label">总价:</text>
-            <text class="total-price">¥{{ order.total_amount }}</text>
+          <view class="order-total-wrap">
+            <view class="order-total">
+              <text class="total-label">总价:</text>
+              <text class="total-price">¥{{ order.total_price }}</text>
+            </view>
+            <view class="order-total">
+              <text class="total-label">总金额:</text>
+              <text class="total-price">¥{{ order.total_amount }}</text>
+            </view>
+            <view v-if="order.actual_amount != null" class="order-actual">
+              <text class="actual-label">实收:</text>
+              <text class="actual-value">¥{{ order.actual_amount }}</text>
+            </view>
           </view>
           <view class="order-actions">
+            <button
+              v-if="order.order_status !== 'completed' && !isViewOnly"
+              class="action-btn edit-actual"
+              @click.stop="openEditActualModal(order)"
+            >
+              修改实收
+            </button>
             <button
               v-if="order.order_status === 'pending' && !isViewOnly"
               class="action-btn confirm"
@@ -107,7 +124,7 @@
               确认订单
             </button>
             <button
-              v-if="order.payment_status === 'pending' && order.order_status !== 'pending' && !isViewOnly"
+              v-if="order.payment_status === 'pending' && !isViewOnly"
               class="action-btn approve"
               @click.stop="approvePayment(order)"
             >
@@ -135,6 +152,64 @@
       </view>
       </view>
     </scroll-view>
+
+    <!-- 确认收款弹窗（填写实收金额） -->
+    <view v-if="showApproveModal" class="edit-actual-mask" @click.stop="closeApproveModal">
+      <view class="edit-actual-modal" @click.stop>
+        <view class="edit-actual-title">确认收款</view>
+        <view class="edit-actual-row">
+          <text class="edit-actual-label">订单号</text>
+          <text class="edit-actual-value">{{ approvingOrder?.id }}</text>
+        </view>
+        <view class="edit-actual-row">
+          <text class="edit-actual-label">订单金额</text>
+          <text class="edit-actual-value">¥{{ approvingOrder?.total_amount ?? '--' }}</text>
+        </view>
+        <view class="edit-actual-row">
+          <text class="edit-actual-label">实际收款金额</text>
+          <input
+            class="edit-actual-input"
+            type="digit"
+            placeholder="请输入实际收款金额"
+            :value="approveActualAmount"
+            @input="onApproveActualAmountInput"
+          />
+        </view>
+        <view class="edit-actual-btns">
+          <button class="edit-actual-btn cancel" @click="closeApproveModal">取消</button>
+          <button class="edit-actual-btn confirm" :disabled="!approveAmountValid" @click="submitApprovePayment">确定</button>
+        </view>
+      </view>
+    </view>
+
+    <!-- 修改实际收款金额弹窗 -->
+    <view v-if="showEditActualModal" class="edit-actual-mask" @click.stop="closeEditActualModal">
+      <view class="edit-actual-modal" @click.stop>
+        <view class="edit-actual-title">修改实际收款金额</view>
+        <view class="edit-actual-row">
+          <text class="edit-actual-label">订单号</text>
+          <text class="edit-actual-value">{{ editingOrderForActual?.id }}</text>
+        </view>
+        <view class="edit-actual-row">
+          <text class="edit-actual-label">订单金额</text>
+          <text class="edit-actual-value">¥{{ editingOrderForActual?.total_amount ?? '--' }}</text>
+        </view>
+        <view class="edit-actual-row">
+          <text class="edit-actual-label">实际收款金额</text>
+          <input
+            class="edit-actual-input"
+            type="digit"
+            placeholder="请输入实际收款金额"
+            :value="editActualAmount"
+            @input="onEditActualAmountInput"
+          />
+        </view>
+        <view class="edit-actual-btns">
+          <button class="edit-actual-btn cancel" @click="closeEditActualModal">取消</button>
+          <button class="edit-actual-btn confirm" :disabled="!editActualAmountValid" @click="submitEditActualAmount">确定</button>
+        </view>
+      </view>
+    </view>
   </view>
 </template>
 
@@ -142,7 +217,7 @@
 import { ref, computed, watch } from 'vue';
 import { onPullDownRefresh, onReachBottom, onShow } from '@dcloudio/uni-app';
 import { companyInfo } from '@/store/userStore';
-import { getOrderList, confirmOrder as apiConfirmOrder, approvePayment as apiApprovePayment, completeOrder as apiCompleteOrder } from '@/subPackages/company/api/order';
+import { getOrderList, confirmOrder as apiConfirmOrder, approvePayment as apiApprovePayment, completeOrder as apiCompleteOrder, updateOrderActualAmount } from '@/subPackages/company/api/order';
 
 const orders = ref<any[]>([]);
 const loading = ref(false);
@@ -162,6 +237,14 @@ const effectiveCompanyId = () => viewCompanyId.value ?? companyInfo.value?.id ??
 
 /** 核查入口只读：不显示确认订单等操作 */
 const isViewOnly = computed(() => !!viewCompanyId.value);
+
+const showEditActualModal = ref(false);
+const editingOrderForActual = ref<any>(null);
+const editActualAmount = ref('');
+const editActualAmountValid = computed(() => {
+  const v = parseFloat(editActualAmount.value);
+  return !Number.isNaN(v) && v >= 0;
+});
 
 function orderStatusText(s: string) {
   if (s === 'pending') return '待确认';
@@ -253,6 +336,42 @@ function loadMore() {
   if (!loading.value && hasMore.value) loadOrders(false);
 }
 
+function openEditActualModal(order: any) {
+  editingOrderForActual.value = order;
+  editActualAmount.value = order?.actual_amount != null ? String(order.actual_amount) : (order?.total_amount != null ? String(order.total_amount) : '');
+  showEditActualModal.value = true;
+}
+
+function closeEditActualModal() {
+  showEditActualModal.value = false;
+  editingOrderForActual.value = null;
+  editActualAmount.value = '';
+}
+
+function onEditActualAmountInput(e: any) {
+  const val = (e.detail?.value ?? '') as string;
+  const filtered = val.replace(/[^\d.]/g, '').replace(/^(\d*\.)(\d*)\./g, '$1$2');
+  editActualAmount.value = filtered;
+}
+
+async function submitEditActualAmount() {
+  const order = editingOrderForActual.value;
+  if (!order?.id) return;
+  const v = parseFloat(editActualAmount.value);
+  if (Number.isNaN(v) || v < 0) {
+    uni.showToast({ title: '请输入有效金额', icon: 'none' });
+    return;
+  }
+  try {
+    await updateOrderActualAmount(Number(order.id), v);
+    uni.showToast({ title: '已更新', icon: 'success' });
+    closeEditActualModal();
+    loadOrders(true);
+  } catch (e: any) {
+    uni.showToast({ title: e?.message || '操作失败', icon: 'none' });
+  }
+}
+
 function onSearch() {
   loadOrders(true);
 }
@@ -282,30 +401,55 @@ const confirmOrder = async (order: any) => {
   });
 };
 
-// 确认收款（仅更新支付状态，不改为已完成；归档需单独点击归档按钮）
-const approvePayment = async (order: any) => {
-  uni.showModal({
-    title: '确认收款',
-    content: '确认用户已付款？归档需在收款后点击「归档」按钮。',
-    success: async (res) => {
-      if (res.confirm) {
-        try {
-          const orderId = Number(order.id);
-          if (!orderId || Number.isNaN(orderId)) {
-            uni.showToast({ title: '订单 ID 无效', icon: 'none' });
-            return;
-          }
-          await apiApprovePayment(orderId, false);
-          uni.showToast({ title: '已确认收款', icon: 'success' });
-          loadOrders(true);
-        } catch (error: any) {
-          const msg = error?.message || error?.error || (error?.errors && error.errors[0]?.message) || '操作失败';
-          uni.showToast({ title: String(msg), icon: 'none' });
-        }
-      }
-    },
-  });
-};
+const showApproveModal = ref(false);
+const approvingOrder = ref<any>(null);
+const approveActualAmount = ref('');
+const approveAmountValid = computed(() => {
+  const v = parseFloat(approveActualAmount.value);
+  return !Number.isNaN(v) && v >= 0;
+});
+
+function openApproveModal(order: any) {
+  approvingOrder.value = order;
+  approveActualAmount.value = order?.total_amount != null ? String(order.total_amount) : '';
+  showApproveModal.value = true;
+}
+
+function closeApproveModal() {
+  showApproveModal.value = false;
+  approvingOrder.value = null;
+  approveActualAmount.value = '';
+}
+
+function onApproveActualAmountInput(e: any) {
+  const val = (e.detail?.value ?? '') as string;
+  const filtered = val.replace(/[^\d.]/g, '').replace(/^(\d*\.)(\d*)\./g, '$1$2');
+  approveActualAmount.value = filtered;
+}
+
+async function submitApprovePayment() {
+  const order = approvingOrder.value;
+  if (!order?.id) return;
+  const v = parseFloat(approveActualAmount.value);
+  if (Number.isNaN(v) || v < 0) {
+    uni.showToast({ title: '请输入有效金额', icon: 'none' });
+    return;
+  }
+  try {
+    await apiApprovePayment(Number(order.id), false, v);
+    uni.showToast({ title: '已确认收款', icon: 'success' });
+    closeApproveModal();
+    loadOrders(true);
+  } catch (error: any) {
+    const msg = error?.message || error?.error || (error?.errors && error.errors[0]?.message) || '操作失败';
+    uni.showToast({ title: String(msg), icon: 'none' });
+  }
+}
+
+// 确认收款（打开弹窗填写实收金额后提交）
+function approvePayment(order: any) {
+  openApproveModal(order);
+}
 
 // 归档（订单状态 -> 已完成，仅已确认且已支付时显示）
 const archiveOrder = async (order: any) => {
@@ -374,6 +518,13 @@ onReachBottom(() => {
   display: flex;
   flex-direction: column;
   background: #f5f5f5;
+  overflow: hidden;
+}
+
+/* 仅列表区域滚动，占满剩余高度 */
+.order-list-scroll {
+  flex: 1;
+  min-height: 0;
 }
 
 .header-bar {
@@ -603,12 +754,37 @@ onReachBottom(() => {
   align-items: center;
   padding-top: 16rpx;
   border-top: 1rpx solid #e0e0e0;
+  flex-wrap: wrap;
+  gap: 12rpx;
+}
+
+.order-total-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 6rpx;
 }
 
 .order-total {
   display: flex;
   align-items: baseline;
   gap: 8rpx;
+}
+
+.order-actual {
+  display: flex;
+  align-items: baseline;
+  gap: 8rpx;
+}
+
+.actual-label {
+  font-size: 24rpx;
+  color: #999;
+}
+
+.actual-value {
+  font-size: 26rpx;
+  color: #52c41a;
+  font-weight: 500;
 }
 
 .total-label {
@@ -651,6 +827,10 @@ onReachBottom(() => {
   background: #52c41a;
 }
 
+.action-btn.edit-actual {
+  background: #8c8c8c;
+}
+
 .empty-state {
   padding: 100rpx 0;
   text-align: center;
@@ -666,5 +846,97 @@ onReachBottom(() => {
   text-align: center;
   color: #999999;
   font-size: 28rpx;
+}
+
+.edit-actual-mask {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48rpx;
+}
+
+.edit-actual-modal {
+  width: 100%;
+  max-width: 560rpx;
+  background: #fff;
+  border-radius: 24rpx;
+  padding: 40rpx;
+}
+
+.edit-actual-title {
+  font-size: 34rpx;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 32rpx;
+  text-align: center;
+}
+
+.edit-actual-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24rpx;
+}
+
+.edit-actual-label {
+  font-size: 28rpx;
+  color: #6b7280;
+}
+
+.edit-actual-value {
+  font-size: 30rpx;
+  font-weight: 500;
+  color: #1f2937;
+}
+
+.edit-actual-input {
+  flex: 1;
+  margin-left: 24rpx;
+  height: 72rpx;
+  padding: 0 24rpx;
+  font-size: 28rpx;
+  background: #f5f5f5;
+  border-radius: 12rpx;
+  text-align: right;
+}
+
+.edit-actual-btns {
+  display: flex;
+  gap: 24rpx;
+  margin-top: 40rpx;
+}
+
+.edit-actual-btn {
+  flex: 1;
+  height: 88rpx;
+  line-height: 88rpx;
+  font-size: 30rpx;
+  border-radius: 16rpx;
+  border: none;
+}
+
+.edit-actual-btn::after {
+  border: none;
+}
+
+.edit-actual-btn.cancel {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+.edit-actual-btn.confirm {
+  background: #1890ff;
+  color: #fff;
+}
+
+.edit-actual-btn.confirm[disabled] {
+  opacity: 0.6;
 }
 </style>

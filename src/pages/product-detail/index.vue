@@ -271,7 +271,7 @@ const checkPermissions = async () => {
     const roleInfo = await getCompanyUserRole();
     if (roleInfo) {
       canViewPrice.value = roleInfo.canViewPrice;
-      canAddToCart.value = roleInfo.canViewPrice; // 能查看价格才能加入购物车
+      canAddToCart.value = true; // 只要登录且是公司用户即可加入购物车，与是否可看价格无关
       priceFactor.value = roleInfo.priceFactor || 1;
     } else {
       canViewPrice.value = false;

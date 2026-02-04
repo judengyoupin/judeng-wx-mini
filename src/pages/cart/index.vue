@@ -58,7 +58,8 @@
             </view>
             <view class="item-spec">{{ item.product_sku?.name || '规格' }}</view>
             <view class="item-price-row">
-              <text class="item-price">¥{{ formatPrice((item.product_sku?.price || 0) * priceFactor) }}</text>
+              <text v-if="canViewPrice" class="item-price">¥{{ formatPrice((item.product_sku?.price || 0) * priceFactor) }}</text>
+              <text v-else class="item-price item-price-hidden">--</text>
               <view class="quantity-control">
                 <view
                   class="quantity-btn"
@@ -96,7 +97,8 @@
             <template v-if="!isManageMode">
               <view class="total-info">
                 <text class="total-label">合计：</text>
-                <text class="total-price">¥{{ formatPrice(totalPrice) }}</text>
+                <text v-if="canViewPrice" class="total-price">¥{{ formatPrice(totalPrice) }}</text>
+                <text v-else class="total-price total-price-hidden">--</text>
               </view>
             </template>
           </view>
@@ -147,7 +149,8 @@ import {
 const cartItems = ref<any[]>([]);
 const loading = ref(false);
 const isManageMode = ref(false);
-const priceFactor = ref(1); // 价格系数，默认为1
+const priceFactor = ref(1);
+const canViewPrice = ref(false); // 无权限时整链不显示价格
 
 // 计算属性
 const selectedCount = computed(() => {
@@ -179,12 +182,15 @@ const loadPriceFactor = async () => {
     const roleInfo = await getCompanyUserRole();
     if (roleInfo) {
       priceFactor.value = roleInfo.priceFactor || 1;
+      canViewPrice.value = roleInfo.canViewPrice;
     } else {
       priceFactor.value = 1;
+      canViewPrice.value = false;
     }
   } catch (error) {
     console.error('加载价格系数失败:', error);
     priceFactor.value = 1;
+    canViewPrice.value = false;
   }
 };
 
