@@ -137,6 +137,12 @@
             </view>
           </view>
 
+          <!-- 未找到用户时提示，底部按钮会变为「创建并添加」 -->
+          <view v-if="!showEditModal && !searchedUser && showCreateAndAddMode" class="create-user-tip">
+            <text class="create-user-tip-text">该手机号尚未注册</text>
+            <text class="create-user-tip-desc">请设置角色与价格系数后，点击下方「创建并添加」</text>
+          </view>
+
           <view class="form-item">
             <view class="label">用户角色</view>
             <view class="role-options">
@@ -174,12 +180,20 @@
               type="digit" 
               v-model="userForm.price_factor" 
               placeholder="大于0，如 1 或 0.9 表示9折"
+              @input="onPriceFactorInput"
             />
             <view class="form-hint">价格系数需大于0，1表示原价，0.9表示9折</view>
           </view>
         </view>
         <view class="modal-footer">
-          <button class="modal-btn" @click="handleSaveUser">保存</button>
+          <button 
+            class="modal-btn"
+            :class="{ disabled: !showEditModal && !hasSearched }"
+            :disabled="!showEditModal && !hasSearched"
+            @click="isCreateAndAddMode ? handleCreateAndAdd() : handleSaveUser()"
+          >
+            {{ isCreateAndAddMode ? '创建并添加' : '保存' }}
+          </button>
           <button class="modal-btn cancel" @click="closeModal">取消</button>
         </view>
       </view>
@@ -191,7 +205,7 @@
 import { ref, computed } from 'vue';
 import { onLoad, onPullDownRefresh, onReachBottom, onShow } from '@dcloudio/uni-app';
 import { companyInfo } from '@/store/userStore';
-import { getCompanyUserList, searchUserByMobile, addCompanyUser, updateCompanyUser, removeCompanyUser } from '@/subPackages/company/api/company-user';
+import { getCompanyUserList, searchUserByMobile, createUserByMobile, addCompanyUser, updateCompanyUser, removeCompanyUser } from '@/subPackages/company/api/company-user';
 
 const users = ref<any[]>([]);
 const loading = ref(false);
@@ -234,6 +248,14 @@ const showAddModal = ref(false);
 const showEditModal = ref(false);
 const editingUserId = ref<number | null>(null);
 const searchedUser = ref<any>(null);
+/** 搜索后未找到用户时，是否显示「创建默认账号并添加」入口（仅添加模式） */
+const showCreateAndAddMode = ref(false);
+/** 当前为「无账号，创建并添加」模式：底部主按钮显示「创建并添加」 */
+const isCreateAndAddMode = computed(
+  () => !showEditModal.value && !searchedUser.value && showCreateAndAddMode.value
+);
+/** 添加模式下是否已点击过「搜索用户」（未搜索前保存/创建并添加按钮不可点） */
+const hasSearched = ref(false);
 const userForm = ref({
   mobile: '',
   role: 'user' as 'admin' | 'user',
@@ -310,23 +332,23 @@ const searchUser = async () => {
     return;
   }
 
+  showCreateAndAddMode.value = false;
   try {
     const user = await searchUserByMobile(userForm.value.mobile);
     if (user) {
       searchedUser.value = user;
     } else {
-      uni.showToast({
-        title: '未找到该用户，请先让用户在小程序中登录',
-        icon: 'none',
-        duration: 3000,
-      });
       searchedUser.value = null;
+      showCreateAndAddMode.value = true;
     }
+    hasSearched.value = true;
   } catch (error: any) {
     uni.showToast({
       title: error.message || '搜索失败',
       icon: 'none',
     });
+    searchedUser.value = null;
+    showCreateAndAddMode.value = false;
   }
 };
 
@@ -434,12 +456,71 @@ const handleSaveUser = async () => {
   }
 };
 
+// 价格系数输入：只保留数字和最多一个小数点
+const onPriceFactorInput = (e: any) => {
+  const raw = (e?.detail?.value ?? e?.target?.value ?? '') as string;
+  let s = raw.replace(/[^\d.]/g, '');
+  const idx = s.indexOf('.');
+  if (idx >= 0) {
+    s = s.slice(0, idx + 1) + s.slice(idx + 1).replace(/\./g, '');
+  }
+  userForm.value.price_factor = s;
+};
+
+// 创建默认账号并添加至公司（未找到用户时使用）
+const handleCreateAndAdd = async () => {
+  const mobile = (userForm.value.mobile || '').trim();
+  if (mobile.length !== 11) {
+    uni.showToast({ title: '请输入正确的手机号', icon: 'none' });
+    return;
+  }
+
+  const priceFactor = Number(userForm.value.price_factor);
+  if (isNaN(priceFactor) || priceFactor <= 0) {
+    uni.showToast({ title: '价格系数必须大于0', icon: 'none' });
+    return;
+  }
+
+  const companyId = effectiveCompanyId();
+  if (!companyId) {
+    uni.showToast({ title: '公司信息不存在', icon: 'none' });
+    return;
+  }
+
+  try {
+    const newUser = await createUserByMobile(mobile);
+    if (!newUser?.id) {
+      uni.showToast({ title: '创建账号失败', icon: 'none' });
+      return;
+    }
+
+    await addCompanyUser({
+      user_users: newUser.id,
+      company_companies: companyId,
+      role: userForm.value.role,
+      can_view_price: userForm.value.can_view_price,
+      price_factor: priceFactor,
+    });
+
+    uni.showToast({ title: '已创建默认账号并添加至公司', icon: 'success' });
+    closeModal();
+    loadUsers(true);
+  } catch (error: any) {
+    uni.showToast({
+      title: error.message || '操作失败',
+      icon: 'none',
+    });
+  }
+};
+
 // 关闭弹窗
 const closeModal = () => {
   showAddModal.value = false;
   showEditModal.value = false;
   editingUserId.value = null;
   searchedUser.value = null;
+  showCreateAndAddMode.value = false;
+  hasSearched.value = false;
   userForm.value = {
     mobile: '',
     role: 'user',
@@ -847,6 +928,28 @@ onReachBottom(() => {
   color: #999999;
 }
 
+.create-user-tip {
+  padding: 24rpx;
+  background: #fff8e6;
+  border: 1rpx solid #ffd666;
+  border-radius: 12rpx;
+  margin-bottom: 20rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 12rpx;
+}
+
+.create-user-tip-text {
+  font-size: 28rpx;
+  color: #333;
+  font-weight: 500;
+}
+
+.create-user-tip-desc {
+  font-size: 24rpx;
+  color: #666;
+}
+
 .picker {
   padding: 20rpx;
   background: #f8f8f8;
@@ -880,5 +983,10 @@ onReachBottom(() => {
 .modal-btn.cancel {
   background: #f0f0f0;
   color: #666666;
+}
+
+.modal-btn.disabled {
+  background: #cccccc;
+  color: #999999;
 }
 </style>

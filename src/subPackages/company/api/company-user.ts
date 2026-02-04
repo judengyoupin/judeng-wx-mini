@@ -72,6 +72,34 @@ export async function getCompanyUserList(params: {
 }
 
 /**
+ * 根据手机号创建默认账号（仅 mobile + role: user，用于「先创建再添加至公司」）
+ */
+export async function createUserByMobile(mobile: string) {
+  const mutation = `
+    mutation CreateUserByMobile($mobile: String!) {
+      insert_users_one(
+        object: {
+          mobile: $mobile
+          role: "user"
+        }
+      ) {
+        id
+        mobile
+        nickname
+        avatar_url
+      }
+    }
+  `;
+
+  const result = await client.execute({
+    query: mutation,
+    variables: { mobile: String(mobile).trim() },
+  });
+
+  return result?.insert_users_one || null;
+}
+
+/**
  * 根据手机号搜索用户
  */
 export async function searchUserByMobile(mobile: string) {
