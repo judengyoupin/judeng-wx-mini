@@ -280,7 +280,128 @@ export async function getProductList(params: {
 }
 
 /**
- * 获取商品详情
+ * 按关键词搜索商品及其规格（用于套餐编辑「添加商品」：先搜索再选择，分页）
+ * 查询当前公司 + 系统默认公司的商品，支持按商品名称模糊匹配
+ */
+export async function searchProductsWithSkus(params: {
+  keyword?: string;
+  companyId: number;
+  defaultCompanyId?: number | null;
+  limit?: number;
+  offset?: number;
+}) {
+  const limit = params.limit ?? 20;
+  const offset = params.offset ?? 0;
+  const hasKeyword = (params.keyword ?? '').trim().length > 0;
+  const pattern = hasKeyword ? `%${String(params.keyword).trim()}%` : '%';
+
+  const companyIds = [params.companyId];
+  if (params.defaultCompanyId != null && params.defaultCompanyId !== params.companyId) {
+    companyIds.push(params.defaultCompanyId);
+  }
+
+  const whereCompany =
+    companyIds.length === 1
+      ? `{ company_companies: { _eq: $companyId } }`
+      : `{ _or: [ { company_companies: { _eq: $companyId } }, { company_companies: { _eq: $defaultCompanyId } } ] }`;
+
+  const whereName = hasKeyword ? `{ name: { _ilike: $pattern } }` : '';
+
+  const whereConditions = [
+    '{ is_deleted: { _eq: false } }',
+    whereCompany,
+    ...(whereName ? [whereName] : []),
+  ];
+
+  const query = `
+    query SearchProductsWithSkus(
+      $companyId: bigint!
+      ${companyIds.length > 1 ? '$defaultCompanyId: bigint!' : ''}
+      ${hasKeyword ? '$pattern: String!' : ''}
+      $limit: Int!
+      $offset: Int!
+    ) {
+      products(
+        where: { _and: [ ${whereConditions.join(', ')} ] }
+        limit: $limit
+        offset: $offset
+        order_by: { created_at: desc }
+      ) {
+        id
+        name
+        product_skus(where: { is_deleted: { _eq: false } }) {
+          id
+          name
+          image_url
+          price
+          stock
+          is_shelved
+        }
+      }
+      products_aggregate(
+        where: { _and: [ ${whereConditions.join(', ')} ] }
+      ) {
+        aggregate { count }
+      }
+    }
+  `;
+
+  const variables: Record<string, unknown> = {
+    companyId: params.companyId,
+    limit,
+    offset,
+  };
+  if (companyIds.length > 1) variables.defaultCompanyId = params.defaultCompanyId;
+  if (hasKeyword) variables.pattern = pattern;
+
+  const result = await client.execute<{
+    products: Array<{
+      id: number;
+      name: string;
+      product_skus: Array<{
+        id: number;
+        name: string;
+        image_url?: string;
+        price: number;
+        stock?: number;
+        is_shelved?: boolean;
+      }>;
+    }>;
+    products_aggregate: { aggregate: { count: number } };
+  }>({ query, variables });
+
+  const products = result?.products ?? [];
+  const total = result?.products_aggregate?.aggregate?.count ?? 0;
+
+  const skus: Array<{
+    id: number;
+    name: string;
+    image_url?: string;
+    price: number;
+    stock?: number;
+    is_shelved?: boolean;
+    product_name: string;
+    product_id?: number;
+  }> = [];
+  products.forEach((p) => {
+    (p.product_skus || []).forEach((sku) => {
+      skus.push({
+        ...sku,
+        product_name: p.name,
+        product_id: p.id,
+      });
+    });
+  });
+
+  return {
+    products,
+    skus,
+    total,
+  };
+}
+
+/**
+ * 获取商品详情（含分类完整父子链，用于编辑页回显与完整路径展示）
  */
 export async function getProductDetail(productId: number) {
   const query = `
@@ -298,6 +419,15 @@ export async function getProductDetail(productId: number) {
         is_shelved
         created_at
         updated_at
+        category {
+          id
+          name
+          category {
+            id
+            name
+            category { id name }
+          }
+        }
         product_skus(
           where: { is_deleted: { _eq: false } }
           order_by: { created_at: asc }

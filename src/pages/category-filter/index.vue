@@ -31,7 +31,7 @@
             <view class="category-card-image-wrap">
               <image
                 class="category-card-image"
-                :src="item.icon_url || item.icon || item.image || '/static/empty.png'"
+                :src="item.icon_url || item.icon || item.image || '/static/default.png'"
                 mode="aspectFill"
               />
             </view>
@@ -88,7 +88,7 @@
         </view>
 
         <view v-else-if="!loading" class="empty-state">
-          <image src="/static/empty.png" mode="aspectFit" class="empty-icon" />
+          <image src="/static/default.png" mode="aspectFit" class="empty-icon" />
           <text class="empty-text">该分类暂无商品</text>
         </view>
 

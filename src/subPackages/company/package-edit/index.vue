@@ -54,7 +54,7 @@
           <view class="form-label">套餐分类</view>
           <view class="category-selector" @click="showCategoryPicker = true">
             <text v-if="selectedCategory" class="selected-category">
-              {{ selectedCategory.name }}
+              {{ selectedCategory.pathLabel || selectedCategory.name }}
             </text>
             <text v-else class="category-placeholder">请选择套餐分类（可选）</text>
             <text class="category-arrow">›</text>
@@ -66,7 +66,7 @@
       <view class="section">
         <view class="section-title">
           套餐商品
-          <button class="add-sku-btn" @click="showSkuModal = true">+ 添加商品</button>
+          <button class="add-sku-btn" @click="showSkuModal = true">+ 添加商品规格</button>
         </view>
         <view class="sku-list">
           <view 
@@ -118,44 +118,62 @@
             <input 
               class="search-input" 
               v-model="skuSearchKeyword" 
-              placeholder="搜索商品..."
-              @input="searchSkus"
+              placeholder="输入商品名称或规格搜索"
+              @input="onSkuSearchInput"
             />
           </view>
-          <scroll-view scroll-y class="sku-select-list">
-            <view 
-              v-for="sku in availableSkus" 
-              :key="sku.id"
-              class="sku-select-item"
-              @click="selectSku(sku)"
-            >
-              <text class="sku-select-name">{{ sku.name }}</text>
-              <text class="sku-select-price">¥{{ sku.price }}</text>
+          <scroll-view
+            scroll-y
+            class="sku-select-list"
+            @scrolltolower="onSkuListScrollToLower"
+          >
+            <view v-if="skuSearchLoading && availableSkus.length === 0" class="sku-search-loading">
+              <text>搜索中...</text>
             </view>
-            <view v-if="availableSkus.length === 0" class="empty-skus">
-              <text>暂无可用商品</text>
-            </view>
+            <template v-else>
+              <view 
+                v-for="sku in availableSkus" 
+                :key="sku.id"
+                class="sku-select-item"
+                @click="selectSku(sku)"
+              >
+                <text class="sku-select-name">{{ sku.name }}</text>
+                <text class="sku-select-price">¥{{ sku.price }}</text>
+              </view>
+              <view v-if="availableSkus.length === 0" class="empty-skus">
+                <text>{{ (skuSearchKeyword || '').trim() ? '未找到匹配的规格' : '暂无规格' }}</text>
+              </view>
+              <view v-else-if="skuSearchHasMore && skuSearchLoading" class="sku-search-loading">
+                <text>加载中...</text>
+              </view>
+              <view v-else-if="skuSearchHasMore && !skuSearchLoading" class="sku-load-more-row">
+                <button class="sku-load-more-btn" type="button" @click="runSkuSearch(false)">加载更多</button>
+              </view>
+              <view v-else-if="availableSkus.length > 0 && !skuSearchHasMore" class="sku-load-more-hint">
+                <text>没有更多了</text>
+              </view>
+            </template>
           </scroll-view>
         </view>
       </view>
     </view>
 
-    <!-- SKU数量编辑弹窗 -->
+    <!-- SKU数量编辑弹窗：单独样式避免数量输入框被遮挡 -->
     <view v-if="showQuantityModal" class="modal-overlay" @click="showQuantityModal = false">
-      <view class="modal-content" @click.stop>
+      <view class="modal-content quantity-modal" @click.stop>
         <view class="modal-header">
           <text class="modal-title">设置数量</text>
           <text class="modal-close" @click="showQuantityModal = false">×</text>
         </view>
-        <view class="modal-body">
+        <view class="modal-body quantity-modal-body">
           <view class="form-item">
             <view class="label">商品规格</view>
             <text class="sku-name-display">{{ editingSkuItem?.product_sku?.name }}</text>
           </view>
-          <view class="form-item">
+          <view class="form-item quantity-input-wrap">
             <view class="label">数量 <text class="required">*</text></view>
             <input 
-              class="input" 
+              class="input quantity-input" 
               type="number" 
               v-model="skuQuantity" 
               placeholder="请输入数量"
@@ -172,11 +190,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { onLoad } from '@dcloudio/uni-app';
 import { companyInfo } from '@/store/userStore';
 import { getPackageDetail, createPackage, updatePackage, addPackageSku, updatePackageSku, deletePackageSku } from '@/subPackages/company/api/package';
-import { getProductList } from '@/subPackages/company/api/product';
+import { searchProductsWithSkus } from '@/subPackages/company/api/product';
 import { getCompanyDetailCached } from '@/subPackages/company/api/platform';
 import { getDefaultCompanyIdCached } from '@/api/config/index';
 import CategoryPicker from '@/components/CategoryPicker.vue';
@@ -193,13 +211,19 @@ const form = ref({
 const packageSkus = ref<any[]>([]);
 const loading = ref(false);
 const showCategoryPicker = ref(false);
-const selectedCategoryInfo = ref<{ id: number; name: string } | null>(null);
+const selectedCategoryInfo = ref<{ id: number; name: string; pathLabel?: string } | null>(null);
 
-// SKU选择相关
+// SKU 选择相关：先搜索再选择，分页加载
 const showSkuModal = ref(false);
 const skuSearchKeyword = ref('');
 const availableSkus = ref<any[]>([]);
-const allSkus = ref<any[]>([]);
+const skuSearchLoading = ref(false);
+const skuSearchHasMore = ref(true);
+const skuSearchOffset = ref(0);
+const skuSearchPageSize = 20;
+const defaultCompanyIdForSearch = ref<number | null>(null);
+const hiddenProductIds = ref<number[]>([]);
+const hiddenAndDefaultLoaded = ref(false);
 
 // 数量编辑相关
 const showQuantityModal = ref(false);
@@ -207,92 +231,136 @@ const editingSkuIndex = ref(-1);
 const editingSkuItem = ref<any>(null);
 const skuQuantity = ref('');
 
-// 加载所有商品SKU（系统默认公司 + 当前公司，并过滤当前公司已隐藏的商品）
-const loadAllSkus = async () => {
+// 获取当前公司隐藏商品 id 与默认公司 id（用于搜索后过滤，只拉一次）
+const ensureHiddenAndDefaultCompany = async () => {
   const currentCompanyId = companyInfo.value?.id;
   if (!currentCompanyId) return;
+  if (hiddenAndDefaultLoaded.value) return;
   try {
-    const defaultCompanyId = await getDefaultCompanyIdCached();
-    const productIds = new Set<number>();
-    const products: any[] = [];
+    defaultCompanyIdForSearch.value = await getDefaultCompanyIdCached();
+    const company = await getCompanyDetailCached(currentCompanyId);
+    const raw = company?.hidden_product_ids;
+    hiddenProductIds.value = Array.isArray(raw) ? raw.map((id: any) => Number(id)) : [];
+  } catch (_) {}
+  hiddenAndDefaultLoaded.value = true;
+};
 
-    const appendProducts = (list: any[]) => {
-      (list || []).forEach((p: any) => {
-        if (p.id && !productIds.has(Number(p.id))) {
-          productIds.add(Number(p.id));
-          products.push(p);
-        }
-      });
-    };
+// 搜索规格（支持无关键词时加载首屏；分页；排除已隐藏商品与已加入套餐的规格）
+const runSkuSearch = async (reset = true) => {
+  const currentCompanyId = companyInfo.value?.id;
+  if (!currentCompanyId) return;
+  await ensureHiddenAndDefaultCompany();
+  if (reset) {
+    skuSearchOffset.value = 0;
+    skuSearchHasMore.value = true;
+    availableSkus.value = [];
+  }
+  if (!skuSearchHasMore.value && !reset) return;
 
-    const [currentRes, defaultRes] = await Promise.all([
-      getProductList({ companyId: currentCompanyId, limit: 1000 }),
-      defaultCompanyId && defaultCompanyId !== currentCompanyId
-        ? getProductList({ companyId: defaultCompanyId, limit: 1000 })
-        : Promise.resolve({ products: [] }),
-    ]);
-    appendProducts(currentRes.products);
-    appendProducts(defaultRes.products);
+  const keyword = (skuSearchKeyword.value || '').trim();
+  skuSearchLoading.value = true;
+  try {
+    const res = await searchProductsWithSkus({
+      keyword: keyword || undefined,
+      companyId: currentCompanyId,
+      defaultCompanyId: defaultCompanyIdForSearch.value ?? undefined,
+      limit: skuSearchPageSize,
+      offset: reset ? 0 : skuSearchOffset.value,
+    });
 
-    let hiddenIds: number[] = [];
-    try {
-      const company = await getCompanyDetailCached(currentCompanyId);
-      const raw = company?.hidden_product_ids;
-      hiddenIds = Array.isArray(raw) ? raw.map((id: any) => Number(id)) : [];
-    } catch (_) {}
+    const addedIds = addedSkuIds.value;
+    const hiddenIds = hiddenProductIds.value;
+    const filtered = (res.skus || []).filter(
+      (s: any) =>
+        !addedIds.has(Number(s.id)) &&
+        (hiddenIds.length === 0 || !s.product_id || !hiddenIds.includes(Number(s.product_id)))
+    );
 
-    const skus: any[] = [];
-    products
-      .filter((p) => !hiddenIds.length || !hiddenIds.includes(Number(p.id)))
-      .forEach((product: any) => {
-        if (product.product_skus) {
-          product.product_skus.forEach((sku: any) => {
-            skus.push({
-              ...sku,
-              product_name: product.name,
-            });
-          });
-        }
-      });
-    allSkus.value = skus;
-    availableSkus.value = skus;
-  } catch (error) {
-    console.error('加载商品SKU失败:', error);
+    if (reset) availableSkus.value = filtered;
+    else availableSkus.value = [...availableSkus.value, ...filtered];
+
+    const nextOffset = (reset ? 0 : skuSearchOffset.value) + (res.products?.length ?? 0);
+    skuSearchOffset.value = nextOffset;
+    skuSearchHasMore.value = (res.products?.length ?? 0) >= skuSearchPageSize && nextOffset < (res.total ?? 0);
+  } catch (e) {
+    console.error('搜索规格失败', e);
+    uni.showToast({ title: '搜索失败', icon: 'none' });
+  } finally {
+    skuSearchLoading.value = false;
   }
 };
 
-// 计算选中的分类（用于展示名称）
+let skuSearchTimer: ReturnType<typeof setTimeout> | null = null;
+const onSkuSearchInput = () => {
+  if (skuSearchTimer) clearTimeout(skuSearchTimer);
+  skuSearchTimer = setTimeout(() => {
+    skuSearchTimer = null;
+    runSkuSearch(true);
+  }, 300);
+};
+
+const onSkuListScrollToLower = () => {
+  if (skuSearchLoading.value || !skuSearchHasMore.value) return;
+  runSkuSearch(false);
+};
+
+// 从接口返回的 category 父子链拼出完整路径
+function getCategoryPathFromApi(cat: any): string {
+  if (!cat?.name) return '';
+  const parts: string[] = [];
+  let c: any = cat;
+  while (c?.name) {
+    parts.unshift(String(c.name).trim());
+    c = c.category;
+  }
+  return parts.join(' / ');
+}
+
+// 计算选中的分类（用于展示名称或完整路径）
 const selectedCategory = computed(() => {
   if (form.value.category_categories == null) return null;
   if (selectedCategoryInfo.value && selectedCategoryInfo.value.id === form.value.category_categories) {
-    return { name: selectedCategoryInfo.value.name };
+    const pathLabel = selectedCategoryInfo.value.pathLabel || selectedCategoryInfo.value.name;
+    return { name: selectedCategoryInfo.value.name, pathLabel };
   }
-  return selectedCategoryInfo.value ? { name: selectedCategoryInfo.value.name } : null;
+  return null;
 });
 
-// 选择分类（来自 CategoryPicker）
-const onCategorySelect = (category: { id: number; name: string } | null) => {
+// 选择分类（来自 CategoryPicker，含 pathLabel）
+const onCategorySelect = (category: { id: number; name: string; pathLabel?: string } | null) => {
   if (category == null) {
     form.value.category_categories = undefined;
     selectedCategoryInfo.value = null;
   } else {
     form.value.category_categories = category.id;
-    selectedCategoryInfo.value = { id: category.id, name: category.name || '' };
+    selectedCategoryInfo.value = {
+      id: category.id,
+      name: category.name || '',
+      pathLabel: category.pathLabel,
+    };
   }
   showCategoryPicker.value = false;
 };
 
-// 搜索SKU
-const searchSkus = () => {
-  if (!skuSearchKeyword.value) {
-    availableSkus.value = allSkus.value;
-    return;
+// 已加入套餐的规格 id 集合，用于选择时排除（避免重复添加）
+const addedSkuIds = computed(() => {
+  const ids = new Set<number>();
+  packageSkus.value.forEach((item: any) => {
+    const id = item.product_sku?.id;
+    if (id != null) ids.add(Number(id));
+  });
+  return ids;
+});
+
+// 打开「添加商品规格」弹窗时：默认加载第一页数据
+watch(showSkuModal, (visible) => {
+  if (visible) {
+    availableSkus.value = [];
+    skuSearchOffset.value = 0;
+    skuSearchHasMore.value = true;
+    runSkuSearch(true);
   }
-  availableSkus.value = allSkus.value.filter(sku => 
-    sku.name.includes(skuSearchKeyword.value) || 
-    sku.product_name?.includes(skuSearchKeyword.value)
-  );
-};
+});
 
 // 选择SKU
 const selectSku = (sku: any) => {
@@ -403,9 +471,17 @@ const loadPackageDetail = async () => {
         tags: pkg.tags || '',
         category_categories: pkg.category_categories || undefined,
       };
-      selectedCategoryInfo.value = pkg.category
-        ? { id: pkg.category.id, name: pkg.category.name || '' }
-        : null;
+      // 用接口返回的 category 父子链回显，并拼出完整路径
+      if (pkg.category && pkg.category_categories != null) {
+        const pathLabel = getCategoryPathFromApi(pkg.category);
+        selectedCategoryInfo.value = {
+          id: pkg.category.id,
+          name: pkg.category.name || '',
+          pathLabel: pathLabel || undefined,
+        };
+      } else {
+        selectedCategoryInfo.value = null;
+      }
       packageSkus.value = pkg.package_product_skus || [];
     }
   } catch (error: any) {
@@ -503,7 +579,6 @@ onLoad((options: any) => {
   if (options?.id) {
     packageId.value = Number(options.id);
   }
-  loadAllSkus();
   if (packageId.value) {
     loadPackageDetail();
   }
@@ -752,6 +827,24 @@ onLoad((options: any) => {
   overflow-y: auto;
 }
 
+/* 设置数量弹窗：避免数量输入框被遮挡 */
+.quantity-modal {
+  max-height: none;
+}
+.quantity-modal .quantity-modal-body {
+  flex: none;
+  padding: 30rpx 30rpx 40rpx;
+  overflow: visible;
+}
+.quantity-modal .quantity-input-wrap {
+  margin-bottom: 0;
+}
+.quantity-modal .quantity-input {
+  min-height: 88rpx;
+  padding: 24rpx 28rpx;
+  box-sizing: border-box;
+}
+
 .sku-search {
   margin-bottom: 20rpx;
 }
@@ -768,6 +861,37 @@ onLoad((options: any) => {
 
 .sku-select-list {
   max-height: 400rpx;
+}
+
+.sku-search-loading,
+.sku-load-more-hint {
+  padding: 24rpx;
+  text-align: center;
+  font-size: 26rpx;
+  color: #999;
+}
+
+.sku-load-more-hint {
+  padding: 16rpx;
+}
+
+.sku-load-more-row {
+  padding: 20rpx;
+  text-align: center;
+}
+
+.sku-load-more-btn {
+  padding: 16rpx 48rpx;
+  font-size: 28rpx;
+  color: #667eea;
+  background: #f0f4ff;
+  border: 1rpx solid #667eea;
+  border-radius: 24rpx;
+  line-height: 1.4;
+}
+
+.sku-load-more-btn::after {
+  border: none;
 }
 
 .sku-select-item {

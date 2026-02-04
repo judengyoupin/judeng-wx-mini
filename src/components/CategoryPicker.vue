@@ -295,9 +295,27 @@ const toggleSubExpand = async (subCategory: any) => {
   }
 };
 
-// 选择分类
+// 在树中查找某分类从根到该节点的名称路径，用于回显完整路径
+function findPathInTree(cats: any[], targetId: number, pathSoFar: string[]): string[] | null {
+  if (!Array.isArray(cats)) return null;
+  for (const c of cats) {
+    const name = (c.name && String(c.name).trim()) || '';
+    const nextPath = [...pathSoFar, name];
+    if (Number(c.id) === Number(targetId)) return nextPath;
+    const children = c.categories || c.children || [];
+    const found = findPathInTree(children, targetId, nextPath);
+    if (found) return found;
+  }
+  return null;
+}
+
+// 选择分类（传出 id、name、pathLabel 便于编辑页展示完整路径）
 const selectCategory = (category: any) => {
-  emit('select', category);
+  const id = category?.id;
+  const name = category?.name ?? '';
+  const pathArr = id != null ? findPathInTree(categories.value, Number(id), []) : null;
+  const pathLabel = pathArr && pathArr.length > 0 ? pathArr.join(' / ') : name;
+  emit('select', { id, name, pathLabel });
   handleClose();
 };
 

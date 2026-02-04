@@ -171,7 +171,7 @@ export async function getPackageList(params: {
 }
 
 /**
- * 获取套餐详情
+ * 获取套餐详情（含分类完整父子链，用于编辑页回显与完整路径展示）
  */
 export async function getPackageDetail(packageId: number) {
   const query = `
@@ -186,6 +186,11 @@ export async function getPackageDetail(packageId: number) {
         category {
           id
           name
+          category {
+            id
+            name
+            category { id name }
+          }
         }
         created_at
         updated_at

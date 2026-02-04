@@ -34,7 +34,7 @@
         <view class="form-item">
           <view class="form-label">所属分类</view>
           <view class="form-picker" :class="{ placeholder: !selectedCategory }" @click="showCategoryPicker = true">
-            {{ selectedCategory ? selectedCategory.name : '请选择分类' }}
+            {{ selectedCategory ? (selectedCategory.pathLabel || selectedCategory.name) : '请选择分类' }}
           </view>
         </view>
 
@@ -375,8 +375,8 @@ const skus = ref<any[]>([]);
 const categories = ref<any[]>([]);
 const loading = ref(false);
 const showCategoryPicker = ref(false);
-// 选择器选中时带出的分类信息，用于选择框展示（避免与页面分类树数据源不一致导致不显示）
-const selectedCategoryInfo = ref<{ id: number; name: string } | null>(null);
+// 选择器选中时带出的分类信息，用于选择框展示（含完整路径 pathLabel）
+const selectedCategoryInfo = ref<{ id: number; name: string; pathLabel?: string } | null>(null);
 
 // SKU编辑相关
 const showSkuModal = ref(false);
@@ -414,25 +414,44 @@ const uploadingSceneMedias = ref<UploadingDetailItem[]>([]);
 // 视频预览浮层（点击视频时全屏播放）
 const videoPreviewUrl = ref('');
 
+// 从接口返回的 category 父子链拼出完整路径（一级/二级/三级）
+function getCategoryPathFromApi(cat: any): string {
+  if (!cat?.name) return '';
+  const parts: string[] = [];
+  let c: any = cat;
+  while (c?.name) {
+    parts.unshift(String(c.name).trim());
+    c = c.category;
+  }
+  return parts.join(' / ');
+}
+
+// 在分类树中查找节点并返回从根到该节点的路径字符串
+function findCategoryPathInTree(cats: any[], targetId: number, pathSoFar: string[]): string | null {
+  if (!Array.isArray(cats)) return null;
+  for (const c of cats) {
+    const name = (c.name && String(c.name).trim()) || '';
+    const nextPath = [...pathSoFar, name];
+    if (Number(c.id) === Number(targetId)) return nextPath.join(' / ');
+    const children = c.categories || [];
+    const found = findCategoryPathInTree(children, targetId, nextPath);
+    if (found) return found;
+  }
+  return null;
+}
+
 const selectedCategory = computed(() => {
   const id = form.value.category_categories;
   if (id == null) return null;
-  // 优先用选择器带回的信息，保证选择后选择框立即显示名称
+  // 优先用选择器或详情接口带回的 pathLabel/name
   if (selectedCategoryInfo.value && selectedCategoryInfo.value.id === id) {
-    return { name: selectedCategoryInfo.value.name };
+    const pathLabel = selectedCategoryInfo.value.pathLabel || selectedCategoryInfo.value.name;
+    return { name: selectedCategoryInfo.value.name, pathLabel };
   }
-  // 再从页面分类树中查找（编辑时或与当前公司一致时）
-  const findCategory = (cats: any[]): any => {
-    for (const cat of cats) {
-      if (cat.id === id) return cat;
-      if (cat.categories && cat.categories.length > 0) {
-        const found = findCategory(cat.categories);
-        if (found) return found;
-      }
-    }
-    return null;
-  };
-  return findCategory(categories.value) || null;
+  // 再从页面分类树中查找并拼路径（编辑时回显）
+  const pathFromTree = findCategoryPathInTree(categories.value, id, []);
+  if (pathFromTree) return { name: pathFromTree.split(' / ').pop() || '', pathLabel: pathFromTree };
+  return null;
 });
 
 // 加载分类树（仅商品分类，用于展示选中项名称）
@@ -462,7 +481,17 @@ const loadProductDetail = async () => {
         scene_medias: product.scene_medias || [],
         is_shelved: product.is_shelved,
       };
-      selectedCategoryInfo.value = null; // 编辑时用分类树查找展示名称
+      // 用接口返回的 category 父子链回显，并拼出完整路径
+      if (product.category && product.category_categories != null) {
+        const pathLabel = getCategoryPathFromApi(product.category);
+        selectedCategoryInfo.value = {
+          id: product.category.id,
+          name: product.category.name || '',
+          pathLabel: pathLabel || undefined,
+        };
+      } else {
+        selectedCategoryInfo.value = null;
+      }
       skus.value = product.product_skus || [];
     }
   } catch (error: any) {
@@ -533,10 +562,19 @@ const uploadSkuImage = async () => {
   }
 };
 
-// 分类选择
+// 分类选择（CategoryPicker 已传出 pathLabel）
 const onCategorySelect = (category: any) => {
+  if (category == null) {
+    form.value.category_categories = undefined;
+    selectedCategoryInfo.value = null;
+    return;
+  }
   form.value.category_categories = category.id;
-  selectedCategoryInfo.value = { id: category.id, name: category.name || '' };
+  selectedCategoryInfo.value = {
+    id: category.id,
+    name: category.name || '',
+    pathLabel: category.pathLabel,
+  };
 };
 
 // 添加媒体

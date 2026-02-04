@@ -22,9 +22,9 @@
         <text class="qrcode-hint">点击图片可放大预览</text>
       </view>
 
-      <!-- 公司介绍 -->
+      <!-- 公司介绍：标题与内容分行显示 -->
       <view v-if="info.description" class="desc-section">
-        <text class="section-label">公司介绍</text>
+        <text class="desc-section-label">公司介绍</text>
         <text class="desc-text">{{ info.description }}</text>
       </view>
 
@@ -154,6 +154,16 @@ function previewImage(url: string) {
   background: #fff;
   border-radius: 20rpx;
   padding: 32rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+}
+
+.desc-section-label {
+  font-size: 26rpx;
+  color: #6b7280;
+  font-weight: 500;
+  display: block;
 }
 
 .desc-text {
@@ -161,6 +171,8 @@ function previewImage(url: string) {
   color: #374151;
   line-height: 1.6;
   white-space: pre-wrap;
+  word-break: break-word;
+  display: block;
 }
 
 .no-content {

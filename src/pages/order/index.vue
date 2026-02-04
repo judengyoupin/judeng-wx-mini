@@ -204,6 +204,22 @@ async function submitOrder() {
     return;
   }
 
+  // 提交前校验库存，不足时提示并阻止提交
+  for (const item of orderItems.value) {
+    const stock = Number(item.product_sku?.stock ?? 0);
+    const need = Number(item.quantity ?? 0);
+    if (need > 0 && stock < need) {
+      const name = item.product_sku?.product?.name || item.product_sku?.name || '商品';
+      const spec = item.product_sku?.name ? `（${item.product_sku.name}）` : '';
+      uni.showToast({
+        title: `${name}${spec} 库存不足，当前库存 ${stock}`,
+        icon: 'none',
+        duration: 2500,
+      });
+      return;
+    }
+  }
+
   submitting.value = true;
   try {
     const items = orderItems.value.map((item) => ({

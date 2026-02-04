@@ -74,7 +74,7 @@ export async function addToCart(params: {
         object: $cart
         on_conflict: {
           constraint: carts_product_sku_product_skus_user_users_company_companies_key
-          update_columns: [quantity]
+          update_columns: [quantity, selected]
         }
       ) {
         id
@@ -97,7 +97,7 @@ export async function addToCart(params: {
         company_companies: Number(companyId),
         product_sku_product_skus: params.skuId,
         quantity: params.quantity || 1,
-        selected: false,
+        selected: true,
       },
     },
   });

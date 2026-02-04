@@ -39,11 +39,11 @@
         </view>
       </view>
 
-      <!-- 商品介绍 -->
+      <!-- 商品介绍（富文本，保留换行） -->
       <view v-if="productDetail.description" class="description-section">
         <view class="section-title">商品介绍</view>
         <view class="description-content">
-          <rich-text :nodes="productDetail.description"></rich-text>
+          <rich-text :nodes="descriptionForRichText"></rich-text>
         </view>
       </view>
 
@@ -147,7 +147,7 @@
         :class="{ 'product-detail-footer-btn--disabled': selectedSkuIds.length === 0 || !canAddToCart }"
         @click="handleAddToCart"
       >
-        加入购物车
+        {{ selectedSkuIds.length === 0 ? '请先选择规格' : '加入购物车' }}
       </button>
     </DetailFooterBar>
   </view>
@@ -157,7 +157,7 @@
 import { ref, computed, onMounted } from 'vue';
 import { onLoad, onShow, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app';
 import { getProductDetail } from '@/api/product/index';
-import { addToCart, getCartList } from '@/api/cart/index';
+import { addToCart, getCartList, updateCartQuantity, toggleCartSelected } from '@/api/cart/index';
 import { user_token, userInfo, companyInfo } from '@/store/userStore';
 import { getCompanyUserRole } from '@/utils/auth';
 import PageNavBar from '@/components/PageNavBar.vue';
@@ -250,6 +250,14 @@ const hasMultiplePrices = computed(() => {
   return new Set(prices).size > 1;
 });
 
+// 商品介绍富文本：将换行符转为 <br/>，便于 rich-text 正确换行
+const descriptionForRichText = computed(() => {
+  const raw = productDetail.value?.description;
+  if (raw == null || raw === '') return '';
+  const str = typeof raw === 'string' ? raw : String(raw);
+  return str.replace(/\n/g, '<br/>');
+});
+
 // 检查权限
 const checkPermissions = async () => {
   if (!user_token.value || !userInfo.value?.id) {
@@ -300,16 +308,8 @@ const loadProductDetail = async () => {
   }
 };
 
-// 切换SKU选择
+// 切换SKU选择（缺货也可选，用于加入购物车）
 const toggleSku = (sku: any) => {
-  if (sku.stock <= 0) {
-    uni.showToast({
-      title: '该规格缺货',
-      icon: 'none',
-    });
-    return;
-  }
-
   const index = selectedSkuIds.value.indexOf(sku.id);
   if (index >= 0) {
     selectedSkuIds.value.splice(index, 1);
@@ -318,7 +318,7 @@ const toggleSku = (sku: any) => {
   }
 };
 
-// 加入购物车
+// 加入购物车（重复加购时数量+1；加购后保持规格选中状态；新加项默认勾选）
 const handleAddToCart = async () => {
   if (selectedSkuIds.value.length === 0) {
     uni.showToast({
@@ -350,13 +350,23 @@ const handleAddToCart = async () => {
   }
 
   try {
-    // 将选中的SKU加入购物车
-    const promises = selectedSkuIds.value.map(skuId => {
-      return addToCart({
-        skuId,
-        quantity: 1,
-      });
+    const list = await getCartList();
+    const bySkuId = new Map<number, any>();
+    list.forEach((item: any) => {
+      const sid = item.product_sku?.id;
+      if (sid != null) bySkuId.set(Number(sid), item);
     });
+
+    const promises: Promise<any>[] = [];
+    for (const skuId of selectedSkuIds.value) {
+      const existing = bySkuId.get(Number(skuId));
+      if (existing) {
+        promises.push(updateCartQuantity(existing.id, (existing.quantity || 0) + 1));
+        promises.push(toggleCartSelected(existing.id, true));
+      } else {
+        promises.push(addToCart({ skuId, quantity: 1 }));
+      }
+    }
 
     await Promise.all(promises);
 
@@ -365,7 +375,6 @@ const handleAddToCart = async () => {
       icon: 'success',
     });
 
-    selectedSkuIds.value = [];
     loadCartCount();
   } catch (error: any) {
     uni.showToast({
@@ -671,6 +680,7 @@ onShareTimeline(() => ({
   font-size: 28rpx;
   color: #333333;
   line-height: 1.8;
+  word-break: break-word;
 }
 
 .product-video {

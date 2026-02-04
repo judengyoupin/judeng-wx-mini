@@ -21,7 +21,7 @@
       <!-- 套餐信息 -->
       <view class="package-info-section">
         <view class="package-name">{{ packageDetail?.name || '' }}</view>
-        <view v-if="packageDetail?.description" class="package-description">
+        <view v-if="packageDetail?.description" class="package-description package-description--pre-wrap">
           {{ packageDetail.description }}
         </view>
       </view>
@@ -323,6 +323,12 @@ onShareTimeline(() => ({
   font-size: 28rpx;
   color: #666666;
   line-height: 1.6;
+}
+
+/* 保留富文本/纯文本中的换行 */
+.package-description--pre-wrap {
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
 .products-section {

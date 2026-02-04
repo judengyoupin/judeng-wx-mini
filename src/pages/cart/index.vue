@@ -228,11 +228,26 @@ const toggleManageMode = () => {
   }
 };
 
-// 切换选中状态
+// 是否缺货（库存不足或库存为 0）
+const isOutOfStock = (item: any) => {
+  const stock = Number(item.product_sku?.stock ?? 0);
+  const need = Number(item.quantity ?? 0);
+  return need > 0 && stock < need;
+};
+
+// 切换选中状态（勾选缺货商品时校验并提示）
 const toggleSelect = async (index: number) => {
   const item = cartItems.value[index];
   const newSelected = !item.selected;
-  
+
+  if (newSelected && isOutOfStock(item)) {
+    uni.showToast({
+      title: '该商品缺货，无法勾选',
+      icon: 'none',
+    });
+    return;
+  }
+
   try {
     await toggleCartSelected(item.id, newSelected);
     item.selected = newSelected;
@@ -244,15 +259,34 @@ const toggleSelect = async (index: number) => {
   }
 };
 
-// 全选/取消全选
+// 全选/取消全选（全选时跳过缺货商品并提示）
 const toggleSelectAll = async () => {
   const newSelected = !isAllSelected.value;
-  
+
+  if (newSelected) {
+    const outOfStockItems = cartItems.value.filter((item: any) => isOutOfStock(item));
+    if (outOfStockItems.length > 0) {
+      const toSelect = cartItems.value.filter((item: any) => !isOutOfStock(item));
+      try {
+        await Promise.all(toSelect.map((item: any) => toggleCartSelected(item.id, true)));
+        toSelect.forEach((item: any) => { item.selected = true; });
+        outOfStockItems.forEach((item: any) => { item.selected = false; });
+        uni.showToast({
+          title: `${outOfStockItems.length} 件商品缺货已跳过`,
+          icon: 'none',
+        });
+      } catch (error: any) {
+        uni.showToast({ title: error.message || '操作失败', icon: 'none' });
+      }
+      return;
+    }
+  }
+
   try {
     await Promise.all(
-      cartItems.value.map(item => toggleCartSelected(item.id, newSelected))
+      cartItems.value.map((item: any) => toggleCartSelected(item.id, newSelected))
     );
-    cartItems.value.forEach(item => {
+    cartItems.value.forEach((item: any) => {
       item.selected = newSelected;
     });
   } catch (error: any) {
