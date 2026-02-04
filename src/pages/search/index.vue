@@ -90,16 +90,17 @@
           class="package-item"
           @click="goPackageDetail(pkg.id)"
         >
-          <image
-            class="package-image"
-            :src="pkg.cover_image_url || '/static/default.png'"
-            mode="aspectFill"
-          />
+          <view class="package-image-wrap">
+            <image
+              class="package-image"
+              :src="pkg.cover_image_url || '/static/default.png'"
+              mode="aspectFill"
+              lazy-load
+            />
+            <view v-if="getFirstTag(pkg.tags)" class="package-tag">{{ getFirstTag(pkg.tags) }}</view>
+          </view>
           <view class="package-info">
             <view class="package-name">{{ pkg.name }}</view>
-            <view class="package-skus">
-              <text class="sku-count">{{ pkg.package_product_skus?.length || 0 }} 个商品</text>
-            </view>
           </view>
         </view>
       </view>
@@ -123,7 +124,7 @@ import { onLoad, onReady } from '@dcloudio/uni-app';
 import { getProductList } from '@/api/product/index';
 import { getPackageList } from '@/api/package/index';
 import { userInfo, user_token, companyInfo } from '@/store/userStore';
-import { getCompanyUserRole } from '@/utils/auth';
+import { getCompanyUserRoleCached } from '@/utils/auth';
 import PageNavBar from '@/components/PageNavBar.vue';
 import SkeletonScreen from '@/components/SkeletonScreen.vue';
 
@@ -169,7 +170,7 @@ const checkPermissions = async () => {
     return;
   }
   try {
-    const roleInfo = await getCompanyUserRole();
+    const roleInfo = await getCompanyUserRoleCached();
     if (roleInfo) {
       canViewPrice.value = roleInfo.canViewPrice;
       priceFactor.value = roleInfo.priceFactor || 1;
@@ -427,6 +428,7 @@ onReady(() => {
   border-radius: 8rpx;
 }
 
+/* 套餐列表：与套餐页一致，每行 3 个 */
 .package-list {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -434,49 +436,52 @@ onReady(() => {
   padding: 24rpx;
 }
 
-.package-card {
+.package-item {
   background: #fff;
   border-radius: 20rpx;
   overflow: hidden;
   box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.06);
 }
 
-.package-card-image-wrap {
+.package-image-wrap {
   position: relative;
   width: 100%;
   aspect-ratio: 1;
   background: #f5f5f5;
-  border-radius: 20rpx 20rpx 0 0;
   overflow: hidden;
 }
 
-.package-card-image {
+.package-image {
   width: 100%;
   height: 100%;
   display: block;
 }
 
-.package-card-info {
-  padding: 20rpx 16rpx;
+.package-tag {
+  position: absolute;
+  left: 12rpx;
+  bottom: 12rpx;
+  background: #22c55e;
+  color: #fff;
+  padding: 6rpx 14rpx;
+  border-radius: 24rpx;
+  font-size: 22rpx;
 }
 
-.package-card-name {
+.package-info {
+  padding: 16rpx 12rpx;
+}
+
+.package-name {
   font-size: 26rpx;
-  font-weight: 600;
+  font-weight: 500;
   color: #333;
+  text-align: center;
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-}
-
-.package-skus {
-  margin-top: 8rpx;
-}
-
-.sku-count {
-  font-size: 22rpx;
-  color: #999;
 }
 
 .empty-state {

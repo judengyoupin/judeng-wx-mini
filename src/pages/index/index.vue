@@ -147,11 +147,9 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from "vue";
-import { ref } from "vue";
-import { getCategoryTree } from "@/api/category/index";
-import { getBanners } from "@/api/banner/index";
-import { userInfo, user_token, companyInfo } from "@/store/userStore";
+import { defineComponent, ref, watch } from "vue";
+import { getHomePageData } from "@/api/home/index";
+import { userInfo, companyInfo, getHomePageCacheValid, setHomePageCache } from "@/store/userStore";
 import { onLoad, onShow, onShareAppMessage } from "@dcloudio/uni-app";
 import type { BannerArray } from "@/types/companies";
 
@@ -177,34 +175,71 @@ interface CategoryItem {
 export default defineComponent({
   components: { PageNavBar, SearchBox },
   setup() {
-    // 定义数据
     const categoryList = ref<CategoryItem[]>([]);
     const loading = ref(true);
     const topBanners = ref<BannerArray>([]);
     const bottomBanners = ref<BannerArray>([]);
 
-    // 获取分类数据
-    const fetchCategories = async () => {
+    const sortBanners = (arr: any[]) =>
+      [...arr].sort((a, b) => {
+        const sortA = typeof a === "object" ? a.sort ?? 999 : 999;
+        const sortB = typeof b === "object" ? b.sort ?? 999 : 999;
+        return sortA - sortB;
+      });
+
+    /** 一次请求拉取轮播 + 分类，优先用 store 内 5 分钟缓存。companyId 优先 store，无则读 storage（App 可能尚未写完 store） */
+    const fetchHomeData = async (forceRefresh = false) => {
+      let companyId: number | null = companyInfo?.value?.id ?? null;
+      if (companyId == null) {
+        try {
+          const id = uni.getStorageSync('companyId');
+          if (id != null && id !== '') {
+            const n = Number(id);
+            if (!Number.isNaN(n)) companyId = n;
+          }
+        } catch (_) {}
+      }
+      if (!companyId) {
+        categoryList.value = [];
+        topBanners.value = [];
+        bottomBanners.value = [];
+        loading.value = false;
+        return;
+      }
+
+      const cached = !forceRefresh ? getHomePageCacheValid(companyId) : null;
+      if (cached) {
+        categoryList.value = cached.categoryList;
+        topBanners.value = cached.topBanners;
+        bottomBanners.value = cached.bottomBanners;
+        loading.value = false;
+        return;
+      }
+
       loading.value = true;
-
       try {
-        // 首页只展示商品分类，不展示套餐分类
-        const res = await getCategoryTree(companyInfo?.value?.id || null, 'product');
-
-        if (res && res.code === 0 && res.data) {
-          categoryList.value = res.data;
-          console.log("获取分类数据成功:", res.data);
+        const res = await getHomePageData(companyId);
+        if (res?.code === 0 && res.data) {
+          const top = sortBanners(res.data.banners.top);
+          const bottom = sortBanners(res.data.banners.bottom);
+          categoryList.value = res.data.categoryList ?? [];
+          topBanners.value = top;
+          bottomBanners.value = bottom;
+          setHomePageCache(companyId, {
+            categoryList: categoryList.value,
+            topBanners: top,
+            bottomBanners: bottom,
+          });
         } else {
-          console.error("获取分类数据失败:", res?.message || "未知错误");
           uni.showToast({
-            title: res?.message || "获取分类数据失败",
+            title: res?.message || "获取首页数据失败",
             icon: "none",
           });
         }
       } catch (error) {
-        console.error("获取分类数据失败:", error);
+        console.error("获取首页数据失败:", error);
         uni.showToast({
-          title: "获取分类数据失败",
+          title: "获取首页数据失败",
           icon: "none",
         });
       } finally {
@@ -212,24 +247,15 @@ export default defineComponent({
       }
     };
 
-    // 一次请求获取顶部+底部轮播图
-    const fetchBanners = async () => {
-      try {
-        const res = await getBanners(companyInfo?.value?.id || null);
-        if (res && res.code === 0 && res.data) {
-          const sortBanners = (arr: any[]) =>
-            [...arr].sort((a, b) => {
-              const sortA = typeof a === "object" ? a.sort ?? 999 : 999;
-              const sortB = typeof b === "object" ? b.sort ?? 999 : 999;
-              return sortA - sortB;
-            });
-          topBanners.value = sortBanners(res.data.top);
-          bottomBanners.value = sortBanners(res.data.bottom);
+    // App 的 syncCompanyInfo 可能晚于首页 onShow，companyInfo 就绪后补拉一次以显示轮播/分类
+    watch(
+      () => companyInfo?.value?.id,
+      (id) => {
+        if (id && categoryList.value.length === 0 && !loading.value) {
+          fetchHomeData(true);
         }
-      } catch (error) {
-        console.error("获取轮播图失败:", error);
       }
-    };
+    );
 
     // 获取分类图片
     const getCategoryImage = (category: any) => {
@@ -406,16 +432,12 @@ export default defineComponent({
       });
     };
 
-    // 页面加载时处理
     onLoad((options: any) => {
-      // 如果 URL 中有 companyId 参数，更新存储
       if (options?.companyId) {
         uni.setStorageSync("companyId", options.companyId);
-        // 重新同步公司信息
         import("@/api/company/index").then(({ syncCompanyInfo }) => {
           syncCompanyInfo(options.companyId).then(() => {
-            fetchCategories();
-            fetchBanners();
+            fetchHomeData(true);
           }).catch((err) => {
             console.error("同步公司信息失败:", err);
           });
@@ -423,14 +445,20 @@ export default defineComponent({
       }
     });
 
-    // 仅 onShow 拉数，避免与 onLoad/onMounted 重复请求
-    onShow(async () => {
-      await new Promise((resolve) => setTimeout(resolve, 100));
-      await Promise.all([
-        fetchCategories(),
-        fetchBanners(),
-      ]);
+    onShow(() => {
+      fetchHomeData(false);
     });
+
+    // 有缓存时直接展示，不闪骨架屏
+    if (companyInfo?.value?.id) {
+      const cached = getHomePageCacheValid(companyInfo.value.id);
+      if (cached) {
+        categoryList.value = cached.categoryList;
+        topBanners.value = cached.topBanners;
+        bottomBanners.value = cached.bottomBanners;
+        loading.value = false;
+      }
+    }
 
     return {
       categoryList,

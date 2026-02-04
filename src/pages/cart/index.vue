@@ -136,7 +136,7 @@
 import { ref, computed, onMounted } from 'vue';
 import { onShow, onPullDownRefresh } from '@dcloudio/uni-app';
 import { user_token, userInfo, companyInfo } from '@/store/userStore';
-import { getCompanyUserRole } from '@/utils/auth';
+import { getCompanyUserRoleCached } from '@/utils/auth';
 import PageNavBar from '@/components/PageNavBar.vue';
 import SkeletonScreen from '@/components/SkeletonScreen.vue';
 import {
@@ -150,7 +150,10 @@ const cartItems = ref<any[]>([]);
 const loading = ref(false);
 const isManageMode = ref(false);
 const priceFactor = ref(1);
-const canViewPrice = ref(false); // 无权限时整链不显示价格
+const canViewPrice = ref(false);
+
+const CART_CACHE_TTL = 30 * 1000;
+const cartListCache = ref<{ items: any[]; timestamp: number } | null>(null);
 
 // 计算属性
 const selectedCount = computed(() => {
@@ -179,7 +182,7 @@ const loadPriceFactor = async () => {
   }
 
   try {
-    const roleInfo = await getCompanyUserRole();
+    const roleInfo = await getCompanyUserRoleCached();
     if (roleInfo) {
       priceFactor.value = roleInfo.priceFactor || 1;
       canViewPrice.value = roleInfo.canViewPrice;
@@ -194,34 +197,39 @@ const loadPriceFactor = async () => {
   }
 };
 
-// 加载购物车
-const loadCart = async () => {
+// 加载购物车，forceRefresh 时跳过 30 秒缓存（下拉刷新、从结算返回等）
+const loadCart = async (forceRefresh = false) => {
   if (!user_token.value) {
     cartItems.value = [];
     return;
   }
 
-  loading.value = true;
-
-  try {
-    // 先加载价格系数
-    await loadPriceFactor();
-    
-    const items = await getCartList();
-    cartItems.value = items.map((item: any) => ({
+  const cache = cartListCache.value;
+  if (!forceRefresh && cache && Date.now() - cache.timestamp < CART_CACHE_TTL) {
+    cartItems.value = cache.items.map((item: any) => ({
       ...item,
       selected: item.selected || false,
     }));
+    await loadPriceFactor();
+    if (typeof uni !== 'undefined' && uni.stopPullDownRefresh) uni.stopPullDownRefresh();
+    return;
+  }
+
+  loading.value = true;
+  try {
+    await loadPriceFactor();
+    const items = await getCartList();
+    const list = items.map((item: any) => ({
+      ...item,
+      selected: item.selected || false,
+    }));
+    cartItems.value = list;
+    cartListCache.value = { items: list, timestamp: Date.now() };
   } catch (error: any) {
-    uni.showToast({
-      title: error.message || '加载失败',
-      icon: 'none',
-    });
+    uni.showToast({ title: error.message || '加载失败', icon: 'none' });
   } finally {
     loading.value = false;
-    if (typeof uni !== 'undefined' && uni.stopPullDownRefresh) {
-      uni.stopPullDownRefresh();
-    }
+    if (typeof uni !== 'undefined' && uni.stopPullDownRefresh) uni.stopPullDownRefresh();
   }
 };
 
@@ -444,12 +452,12 @@ onMounted(() => {
 });
 
 onShow(() => {
-  loadCart();
+  loadCart(false);
   calcScrollListHeight();
 });
 
 onPullDownRefresh(() => {
-  loadCart();
+  loadCart(true);
 });
 </script>
 

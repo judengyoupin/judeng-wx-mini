@@ -113,7 +113,7 @@ import { getProductList } from '@/api/product/index';
 import { userInfo, user_token, companyInfo } from '@/store/userStore';
 import PageNavBar from '@/components/PageNavBar.vue';
 import SearchBox from '@/components/SearchBox.vue';
-import { getCompanyUserRole } from '@/utils/auth';
+import { getCompanyUserRoleCached } from '@/utils/auth';
 
 const parentId = ref<number | null>(null);
 const pageTitle = ref('分类筛选');
@@ -159,7 +159,7 @@ const checkPermissions = async () => {
     return;
   }
   try {
-    const roleInfo = await getCompanyUserRole();
+    const roleInfo = await getCompanyUserRoleCached();
     if (roleInfo) {
       canViewPrice.value = roleInfo.canViewPrice;
       priceFactor.value = roleInfo.priceFactor || 1;

@@ -76,7 +76,7 @@ import { onLoad, onShow, onShareAppMessage, onShareTimeline } from '@dcloudio/un
 import { getPackageDetail } from '@/api/package/index';
 import { addToCart, getCartList } from '@/api/cart/index';
 import { user_token, userInfo, companyInfo } from '@/store/userStore';
-import { getCompanyUserRole } from '@/utils/auth';
+import { getCompanyUserRoleCached } from '@/utils/auth';
 import PageNavBar from '@/components/PageNavBar.vue';
 import DetailFooterBar from '@/components/DetailFooterBar.vue';
 import SkeletonScreen from '@/components/SkeletonScreen.vue';
@@ -112,7 +112,7 @@ const loadPriceFactor = async () => {
   }
 
   try {
-    const roleInfo = await getCompanyUserRole();
+    const roleInfo = await getCompanyUserRoleCached();
     if (roleInfo) {
       priceFactor.value = roleInfo.priceFactor || 1;
       canViewPrice.value = roleInfo.canViewPrice ?? false;

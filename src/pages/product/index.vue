@@ -87,7 +87,7 @@ import { ref, computed } from 'vue';
 import { onLoad } from '@dcloudio/uni-app';
 import { getProductList } from '@/api/product/index';
 import { userInfo, user_token, companyInfo } from '@/store/userStore';
-import { getCompanyUserRole } from '@/utils/auth';
+import { getCompanyUserRoleCached } from '@/utils/auth';
 import PageNavBar from '@/components/PageNavBar.vue';
 import SkeletonScreen from '@/components/SkeletonScreen.vue';
 
@@ -133,7 +133,7 @@ const checkPermissions = async () => {
     return;
   }
   try {
-    const roleInfo = await getCompanyUserRole();
+    const roleInfo = await getCompanyUserRoleCached();
     if (roleInfo) {
       canViewPrice.value = roleInfo.canViewPrice;
       priceFactor.value = roleInfo.priceFactor || 1;

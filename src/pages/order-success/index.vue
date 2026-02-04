@@ -40,7 +40,7 @@
 import { ref, onMounted } from 'vue';
 import { onLoad, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app';
 import { getOrderDetailById } from '@/api/order/index';
-import { getCompanyUserRole } from '@/utils/auth';
+import { getCompanyUserRoleCached } from '@/utils/auth';
 
 const orderId = ref<number | null>(null);
 const orderAmount = ref<string>('');
@@ -56,7 +56,7 @@ onLoad((options: any) => {
 });
 
 onMounted(async () => {
-  getCompanyUserRole().then((r) => {
+  getCompanyUserRoleCached().then((r) => {
     canViewPrice.value = r?.canViewPrice ?? false;
   });
   if (orderId.value) {

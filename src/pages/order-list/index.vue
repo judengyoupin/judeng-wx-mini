@@ -176,7 +176,7 @@ import { ref, watch } from 'vue';
 import { onLoad, onShow, onPullDownRefresh, onReachBottom } from '@dcloudio/uni-app';
 import { user_token, userInfo } from '@/store/userStore';
 import { getMyOrderList } from '@/api/order/index';
-import { getCompanyUserRole } from '@/utils/auth';
+import { getCompanyUserRoleCached } from '@/utils/auth';
 import PageNavBar from '@/components/PageNavBar.vue';
 import SkeletonScreen from '@/components/SkeletonScreen.vue';
 
@@ -304,7 +304,7 @@ watch(paymentStatusFilter, () => {
 
 onShow(() => {
   if (user_token.value && userInfo.value?.id) {
-    getCompanyUserRole().then((r) => {
+    getCompanyUserRoleCached().then((r) => {
       canViewPrice.value = r?.canViewPrice ?? false;
     });
     loadOrders(true);

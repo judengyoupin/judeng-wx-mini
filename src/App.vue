@@ -1,90 +1,85 @@
 <script setup lang="ts">
 import { onLaunch, onShow, onHide } from "@dcloudio/uni-app";
 import { syncCompanyInfo } from "@/api/company/index";
-import { getDefaultCompanyId } from "@/api/config/index";
+import { getDefaultCompanyIdCached } from "@/api/config/index";
 import {
   companyInfo,
   restoreUserFromStorage,
   user_token,
-  setDefaultCompanyIdCache,
+  getDefaultCompanyIdFromStorage,
+  ensureUserInfoCached,
 } from "@/store/userStore";
-import { getUserManagedCompanyId } from "@/utils/company";
+import { refreshManagedCompanyAfterLogin, getCompanyUserRoleCached } from "@/utils/auth";
 
-/** 定期刷新：重新拉取默认公司 ID 并更新缓存 */
-async function refreshDefaultCompanyIdCache() {
-  try {
-    const id = await getDefaultCompanyId();
-    setDefaultCompanyIdCache(id);
-  } catch (_) {}
-}
+/** 时序 1：确定当前公司 ID（本地 → 分享链接 → 系统配置），并确保默认公司 ID 存本地 */
 
 onLaunch(async (options) => {
   console.log("App Launch", options);
 
-  // 1. 首先恢复用户登录状态
+  // 1. 恢复用户登录状态（token、userId、userInfo 存本地，此处恢复）
   const isLoggedIn = restoreUserFromStorage();
   console.log("恢复登录状态:", isLoggedIn ? "已登录" : "未登录");
 
-  // 2. 获取公司ID
-  const companyId = options?.query?.companyId;
-  if (companyId) {
-    uni.setStorageSync("companyId", companyId);
+  // 2. 分享链接带 companyId：直接存本地，作为当前公司
+  const linkCompanyId = options?.query?.companyId;
+  if (linkCompanyId) {
+    uni.setStorageSync("companyId", linkCompanyId);
   }
 
-  // 3. 从存储中获取公司ID（优先使用本地存储，记住上次进入的公司）
-  let storageCompanyId = uni.getStorageSync("companyId");
-  
-  // 4. 如果用户已登录且是公司管理员，优先使用管理的公司ID（但不会覆盖已存储的公司ID）
-  if (isLoggedIn && user_token.value && !storageCompanyId) {
+  // 3. 当前公司 ID：优先本地
+  let currentCompanyId: string | number | null = uni.getStorageSync("companyId");
+
+  // 4. 已登录且本地无公司：强制刷新角色缓存，若为某公司管理员则用其管理的公司 ID（同一次请求拿角色+公司信息）
+  if (isLoggedIn && user_token.value && !currentCompanyId) {
     try {
-      const managedCompanyId = await getUserManagedCompanyId();
-      if (managedCompanyId) {
-        storageCompanyId = managedCompanyId;
+      const managedCompanyId = await refreshManagedCompanyAfterLogin();
+      if (managedCompanyId != null) {
+        currentCompanyId = managedCompanyId;
         uni.setStorageSync("companyId", managedCompanyId);
-        console.log("使用公司管理员管理的公司ID:", managedCompanyId);
+        console.log("使用管理员管理的公司ID:", managedCompanyId);
       }
     } catch (error) {
-      console.error("获取公司管理员公司ID失败:", error);
-    }
-  }
-  
-  // 5. 确定最终使用的公司ID：优先使用存储的公司ID，如果没有则使用默认值
-  let finalCompanyId: number | null = null;
-  if (storageCompanyId) {
-    finalCompanyId = Number(storageCompanyId);
-    console.log("使用本地存储的公司ID:", finalCompanyId);
-    // 同时把配置里的默认公司 ID 拉取并缓存（供各页 getDefaultCompanyIdCached 使用）
-    await refreshDefaultCompanyIdCache();
-  } else {
-    const configCompanyId = await getDefaultCompanyId();
-    if (configCompanyId) {
-      finalCompanyId = configCompanyId;
-      uni.setStorageSync("companyId", configCompanyId);
-      setDefaultCompanyIdCache(configCompanyId);
-      console.log("使用配置的默认公司ID:", finalCompanyId);
-    } else {
-      console.warn("未找到默认公司ID配置，无法初始化公司信息");
+      console.error("获取管理员公司ID失败:", error);
     }
   }
 
-  if (!finalCompanyId) {
+  // 5. 本地没有当前公司 ID：用系统配置的默认公司 ID（优先读本地 defaultCompanyId，没有再请求 config）
+  if (!currentCompanyId) {
+    const defaultId = getDefaultCompanyIdFromStorage() ?? (await getDefaultCompanyIdCached());
+    if (defaultId != null) {
+      currentCompanyId = defaultId;
+      uni.setStorageSync("companyId", defaultId);
+      console.log("使用系统默认公司ID:", defaultId);
+    }
+  }
+
+  const finalCompanyId = currentCompanyId != null ? Number(currentCompanyId) : null;
+  if (finalCompanyId == null || Number.isNaN(finalCompanyId)) {
     console.warn("无法确定公司ID，跳过公司信息同步");
     return;
   }
 
-  // 6. 同步公司信息
+  // 6. 公司完整配置：有缓存直接用，否则拉取并写缓存（5 分钟）
   try {
     await syncCompanyInfo(finalCompanyId);
     console.log("公司信息同步成功:", companyInfo.value);
   } catch (error) {
     console.error("同步公司信息失败:", error);
   }
+
+  // 7. 已登录时预拉 userInfo、company_users 并缓存，各页（我的、购物车等）不再重复请求
+  if (isLoggedIn && user_token.value) {
+    try {
+      await ensureUserInfoCached();
+      await getCompanyUserRoleCached();
+    } catch (e) {
+      console.error("预拉用户/角色失败:", e);
+    }
+  }
 });
 
 onShow(() => {
   console.log("App Show");
-  // 定期重新获取默认公司 ID 缓存（避免配置在后台被改后长期不更新）
-  refreshDefaultCompanyIdCache();
 });
 
 onHide(() => {

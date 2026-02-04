@@ -522,13 +522,14 @@ const handleSave = async () => {
       await updatePackage(packageId.value, form.value);
       savedPackageId = packageId.value;
     } else {
-      // 创建套餐：传入当前公司 ID
-      const companyId = companyInfo.value?.id;
-      if (companyId == null) {
+      // 创建套餐：必须传入当前公司 ID（packages 表外键 company_companies -> companies.id）
+      const rawCompanyId = companyInfo.value?.id;
+      if (rawCompanyId == null || rawCompanyId === '' || Number(rawCompanyId) <= 0) {
         uni.showToast({ title: '请先选择公司', icon: 'none' });
         loading.value = false;
         return;
       }
+      const companyId = Number(rawCompanyId);
       const result = await createPackage({
         ...form.value,
         company_companies: companyId,
@@ -561,8 +562,10 @@ const handleSave = async () => {
       uni.navigateBack();
     }, 1500);
   } catch (error: any) {
+    const msg = error?.message || (error?.errors?.[0]?.message ?? '') || '';
+    const isFkError = /foreign key|constraint-violation|constraint/i.test(msg);
     uni.showToast({
-      title: error.message || '保存失败',
+      title: isFkError ? '当前公司无效或不存在，请从公司列表重新进入后再试' : (msg || '保存失败'),
       icon: 'none',
     });
   } finally {

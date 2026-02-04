@@ -100,7 +100,7 @@ import { userInfo, user_token, companyInfo } from '@/store/userStore';
 import { getCartList, deleteCartItems } from '@/api/cart/index';
 import { getAddressList, type AddressItem } from '@/api/address/index';
 import { createOrder } from '@/api/order/index';
-import { getCompanyUserRole } from '@/utils/auth';
+import { getCompanyUserRoleCached } from '@/utils/auth';
 
 const cartIds = ref<number[]>([]);
 const orderItems = ref<any[]>([]);
@@ -139,7 +139,7 @@ function goBack() {
 async function loadPriceFactor() {
   if (!user_token.value || !userInfo.value?.id) return;
   try {
-    const roleInfo = await getCompanyUserRole();
+    const roleInfo = await getCompanyUserRoleCached();
     priceFactor.value = roleInfo?.priceFactor ?? 1;
     canViewPrice.value = roleInfo?.canViewPrice ?? false;
   } catch {

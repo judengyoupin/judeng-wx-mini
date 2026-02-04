@@ -57,7 +57,6 @@
           <view class="action-btn preview" @click.stop="previewCompany(company)">预览</view>
           <view class="action-btn" @click.stop="goToEditCompany(company.id)">编辑</view>
           <view class="action-btn" @click.stop="authorizeAdmin(company)">授权</view>
-          <view class="action-btn delete" @click.stop="handleDelete(company)">删除</view>
         </view>
       </view>
 
@@ -152,7 +151,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { onPullDownRefresh, onReachBottom, onShow } from '@dcloudio/uni-app';
-import { getCompanyList, deleteCompany, authorizeCompanyAdmin, searchUserByMobileForPlatform } from '@/subPackages/admin/api/platform';
+import { getCompanyList, authorizeCompanyAdmin, searchUserByMobileForPlatform } from '@/subPackages/admin/api/platform';
 import { syncCompanyInfo } from '@/api/company/index';
 
 const companies = ref<any[]>([]);
@@ -283,31 +282,6 @@ const handleAuthorize = async () => {
       icon: 'none',
     });
   }
-};
-
-// 删除公司
-const handleDelete = (company: any) => {
-  uni.showModal({
-    title: '确认删除',
-    content: `确定要删除公司"${company.name}"吗？`,
-    success: async (res) => {
-      if (res.confirm) {
-        try {
-          await deleteCompany(company.id);
-          uni.showToast({
-            title: '删除成功',
-            icon: 'success',
-          });
-          loadCompanies(true);
-        } catch (error: any) {
-          uni.showToast({
-            title: error.message || '删除失败',
-            icon: 'none',
-          });
-        }
-      }
-    },
-  });
 };
 
 // 跳转到添加公司
@@ -564,11 +538,6 @@ onReachBottom(() => {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: #ffffff;
   font-weight: 500;
-}
-
-.action-btn.delete {
-  background: #fff5f5;
-  color: #ff6b6b;
 }
 
 .empty-state {

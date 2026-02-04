@@ -200,9 +200,8 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import { onShow } from '@dcloudio/uni-app';
-import { userInfo, user_token, companyInfo, clearUserContext } from '@/store/userStore';
-import client from '@/config-lib/hasura-graphql-client/hasura-graphql-client';
-import { isPlatformAdmin, isCompanyAdmin } from '@/utils/auth';
+import { userInfo, user_token, companyInfo, clearUserContext, getCompanyDetailFromCache, ensureUserInfoCached } from '@/store/userStore';
+import { getCompanyUserRoleCached } from '@/utils/auth';
 import { getCompanyPublicInfo } from '@/api/company/index';
 import type { CompanyPublicInfo } from '@/api/company/index';
 
@@ -212,63 +211,49 @@ const showAboutModal = ref(false);
 const isAdmin = ref(false);
 const isCompanyAdminUser = ref(false);
 
-// 检查用户权限
+const PERMISSIONS_CACHE_TTL = 5 * 60 * 1000;
+const permissionsCache = ref<{ userId: number; isAdmin: boolean; isCompanyUser: boolean; isCompanyAdminUser: boolean; ts: number } | null>(null);
+
+// 权限与展示数据：先确保全局 userInfo 已拉取（昵称、头像、role），再根据缓存或接口得到 isAdmin / 公司角色
 const checkUserPermissions = async () => {
-  if (!user_token.value || !userInfo.value?.id) {
+  const userId = userInfo.value?.id;
+  if (!user_token.value || !userId) {
     isCompanyUser.value = false;
     isAdmin.value = false;
     isCompanyAdminUser.value = false;
+    permissionsCache.value = null;
     return;
   }
 
-  // 检查平台管理员
-  isAdmin.value = await isPlatformAdmin();
+  // 先保证全局 userInfo 有昵称、头像、role（从 App 缓存或接口拉取），我的页直接读 userInfo 展示
+  await ensureUserInfoCached();
 
-  // 检查公司用户和管理员
+  const cache = permissionsCache.value;
+  if (cache && cache.userId === Number(userId) && Date.now() - cache.ts < PERMISSIONS_CACHE_TTL) {
+    isAdmin.value = cache.isAdmin;
+    isCompanyUser.value = cache.isCompanyUser;
+    isCompanyAdminUser.value = cache.isCompanyAdminUser;
+    return;
+  }
+
+  isAdmin.value = userInfo.value?.role === 'admin';
+
   if (companyInfo.value?.id) {
-    isCompanyUser.value = await checkCompanyUser();
-    isCompanyAdminUser.value = await isCompanyAdmin();
+    const role = await getCompanyUserRoleCached();
+    isCompanyUser.value = role != null;
+    isCompanyAdminUser.value = role?.isAdmin ?? false;
   } else {
     isCompanyUser.value = false;
     isCompanyAdminUser.value = false;
   }
-};
 
-// 检查用户是否注册到公司
-const checkCompanyUser = async (): Promise<boolean> => {
-  if (!user_token.value || !userInfo.value?.id || !companyInfo.value?.id) {
-    return false;
-  }
-
-  try {
-    const query = `
-      query CheckCompanyUser($userId: bigint!, $companyId: bigint!) {
-        company_users(
-          where: {
-            user_users: { _eq: $userId }
-            company_companies: { _eq: $companyId }
-          }
-          limit: 1
-        ) {
-          id
-          price_factor
-        }
-      }
-    `;
-
-    const result = await client.execute({
-      query,
-      variables: {
-        userId: Number(userInfo.value.id),
-        companyId: Number(companyInfo.value.id),
-      },
-    });
-
-    return (result?.company_users?.length || 0) > 0;
-  } catch (error) {
-    console.error('检查公司用户失败:', error);
-    return false;
-  }
+  permissionsCache.value = {
+    userId: Number(userId),
+    isAdmin: isAdmin.value,
+    isCompanyUser: isCompanyUser.value,
+    isCompanyAdminUser: isCompanyAdminUser.value,
+    ts: Date.now(),
+  };
 };
 
 // 跳转到登录页
@@ -491,18 +476,33 @@ const handleLogout = () => {
   });
 };
 
-// 仅 onShow 拉数，避免首次与 onMounted 重复请求
-onShow(() => {
-  checkUserPermissions();
-  if (companyInfo.value?.id) {
-    getCompanyPublicInfo(companyInfo.value.id).then((info) => {
-      companyPublicInfo.value = info;
-    }).catch(() => {
-      companyPublicInfo.value = null;
-    });
-  } else {
+// onShow：先拉取/补齐全局 userInfo 与权限（昵称、头像、管理员板块），再填公司公开信息（优先缓存）
+onShow(async () => {
+  await checkUserPermissions();
+
+  const companyId = companyInfo.value?.id;
+  if (!companyId) {
     companyPublicInfo.value = null;
+    return;
   }
+  const cached = getCompanyDetailFromCache(companyId);
+  if (cached && typeof cached === 'object') {
+    companyPublicInfo.value = {
+      id: cached.id,
+      name: cached.name,
+      logo_url: cached.logo_url ?? null,
+      description: cached.description ?? null,
+      contact_code: cached.contact_code ?? null,
+      wechat_code: cached.wechat_code ?? null,
+      resource_file_url: cached.resource_file_url ?? null,
+    };
+    return;
+  }
+  getCompanyPublicInfo(companyId).then((info) => {
+    companyPublicInfo.value = info;
+  }).catch(() => {
+    companyPublicInfo.value = null;
+  });
 });
 </script>
 

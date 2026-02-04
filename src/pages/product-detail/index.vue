@@ -159,7 +159,7 @@ import { onLoad, onShow, onShareAppMessage, onShareTimeline } from '@dcloudio/un
 import { getProductDetail } from '@/api/product/index';
 import { addToCart, getCartList, updateCartQuantity, toggleCartSelected } from '@/api/cart/index';
 import { user_token, userInfo, companyInfo } from '@/store/userStore';
-import { getCompanyUserRole } from '@/utils/auth';
+import { getCompanyUserRoleCached } from '@/utils/auth';
 import PageNavBar from '@/components/PageNavBar.vue';
 import SkeletonScreen from '@/components/SkeletonScreen.vue';
 import DetailFooterBar from '@/components/DetailFooterBar.vue';
@@ -268,7 +268,7 @@ const checkPermissions = async () => {
   }
 
   try {
-    const roleInfo = await getCompanyUserRole();
+    const roleInfo = await getCompanyUserRoleCached();
     if (roleInfo) {
       canViewPrice.value = roleInfo.canViewPrice;
       canAddToCart.value = true; // 只要登录且是公司用户即可加入购物车，与是否可看价格无关

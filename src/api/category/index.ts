@@ -2,9 +2,9 @@ import client from "@/config-lib/hasura-graphql-client/hasura-graphql-client";
 import { getDefaultCompanyIdCached } from "@/api/config/index";
 
 /**
- * 单节点转为前端树节点格式（含 children），并过滤隐藏分类
+ * 单节点转为前端树节点格式（含 children），并过滤隐藏分类（供首页合并接口等复用）
  */
-function mapCategoryNode(c: any, hiddenCategoryIds: number[]): any | null {
+export function mapCategoryNode(c: any, hiddenCategoryIds: number[]): any | null {
   if (hiddenCategoryIds.length && hiddenCategoryIds.includes(Number(c.id))) return null;
   const rawChildren = Array.isArray(c.categories) ? c.categories : [];
   const children = rawChildren.map((child: any) => mapCategoryNode(child, hiddenCategoryIds)).filter(Boolean);
@@ -27,90 +27,47 @@ function mapCategoryNode(c: any, hiddenCategoryIds: number[]): any | null {
 
 /**
  * 获取分类树（一次请求返回三层：根 → 二级 → 三级）
- * 合并当前公司和默认公司的分类数据，并过滤当前公司的隐藏分类
+ * 当前公司 + 系统默认公司；查出来后用当前公司的 hidden_category_ids 剔除隐藏分类
  * @param companyId 公司ID
  * @param type 分类类型：'product' | 'package' | null（null表示所有类型）
  */
 export async function getCategoryTree(companyId?: number | null, type?: 'product' | 'package' | null) {
   try {
     const categoryType: 'product' | 'package' | null | undefined = type;
-    const defaultCompanyId = await getDefaultCompanyIdCached();
-
-    const companyIds: number[] = [];
-    if (companyId) companyIds.push(companyId);
-    if (defaultCompanyId && defaultCompanyId !== companyId) companyIds.push(defaultCompanyId);
-    if (companyIds.length === 0) {
+    if (!companyId) {
       return { code: 0, data: [], message: "获取分类成功" };
     }
 
+    const defaultCompanyId = await getDefaultCompanyIdCached();
+    const companyIds: number[] = [companyId];
+    if (defaultCompanyId != null && defaultCompanyId !== companyId) {
+      companyIds.push(defaultCompanyId);
+    }
+
     let hiddenCategoryIds: number[] = [];
-    const currentCompanyId = companyId ?? null;
+    const currentCompanyId = companyId;
     const whereConditions = [
       '{ parent_categories: { _is_null: true } }',
       '{ is_deleted: { _eq: false } }',
     ];
     if (categoryType) whereConditions.push('{ type: { _eq: $type } }');
-    if (companyIds.length === 1) whereConditions.push('{ company_companies: { _eq: $companyId } }');
-    else whereConditions.push('{ company_companies: { _in: $companyIds } }');
+    if (companyIds.length === 1) {
+      whereConditions.push('{ company_companies: { _eq: $companyId } }');
+    } else {
+      whereConditions.push('{ company_companies: { _in: $companyIds } }');
+    }
     const nestedWhere = categoryType ? '{ is_deleted: { _eq: false }, type: { _eq: $type } }' : '{ is_deleted: { _eq: false } }';
 
-    // 合并请求：有当前公司时一次查询同时拉取 hidden_category_ids + 分类树
-    const variables: any = companyIds.length === 1 ? { companyId: companyIds[0] } : { companyIds };
+    const variables: any = companyIds.length === 1 ? { companyId: companyIds[0], currentCompanyId } : { companyIds, currentCompanyId };
     if (categoryType) variables.type = categoryType;
-    if (currentCompanyId) variables.currentCompanyId = currentCompanyId;
 
-    const variableDeclarations = companyIds.length === 1 ? ['$companyId: bigint!'] : ['$companyIds: [bigint!]!'];
+    const variableDeclarations = companyIds.length === 1 ? ['$companyId: bigint!', '$currentCompanyId: bigint!'] : ['$companyIds: [bigint!]!', '$currentCompanyId: bigint!'];
     if (categoryType) variableDeclarations.push('$type: String!');
-    if (currentCompanyId) variableDeclarations.push('$currentCompanyId: bigint!');
     const varStr = `(${variableDeclarations.join(', ')})`;
 
-    const treeQuery = currentCompanyId
-      ? `
+    const treeQuery = `
       query GetCategoryTreeWithHidden${varStr} {
         company: companies_by_pk(id: $currentCompanyId) { hidden_category_ids }
-        categories(
-          where: { _and: [ ${whereConditions.join(', ')} ] }
-          order_by: { sort_order: asc }
-        ) {
-          id
-          name
-          sort_order
-          route_ui_style
-          icon_url
-          parent_categories
-          level
-          type
-          categories(
-            where: ${nestedWhere}
-            order_by: { sort_order: asc }
-          ) {
-            id
-            name
-            sort_order
-            route_ui_style
-            icon_url
-            parent_categories
-            level
-            type
-            categories(
-              where: ${nestedWhere}
-              order_by: { sort_order: asc }
-            ) {
-              id
-              name
-              sort_order
-              route_ui_style
-              icon_url
-              parent_categories
-              level
-              type
-            }
-          }
-        }
-      }
-    `
-      : `
-      query GetCategoryTreeFull${varStr} {
         categories(
           where: { _and: [ ${whereConditions.join(', ')} ] }
           order_by: { sort_order: asc }
@@ -160,9 +117,9 @@ export async function getCategoryTree(companyId?: number | null, type?: 'product
       query: treeQuery,
       variables,
     });
-    if (currentCompanyId && result?.company?.hidden_category_ids) {
+    if (result?.company?.hidden_category_ids) {
       const arr = result.company.hidden_category_ids;
-      hiddenCategoryIds = Array.isArray(arr) ? arr.map((id) => Number(id)) : [];
+      hiddenCategoryIds = Array.isArray(arr) ? arr.map((id: string | number) => Number(id)) : [];
     }
 
     const rawList = result?.categories || [];

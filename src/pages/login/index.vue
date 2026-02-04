@@ -73,7 +73,7 @@ import { ref, computed } from 'vue';
 import { onLoad } from '@dcloudio/uni-app';
 import { passwordLogin, wechatLogin } from '@/api/user/index';
 import { setUserContext } from '@/store/userStore';
-import { getUserManagedCompanyId } from '@/utils/company';
+import { refreshManagedCompanyAfterLogin } from '@/utils/auth';
 import { syncCompanyInfo } from '@/api/company/index';
 
 const showPassword = ref(false);
@@ -116,12 +116,11 @@ const handlePasswordLogin = async () => {
         userId: result.userId,
       });
 
-      // 如果是公司管理员，自动获取管理的公司信息
+      // 登录后强制刷新角色缓存，若为公司管理员则一次请求拿到管理的公司并写入上下文
       try {
-        const managedCompanyId = await getUserManagedCompanyId();
-        if (managedCompanyId) {
+        const managedCompanyId = await refreshManagedCompanyAfterLogin();
+        if (managedCompanyId != null) {
           await syncCompanyInfo(managedCompanyId);
-          uni.setStorageSync('companyId', managedCompanyId);
         }
       } catch (error) {
         console.error('获取公司信息失败:', error);
@@ -175,12 +174,11 @@ const handleWechatLogin = async (e: any) => {
           userId: result.userId,
         });
 
-        // 如果是公司管理员，自动获取管理的公司信息
+        // 登录后强制刷新角色缓存，若为公司管理员则一次请求拿到管理的公司并写入上下文
         try {
-          const managedCompanyId = await getUserManagedCompanyId();
-          if (managedCompanyId) {
+          const managedCompanyId = await refreshManagedCompanyAfterLogin();
+          if (managedCompanyId != null) {
             await syncCompanyInfo(managedCompanyId);
-            uni.setStorageSync('companyId', managedCompanyId);
           }
         } catch (error) {
           console.error('获取公司信息失败:', error);

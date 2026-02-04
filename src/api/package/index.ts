@@ -1,10 +1,10 @@
 import client from '@/config-lib/hasura-graphql-client/hasura-graphql-client';
-import { companyInfo } from '@/store/userStore';
+import { companyInfo, getCompanyDetailFromCache } from '@/store/userStore';
 import { getDefaultCompanyIdCached } from '@/api/config/index';
 
 /**
  * 获取套餐列表（前端展示）
- * 合并当前公司和默认公司的套餐数据
+ * 当前公司 + 系统默认公司；隐藏套餐从公司配置缓存读取并在查询时过滤
  */
 export async function getPackageList(params: {
   companyId?: number;
@@ -14,20 +14,12 @@ export async function getPackageList(params: {
   offset?: number;
 }) {
   const currentCompanyId = params.companyId || companyInfo.value?.id;
-  
-  // 获取默认公司ID（优先读缓存）
+
   const defaultCompanyId = await getDefaultCompanyIdCached();
-  
-  // 确定要查询的公司ID列表（去重）
   const companyIds: number[] = [];
-  if (currentCompanyId) {
-    companyIds.push(currentCompanyId);
-  }
-  if (defaultCompanyId && defaultCompanyId !== currentCompanyId) {
-    companyIds.push(defaultCompanyId);
-  }
-  
-  // 如果没有公司ID，返回空
+  if (currentCompanyId) companyIds.push(currentCompanyId);
+  if (defaultCompanyId != null && defaultCompanyId !== currentCompanyId) companyIds.push(defaultCompanyId);
+
   if (companyIds.length === 0) {
     return {
       packages: [],
@@ -35,33 +27,19 @@ export async function getPackageList(params: {
     };
   }
 
-  // 获取当前用户所属公司的隐藏套餐 id 列表（该公司管理员隐藏的套餐，其用户端不可见）
-  let hiddenPackageIds: number[] = [];
-  if (currentCompanyId) {
-    try {
-      const hideRes = await client.execute<{ companies_by_pk: { hidden_package_ids: (string | number)[] | null } | null }>({
-        query: `query GetCompanyHiddenPackages($id: bigint!) {
-          companies_by_pk(id: $id) { hidden_package_ids }
-        }`,
-        variables: { id: currentCompanyId },
-      });
-      const arr = hideRes?.companies_by_pk?.hidden_package_ids;
-      hiddenPackageIds = Array.isArray(arr) ? arr.map((id) => Number(id)) : [];
-    } catch (_) {
-      // 忽略错误，按不隐藏处理
-    }
-  }
+  // 当前公司隐藏套餐 id：从全局公司配置缓存读取（App 已拉取，无需再请求）
+  const companyDetail = currentCompanyId ? getCompanyDetailFromCache(currentCompanyId) : null;
+  const arr = companyDetail?.hidden_package_ids;
+  const hiddenPackageIds: number[] = Array.isArray(arr) ? arr.map((id) => Number(id)) : [];
 
-  // 构建公司过滤条件
-  const companyFilter = companyIds.length === 1
+  const packageCompanyFilter = companyIds.length === 1
     ? 'company_companies: { _eq: $companyId }'
     : 'company_companies: { _in: $companyIds }';
 
-  // 构建where条件数组
   const whereConditions: string[] = [
+    packageCompanyFilter,
     `package_product_skus: {
               product_sku: {
-                ${companyFilter}
                 is_deleted: { _eq: false }
                 is_shelved: { _eq: false }
               }
@@ -91,114 +69,82 @@ export async function getPackageList(params: {
 
   const hiddenVars = hiddenPackageIds.length > 0 ? ', $hiddenPackageIds: [bigint!]!' : '';
   const keywordVar = params.keyword?.trim() ? ', $keyword: String!' : '';
-  const query = companyIds.length === 1
+  const isSingle = companyIds.length === 1;
+  const query = isSingle
     ? `
-      query GetPackageList($companyId: bigint!, $limit: Int, $offset: Int${params.categoryId ? ', $categoryId: bigint!' : ''}${keywordVar}${hiddenVars}) {
-        packages(
-          where: {
-            ${whereClause}
-          }
-          limit: $limit
-          offset: $offset
-          order_by: { created_at: desc }
-        ) {
+    query GetPackageList($companyId: bigint!, $limit: Int, $offset: Int${params.categoryId ? ', $categoryId: bigint!' : ''}${keywordVar}${hiddenVars}) {
+      packages(
+        where: { ${whereClause} }
+        limit: $limit
+        offset: $offset
+        order_by: { created_at: desc }
+      ) {
+        id
+        name
+        cover_image_url
+        description
+        tags
+        created_at
+        package_product_skus(where: { product_sku: { is_deleted: { _eq: false }, is_shelved: { _eq: false } } }) {
           id
-          name
-          cover_image_url
-          description
-          tags
-          created_at
-          package_product_skus(
-            where: {
-              product_sku: {
-                is_deleted: { _eq: false }
-                is_shelved: { _eq: false }
-              }
-            }
-          ) {
+          quantity
+          product_sku {
             id
-            quantity
-            product_sku {
-              id
+            name
+            price
+            image_url
+            product { id
               name
-              price
-              image_url
-              product {
-                id
-                name
-                cover_image_url
-              }
+              cover_image_url
             }
-          }
-        }
-        packages_aggregate(
-          where: {
-            ${whereClause}
-          }
-        ) {
-          aggregate {
-            count
           }
         }
       }
-    `
+      packages_aggregate(where: { ${whereClause} }) {
+        aggregate { count }
+      }
+    }
+  `
     : `
-      query GetPackageList($companyIds: [bigint!]!, $limit: Int, $offset: Int${params.categoryId ? ', $categoryId: bigint!' : ''}${keywordVar}${hiddenVars}) {
-        packages(
-          where: {
-            ${whereClause}
-          }
-          limit: $limit
-          offset: $offset
-          order_by: { created_at: desc }
-        ) {
+    query GetPackageListMulti($companyIds: [bigint!]!, $limit: Int, $offset: Int${params.categoryId ? ', $categoryId: bigint!' : ''}${keywordVar}${hiddenVars}) {
+      packages(
+        where: { ${whereClause} }
+        limit: $limit
+        offset: $offset
+        order_by: { created_at: desc }
+      ) {
+        id
+        name
+        cover_image_url
+        description
+        tags
+        created_at
+        package_product_skus(where: { product_sku: { is_deleted: { _eq: false }, is_shelved: { _eq: false } } }) {
           id
-          name
-          cover_image_url
-          description
-          tags
-          created_at
-          package_product_skus(
-            where: {
-              product_sku: {
-                is_deleted: { _eq: false }
-                is_shelved: { _eq: false }
-              }
-            }
-          ) {
+          quantity
+          product_sku {
             id
-            quantity
-            product_sku {
-              id
+            name
+            price
+            image_url
+            product { id
               name
-              price
-              image_url
-              product {
-                id
-                name
-                cover_image_url
-              }
+              cover_image_url
             }
-          }
-        }
-        packages_aggregate(
-          where: {
-            ${whereClause}
-          }
-        ) {
-          aggregate {
-            count
           }
         }
       }
-    `;
+      packages_aggregate(where: { ${whereClause} }) {
+        aggregate { count }
+      }
+    }
+  `;
 
   const variables: any = {
     limit: params.limit || 20,
     offset: params.offset || 0,
   };
-  
-  if (companyIds.length === 1) {
+  if (isSingle) {
     variables.companyId = companyIds[0];
   } else {
     variables.companyIds = companyIds;

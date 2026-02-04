@@ -92,6 +92,7 @@ export const getUser = async ({
         bio
         mobile
         avatar_url
+        role
       }
     }
   `;

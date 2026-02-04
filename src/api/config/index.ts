@@ -3,6 +3,7 @@ import {
   defaultCompanyIdCache,
   isDefaultCompanyIdCacheValid,
   setDefaultCompanyIdCache,
+  getDefaultCompanyIdFromStorage,
 } from "@/store/userStore";
 
 /**
@@ -56,12 +57,19 @@ function parseCompanyIdFromConfigValue(value: any): number | null {
 }
 
 /**
- * 获取默认公司ID（带全局缓存，优先读缓存，减少重复请求）
+ * 获取默认公司ID：优先内存缓存 → 本地存储（5 分钟内）→ 请求 config 表
  * @param forceRefresh 为 true 时跳过缓存强制拉取
  */
 export async function getDefaultCompanyIdCached(forceRefresh = false): Promise<number | null> {
   if (!forceRefresh && isDefaultCompanyIdCacheValid() && defaultCompanyIdCache.value != null) {
     return defaultCompanyIdCache.value;
+  }
+  if (!forceRefresh) {
+    const fromStorage = getDefaultCompanyIdFromStorage();
+    if (fromStorage != null) {
+      setDefaultCompanyIdCache(fromStorage);
+      return fromStorage;
+    }
   }
   const id = await getDefaultCompanyId();
   if (id != null) setDefaultCompanyIdCache(id);

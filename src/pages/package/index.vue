@@ -84,7 +84,6 @@ import SkeletonScreen from '@/components/SkeletonScreen.vue';
 
 const packages = ref<any[]>([]);
 const loading = ref(false);
-const searchKeyword = ref('');
 const page = ref(1);
 const pageSize = 20;
 const hasMore = ref(true);
@@ -92,20 +91,35 @@ const categories = ref<any[]>([]);
 const selectedCategoryId = ref<number | null>(null);
 const loadingCategories = ref(false);
 
+const PACKAGE_PAGE_CACHE_TTL = 5 * 60 * 1000;
+const packagePageCache = ref<{
+  companyId: number;
+  categoryId: number | null;
+  categories: any[];
+  packages: any[];
+  timestamp: number;
+} | null>(null);
+
 const getFirstTag = (tagsStr: string | null | undefined) => {
   if (!tagsStr || !String(tagsStr).trim()) return '';
   return String(tagsStr).split(/[,，|｜]/)[0].trim() || '';
 };
 
-// 加载分类列表（套餐分类）
-const loadCategories = async () => {
-  if (!companyInfo.value?.id) return;
+// 加载分类列表（套餐分类），成功时更新缓存
+const loadCategories = async (useCache = true) => {
+  const companyId = companyInfo.value?.id;
+  if (!companyId) return;
+
+  const cache = packagePageCache.value;
+  if (useCache && cache && cache.companyId === companyId && Date.now() - cache.timestamp < PACKAGE_PAGE_CACHE_TTL && cache.categories.length > 0) {
+    categories.value = cache.categories;
+    return;
+  }
 
   loadingCategories.value = true;
   try {
-    const result = await getCategoryTree(companyInfo.value.id, 'package');
+    const result = await getCategoryTree(companyId, 'package');
     if (result.code === 0 && result.data) {
-      // 扁平化分类树，只显示一级分类
       categories.value = result.data;
     }
   } catch (error: any) {
@@ -115,15 +129,17 @@ const loadCategories = async () => {
   }
 };
 
-// 选择分类
+// 选择分类（必走接口，不用缓存）
 const selectCategory = (categoryId: number | null) => {
   selectedCategoryId.value = categoryId;
-  loadPackages(true); // 重新加载套餐列表
+  loadPackages(true, false);
 };
 
-// 加载套餐列表
-const loadPackages = async (reset = false) => {
-  if (loading.value || (!hasMore.value && !reset)) {
+// 加载套餐列表，reset 时可选使用/写入 5 分钟缓存
+const loadPackages = async (reset = false, useCache = true) => {
+  const companyId = companyInfo.value?.id;
+  if (!companyId) {
+    uni.showToast({ title: '公司信息不存在', icon: 'none' });
     return;
   }
 
@@ -132,47 +148,55 @@ const loadPackages = async (reset = false) => {
     hasMore.value = true;
   }
 
-  if (!companyInfo.value?.id) {
-    uni.showToast({
-      title: '公司信息不存在',
-      icon: 'none',
-    });
+  const cid = selectedCategoryId.value ?? null;
+  const cache = packagePageCache.value;
+  const cacheValid = useCache && reset && cache && cache.companyId === companyId && cache.categoryId === cid
+    && Date.now() - cache.timestamp < PACKAGE_PAGE_CACHE_TTL;
+
+  if (cacheValid && cache) {
+    packages.value = cache.packages;
+    hasMore.value = cache.packages.length >= pageSize;
+    if (cache.packages.length >= pageSize) page.value = 2;
+    if (typeof uni !== 'undefined' && uni.stopPullDownRefresh) uni.stopPullDownRefresh();
     return;
   }
 
-  loading.value = true;
+  if (loading.value || (!hasMore.value && !reset)) return;
 
+  loading.value = true;
   try {
     const result = await getPackageList({
-      companyId: companyInfo.value.id,
-      categoryId: selectedCategoryId.value || undefined,
+      companyId,
+      categoryId: cid ?? undefined,
       limit: pageSize,
       offset: (page.value - 1) * pageSize,
     });
 
-    if (reset) {
-      packages.value = [];
-    }
+    if (reset) packages.value = [];
 
     if (result.packages && result.packages.length > 0) {
       packages.value = [...packages.value, ...result.packages];
-      
-      if (result.packages.length < pageSize) {
-        hasMore.value = false;
-      } else {
-        page.value++;
-      }
+      hasMore.value = result.packages.length >= pageSize;
+      if (result.packages.length >= pageSize) page.value++;
+      else hasMore.value = false;
     } else {
       hasMore.value = false;
     }
+
+    if (reset) {
+      packagePageCache.value = {
+        companyId,
+        categoryId: cid,
+        categories: categories.value,
+        packages: packages.value,
+        timestamp: Date.now(),
+      };
+    }
   } catch (error: any) {
-    uni.showToast({
-      title: error.message || '加载失败',
-      icon: 'none',
-    });
+    uni.showToast({ title: error.message || '加载失败', icon: 'none' });
   } finally {
     loading.value = false;
-    uni.stopPullDownRefresh();
+    if (typeof uni !== 'undefined' && uni.stopPullDownRefresh) uni.stopPullDownRefresh();
   }
 };
 
@@ -191,15 +215,16 @@ const goToPackageDetail = (packageId: number) => {
 };
 
 onShow(() => {
-  // 每次进入页面（含从详情返回、切换 tab）都刷新分类和套餐列表，保证数据实时
-  if (companyInfo.value?.id) {
-    loadCategories();
-    loadPackages(true);
-  }
+  if (!companyInfo.value?.id) return;
+  // 优先用 5 分钟缓存，减少重复请求
+  loadCategories(true).then(() => {
+    loadPackages(true, true);
+  });
 });
 
 onPullDownRefresh(() => {
-  loadPackages(true);
+  loadCategories(false);
+  loadPackages(true, false);
 });
 
 onReachBottom(() => {

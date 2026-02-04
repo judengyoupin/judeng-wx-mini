@@ -1,5 +1,5 @@
 import client from "@/config-lib/hasura-graphql-client/hasura-graphql-client";
-import { setCompanyContext } from "@/store/userStore";
+import { setCompanyContext, setCompanyDetailCache, getCompanyDetailFromCache } from "@/store/userStore";
 
 /** C 端公司公开信息（资料库、联系我们、关于我们等） */
 export interface CompanyPublicInfo {
@@ -39,17 +39,37 @@ export async function getCompanyPublicInfo(companyId: number): Promise<CompanyPu
 }
 
 /**
- * 同步公司信息
- * 从后端获取公司信息并存储到全局状态
+ * 同步公司信息（C 端时序 2）
+ * 一次请求拉取公司完整配置，写入内存缓存（5 分钟），后续商品/套餐/分类等可直接用缓存。
+ * 若缓存未过期则直接使用，不发请求。
  */
 export async function syncCompanyInfo(companyId: string | number) {
+  const id = Number(companyId);
+  const cached = getCompanyDetailFromCache(id);
+  if (cached && typeof cached === "object") {
+    setCompanyContext({
+      id: cached.id,
+      name: cached.name,
+      logo_url: cached.logo_url ?? undefined,
+    });
+    return cached;
+  }
   try {
     const query = `
-      query GetCompanyInfo($companyId: bigint!) {
+      query GetCompanyFullConfig($companyId: bigint!) {
         companies_by_pk(id: $companyId) {
           id
           name
           logo_url
+          banner_top
+          banner_bottom
+          hidden_category_ids
+          hidden_product_ids
+          hidden_package_ids
+          description
+          contact_code
+          wechat_code
+          resource_file_url
         }
       }
     `;
@@ -59,10 +79,19 @@ export async function syncCompanyInfo(companyId: string | number) {
         id: number;
         name: string;
         logo_url?: string | null;
+        banner_top?: any;
+        banner_bottom?: any;
+        hidden_category_ids?: (string | number)[] | null;
+        hidden_product_ids?: (string | number)[] | null;
+        hidden_package_ids?: (string | number)[] | null;
+        description?: string | null;
+        contact_code?: string | null;
+        wechat_code?: string | null;
+        resource_file_url?: string | null;
       } | null;
     }>({
       query,
-      variables: { companyId: Number(companyId) },
+      variables: { companyId: id },
     });
 
     if (!result.companies_by_pk) {
@@ -70,16 +99,17 @@ export async function syncCompanyInfo(companyId: string | number) {
       return null;
     }
 
-    const company = {
-      id: result.companies_by_pk.id,
-      name: result.companies_by_pk.name,
-      logo_url: result.companies_by_pk.logo_url,
+    const row = result.companies_by_pk;
+    const companyBasic = {
+      id: row.id,
+      name: row.name,
+      logo_url: row.logo_url,
     };
 
-    // 设置到全局状态
-    setCompanyContext(company);
+    setCompanyContext(companyBasic);
+    setCompanyDetailCache(id, row);
 
-    return company;
+    return row;
   } catch (error: any) {
     console.error("同步公司信息失败:", error);
     throw error;

@@ -222,9 +222,25 @@ export async function getPackageDetail(packageId: number) {
 }
 
 /**
- * 创建套餐
+ * 创建套餐（必须传入有效的 company_companies，否则会触发外键约束错误）
  */
 export async function createPackage(packageData: PackageInput) {
+  const companyId = packageData.company_companies;
+  if (companyId == null || Number.isNaN(Number(companyId)) || Number(companyId) <= 0) {
+    throw new Error('创建套餐时必须选择公司，请先选择当前公司后再保存');
+  }
+  const company_companies = Number(companyId);
+
+  const insertObject = {
+    name: packageData.name,
+    cover_image_url: packageData.cover_image_url,
+    description: packageData.description ?? null,
+    category_categories: packageData.category_categories ?? null,
+    tags: packageData.tags ?? null,
+    is_shelved: packageData.is_shelved ?? false,
+    company_companies,
+  };
+
   const mutation = `
     mutation CreatePackage($package: packages_insert_input!) {
       insert_packages_one(object: $package) {
@@ -238,7 +254,7 @@ export async function createPackage(packageData: PackageInput) {
 
   const result = await client.execute({
     query: mutation,
-    variables: { package: packageData },
+    variables: { package: insertObject },
   });
 
   return result?.insert_packages_one;

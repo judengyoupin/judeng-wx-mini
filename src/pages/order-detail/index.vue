@@ -234,7 +234,7 @@
 import { ref, computed, onMounted } from 'vue';
 import { onLoad, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app';
 import { getOrderDetailById, getOrderUserCompanyInfo, confirmOrder as apiConfirmOrder, approvePayment as apiApprovePayment, completeOrder as apiCompleteOrder, updateOrderActualAmount } from '@/api/order/index';
-import { getCompanyUserRole, isCompanyAdmin } from '@/utils/auth';
+import { getCompanyUserRoleCached, isCompanyAdmin } from '@/utils/auth';
 import SkeletonScreen from '@/components/SkeletonScreen.vue';
 
 const orderId = ref<number | null>(null);
@@ -343,7 +343,7 @@ onMounted(async () => {
   try {
     const [orderRes, roleInfo] = await Promise.all([
       getOrderDetailById(orderId.value),
-      getCompanyUserRole().then((r) => r ?? null),
+      getCompanyUserRoleCached().then((r) => r ?? null),
     ]);
     order.value = orderRes;
     const companyId = orderRes?.company?.id;
