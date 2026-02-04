@@ -177,6 +177,7 @@ import { onLoad, onShow, onPullDownRefresh, onReachBottom } from '@dcloudio/uni-
 import { user_token, userInfo } from '@/store/userStore';
 import { getMyOrderList } from '@/api/order/index';
 import { getCompanyUserRoleCached } from '@/utils/auth';
+import { safeNavigateBack } from '@/utils/navigation';
 import PageNavBar from '@/components/PageNavBar.vue';
 import SkeletonScreen from '@/components/SkeletonScreen.vue';
 
@@ -269,7 +270,7 @@ async function loadOrders(reset = false) {
 }
 
 function goBack() {
-  uni.navigateBack();
+  safeNavigateBack();
 }
 
 function goToLogin() {

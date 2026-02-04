@@ -160,6 +160,7 @@ import { getProductDetail } from '@/api/product/index';
 import { addToCart, getCartList, updateCartQuantity, toggleCartSelected } from '@/api/cart/index';
 import { user_token, userInfo, companyInfo } from '@/store/userStore';
 import { getCompanyUserRoleCached } from '@/utils/auth';
+import { safeNavigateBack } from '@/utils/navigation';
 import PageNavBar from '@/components/PageNavBar.vue';
 import SkeletonScreen from '@/components/SkeletonScreen.vue';
 import DetailFooterBar from '@/components/DetailFooterBar.vue';
@@ -397,7 +398,7 @@ const previewImages = (urls: string[], current: number) => {
 
 // 返回
 const goBack = () => {
-  uni.navigateBack();
+  safeNavigateBack();
 };
 
 // 去首页
@@ -445,15 +446,28 @@ onShow(() => {
   loadCartCount();
 });
 
-onShareAppMessage(() => ({
-  title: productDetail.value?.name || '商品详情',
-  path: `/pages/product-detail/index?id=${productId.value}`,
-}));
+// 分享带 companyId，别人点开可进入对应公司
+onShareAppMessage(() => {
+  const cid = companyInfo?.value?.id ?? uni.getStorageSync('companyId') ?? '';
+  const path = cid
+    ? `/pages/product-detail/index?id=${productId.value}&companyId=${cid}`
+    : `/pages/product-detail/index?id=${productId.value}`;
+  return {
+    title: productDetail.value?.name || '商品详情',
+    path,
+  };
+});
 
-onShareTimeline(() => ({
-  title: productDetail.value?.name || '商品详情',
-  query: `id=${productId.value}`,
-}));
+onShareTimeline(() => {
+  const cid = companyInfo?.value?.id ?? uni.getStorageSync('companyId') ?? '';
+  const query = cid
+    ? `id=${productId.value}&companyId=${cid}`
+    : `id=${productId.value}`;
+  return {
+    title: productDetail.value?.name || '商品详情',
+    query,
+  };
+});
 </script>
 
 <style scoped>

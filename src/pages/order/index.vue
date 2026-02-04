@@ -101,6 +101,7 @@ import { getCartList, deleteCartItems } from '@/api/cart/index';
 import { getAddressList, type AddressItem } from '@/api/address/index';
 import { createOrder } from '@/api/order/index';
 import { getCompanyUserRoleCached } from '@/utils/auth';
+import { safeNavigateBack } from '@/utils/navigation';
 
 const cartIds = ref<number[]>([]);
 const orderItems = ref<any[]>([]);
@@ -133,7 +134,7 @@ function formatPrice(p: number) {
 }
 
 function goBack() {
-  uni.navigateBack();
+  safeNavigateBack();
 }
 
 async function loadPriceFactor() {

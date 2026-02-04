@@ -80,19 +80,30 @@ onMounted(async () => {
   }
 });
 
-onShareAppMessage(() => ({
-  title: orderId.value && companyName.value
-    ? `订单 ${orderId.value} - ${companyName.value}（请处理）`
-    : `订单 ${orderId.value} - 订单详情`,
-  path: `/pages/order-detail/index?id=${orderId.value}`,
-}));
+// 分享带 companyId，别人点开可进入对应公司（订单所属公司从订单详情取，此处用 storage 当前公司）
+onShareAppMessage(() => {
+  const cid = uni.getStorageSync('companyId') || '';
+  const path = cid
+    ? `/pages/order-detail/index?id=${orderId.value}&companyId=${cid}`
+    : `/pages/order-detail/index?id=${orderId.value}`;
+  return {
+    title: orderId.value && companyName.value
+      ? `订单 ${orderId.value} - ${companyName.value}（请处理）`
+      : `订单 ${orderId.value} - 订单详情`,
+    path,
+  };
+});
 
-onShareTimeline(() => ({
-  title: orderId.value && companyName.value
-    ? `订单 ${orderId.value} - ${companyName.value}（请处理）`
-    : `订单 ${orderId.value} - 订单详情`,
-  query: `id=${orderId.value}`,
-}));
+onShareTimeline(() => {
+  const cid = uni.getStorageSync('companyId') || '';
+  const query = cid ? `id=${orderId.value}&companyId=${cid}` : `id=${orderId.value}`;
+  return {
+    title: orderId.value && companyName.value
+      ? `订单 ${orderId.value} - ${companyName.value}（请处理）`
+      : `订单 ${orderId.value} - 订单详情`,
+    query,
+  };
+});
 
 function goToOrderDetail() {
   if (orderId.value) {

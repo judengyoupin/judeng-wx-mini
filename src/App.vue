@@ -9,7 +9,7 @@ import {
   getDefaultCompanyIdFromStorage,
   ensureUserInfoCached,
 } from "@/store/userStore";
-import { refreshManagedCompanyAfterLogin, getCompanyUserRoleCached } from "@/utils/auth";
+import { getCompanyUserRoleCached } from "@/utils/auth";
 
 /** 时序 1：确定当前公司 ID（本地 → 分享链接 → 系统配置），并确保默认公司 ID 存本地 */
 
@@ -29,21 +29,7 @@ onLaunch(async (options) => {
   // 3. 当前公司 ID：优先本地
   let currentCompanyId: string | number | null = uni.getStorageSync("companyId");
 
-  // 4. 已登录且本地无公司：强制刷新角色缓存，若为某公司管理员则用其管理的公司 ID（同一次请求拿角色+公司信息）
-  if (isLoggedIn && user_token.value && !currentCompanyId) {
-    try {
-      const managedCompanyId = await refreshManagedCompanyAfterLogin();
-      if (managedCompanyId != null) {
-        currentCompanyId = managedCompanyId;
-        uni.setStorageSync("companyId", managedCompanyId);
-        console.log("使用管理员管理的公司ID:", managedCompanyId);
-      }
-    } catch (error) {
-      console.error("获取管理员公司ID失败:", error);
-    }
-  }
-
-  // 5. 本地没有当前公司 ID：用系统配置的默认公司 ID（优先读本地 defaultCompanyId，没有再请求 config）
+  // 4. 本地没有当前公司 ID：用系统配置的默认公司 ID（优先读本地 defaultCompanyId，没有再请求 config）
   if (!currentCompanyId) {
     const defaultId = getDefaultCompanyIdFromStorage() ?? (await getDefaultCompanyIdCached());
     if (defaultId != null) {
@@ -59,7 +45,7 @@ onLaunch(async (options) => {
     return;
   }
 
-  // 6. 公司完整配置：有缓存直接用，否则拉取并写缓存（5 分钟）
+  // 5. 公司完整配置：有缓存直接用，否则拉取并写缓存（5 分钟）
   try {
     await syncCompanyInfo(finalCompanyId);
     console.log("公司信息同步成功:", companyInfo.value);
@@ -67,7 +53,7 @@ onLaunch(async (options) => {
     console.error("同步公司信息失败:", error);
   }
 
-  // 7. 已登录时预拉 userInfo、company_users 并缓存，各页（我的、购物车等）不再重复请求
+  // 6. 已登录时预拉 userInfo、company_users 并缓存，各页（我的、购物车等）不再重复请求
   if (isLoggedIn && user_token.value) {
     try {
       await ensureUserInfoCached();

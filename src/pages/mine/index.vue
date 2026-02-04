@@ -74,6 +74,12 @@
         </view>
         <text class="action-label">联系客服</text>
       </view>
+      <view v-if="user_token" class="action-item" @click="goToSwitchCompany">
+        <view class="action-icon-wrapper company-switch">
+          <text class="action-icon-emoji">🏢</text>
+        </view>
+        <text class="action-label">切换公司</text>
+      </view>
     </view>
 
     <!-- 超级管理员区域：仅 user.role === admin 可见 -->
@@ -312,6 +318,17 @@ const goToContact = () => {
   }
   uni.navigateTo({
     url: `/pages/contact/index?companyId=${companyId}`,
+  });
+};
+
+// 跳转到切换公司页（已加入的公司列表，可切换当前访问的公司）
+const goToSwitchCompany = () => {
+  if (!user_token.value) {
+    goToLogin();
+    return;
+  }
+  uni.navigateTo({
+    url: '/pages/switch-company/index',
   });
 };
 
@@ -728,6 +745,10 @@ onShow(async () => {
 
 .action-icon-wrapper.contact {
   background: linear-gradient(135deg, #a8c0ff 0%, #c2e9fb 100%);
+}
+
+.action-icon-wrapper.company-switch {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
 
 .action-icon-emoji {

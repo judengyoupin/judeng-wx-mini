@@ -1,7 +1,7 @@
 <template>
   <view class="container">
     <!-- 统一导航栏（含状态栏高度） -->
-    <PageNavBar :title="companyInfo?.name || '聚灯优品'" />
+    <PageNavBar :title="companyInfo?.name || '首页'" />
 
     <!-- 搜索框：点击跳转搜索页并自动聚焦 -->
     <SearchBox type="product" placeholder="请输入商品名称" search-icon="/static/index/srch.png" />
@@ -488,14 +488,14 @@ export default defineComponent({
   },
   onShareAppMessage(res: { from?: string; target?: unknown }) {
     console.log(res);
-
-    const storageCompanyId = uni.getStorageSync("companyId");
-    // 优先使用：用户公司ID > 存储的公司ID > 默认值545（兜底）
-    const queryCompanyId =
-      userInfo?.value?.manager?.company?.id || storageCompanyId || 545;
+    // 分享只带当前所在公司 id，有则带参数，无则不带
+    const currentCompanyId = companyInfo?.value?.id ?? uni.getStorageSync("companyId") ?? null;
+    const path = currentCompanyId != null && currentCompanyId !== ''
+      ? `/pages/index/index?companyId=${currentCompanyId}`
+      : '/pages/index/index';
     return {
-      title: `${companyInfo?.value?.name || "聚灯优品"}`,
-      path: `/pages/index/index?companyId=${queryCompanyId}`,
+      title: companyInfo?.value?.name ? `${companyInfo.value.name}` : '首页',
+      path,
       imageUrl: "",
     };
   },

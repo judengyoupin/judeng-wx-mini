@@ -157,13 +157,18 @@
       </view>
     </view>
   </view>
+
+  <UploadProgressOverlay :show="uploading" :progress="progress" />
 </template>
 
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import { onLoad } from '@dcloudio/uni-app';
 import { getCompanyDetailCached, createCompany, updateCompany, authorizeCompanyAdmin, searchUserByMobileForPlatform, type CompanyInput } from '@/subPackages/admin/api/platform';
-import { uploadFile } from '@/api/upload';
+import { useImageUploadWithProgress } from '@/utils/useImageUploadWithProgress';
+import UploadProgressOverlay from '@/components/UploadProgressOverlay.vue';
+
+const { uploading, progress, chooseAndUploadImage, uploadWithProgress } = useImageUploadWithProgress();
 
 const companyId = ref<number | null>(null);
 const form = ref({
@@ -185,52 +190,38 @@ const authorizeForm = ref({
 const authorizing = ref(false);
 const createdCompanyId = ref<number | null>(null);
 
-// 上传Logo
+// 上传Logo（带进度）
 const uploadLogo = async () => {
   try {
-    uni.chooseImage({
-      count: 1,
-      success: async (res) => {
-        const tempFilePath = res.tempFilePaths[0];
-        try {
-          const url = await uploadFile(tempFilePath, undefined, '.jpg');
-          form.value.logo_url = url;
-        } catch (error: any) {
-          uni.showToast({ title: (error as any)?.message || '上传失败', icon: 'none' });
-        }
-      },
-    });
-  } catch (error) {
-    console.error('选择图片失败:', error);
+    const url = await chooseAndUploadImage({ ext: '.jpg' });
+    form.value.logo_url = url;
+  } catch (error: any) {
+    if (error?.message && !error.message.includes('取消')) {
+      uni.showToast({ title: (error as any)?.message || '上传失败', icon: 'none' });
+    }
   }
 };
 
-const uploadContactCode = () => {
-  uni.chooseImage({
-    count: 1,
-    success: async (res) => {
-      try {
-        const url = await uploadFile(res.tempFilePaths[0], undefined, '.jpg');
-        form.value.contact_code = url;
-      } catch (error: any) {
-        uni.showToast({ title: (error as any)?.message || '上传失败', icon: 'none' });
-      }
-    },
-  });
+const uploadContactCode = async () => {
+  try {
+    const url = await chooseAndUploadImage({ ext: '.jpg' });
+    form.value.contact_code = url;
+  } catch (error: any) {
+    if (error?.message && !error.message.includes('取消')) {
+      uni.showToast({ title: (error as any)?.message || '上传失败', icon: 'none' });
+    }
+  }
 };
 
-const uploadWechatCode = () => {
-  uni.chooseImage({
-    count: 1,
-    success: async (res) => {
-      try {
-        const url = await uploadFile(res.tempFilePaths[0], undefined, '.jpg');
-        form.value.wechat_code = url;
-      } catch (error: any) {
-        uni.showToast({ title: (error as any)?.message || '上传失败', icon: 'none' });
-      }
-    },
-  });
+const uploadWechatCode = async () => {
+  try {
+    const url = await chooseAndUploadImage({ ext: '.jpg' });
+    form.value.wechat_code = url;
+  } catch (error: any) {
+    if (error?.message && !error.message.includes('取消')) {
+      uni.showToast({ title: (error as any)?.message || '上传失败', icon: 'none' });
+    }
+  }
 };
 
 // 资源库文件名展示
@@ -246,7 +237,7 @@ const resourceFileName = computed(() => {
   }
 });
 
-// 上传资源库文件（PDF、Word 等）
+// 上传资源库文件（PDF、Word 等，带进度）
 const uploadResourceFile = () => {
   // #ifdef MP-WEIXIN
   uni.chooseMessageFile({
@@ -258,13 +249,10 @@ const uploadResourceFile = () => {
       if (!file?.path) return;
       const ext = file.name ? (file.name.includes('.') ? '.' + file.name.split('.').pop() : '') : '';
       try {
-        uni.showLoading({ title: '上传中...' });
-        const url = await uploadFile(file.path, undefined, ext || '.pdf');
+        const url = await uploadWithProgress(file.path, ext || '.pdf');
         form.value.resource_file_url = url;
-        uni.hideLoading();
         uni.showToast({ title: '上传成功', icon: 'success' });
       } catch (error: any) {
-        uni.hideLoading();
         uni.showToast({ title: (error as any)?.message || '上传失败', icon: 'none' });
       }
     },

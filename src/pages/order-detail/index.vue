@@ -234,6 +234,7 @@
 import { ref, computed, onMounted } from 'vue';
 import { onLoad, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app';
 import { getOrderDetailById, getOrderUserCompanyInfo, confirmOrder as apiConfirmOrder, approvePayment as apiApprovePayment, completeOrder as apiCompleteOrder, updateOrderActualAmount } from '@/api/order/index';
+import { companyInfo } from '@/store/userStore';
 import { getCompanyUserRoleCached, isCompanyAdmin } from '@/utils/auth';
 import SkeletonScreen from '@/components/SkeletonScreen.vue';
 
@@ -478,15 +479,32 @@ async function archiveOrder() {
   }
 }
 
-onShareAppMessage(() => ({
-  title: `订单 ${orderId.value} - ${order.value?.company?.name || '订单详情'}`,
-  path: `/pages/order-detail/index?id=${orderId.value}`,
-}));
+// 分享带 companyId，别人点开可进入对应公司
+function getShareCompanyId() {
+  return order.value?.company?.id ?? companyInfo?.value?.id ?? uni.getStorageSync('companyId') ?? '';
+}
 
-onShareTimeline(() => ({
-  title: `订单 ${orderId.value} - ${order.value?.company?.name || '订单详情'}`,
-  query: `id=${orderId.value}`,
-}));
+onShareAppMessage(() => {
+  const cid = getShareCompanyId();
+  const path = cid
+    ? `/pages/order-detail/index?id=${orderId.value}&companyId=${cid}`
+    : `/pages/order-detail/index?id=${orderId.value}`;
+  return {
+    title: `订单 ${orderId.value} - ${order.value?.company?.name || '订单详情'}`,
+    path,
+  };
+});
+
+onShareTimeline(() => {
+  const cid = getShareCompanyId();
+  const query = cid
+    ? `id=${orderId.value}&companyId=${cid}`
+    : `id=${orderId.value}`;
+  return {
+    title: `订单 ${orderId.value} - ${order.value?.company?.name || '订单详情'}`,
+    query,
+  };
+});
 </script>
 
 <style scoped>

@@ -186,6 +186,8 @@
         </view>
       </view>
     </view>
+
+    <UploadProgressOverlay :show="uploading" :progress="progress" />
   </view>
 </template>
 
@@ -198,7 +200,10 @@ import { searchProductsWithSkus } from '@/subPackages/company/api/product';
 import { getCompanyDetailCached } from '@/subPackages/company/api/platform';
 import { getDefaultCompanyIdCached } from '@/api/config/index';
 import CategoryPicker from '@/components/CategoryPicker.vue';
-import { uploadFile } from '@/api/upload';
+import { useImageUploadWithProgress } from '@/utils/useImageUploadWithProgress';
+import UploadProgressOverlay from '@/components/UploadProgressOverlay.vue';
+
+const { uploading, progress, chooseAndUploadImage } = useImageUploadWithProgress();
 
 const packageId = ref<number | null>(null);
 const form = ref({
@@ -434,26 +439,15 @@ const removeSku = async (index: number) => {
   }
 };
 
-// 上传封面图
+// 上传封面图（带进度）
 const uploadCoverImage = async () => {
   try {
-    uni.chooseImage({
-      count: 1,
-      success: async (res) => {
-        const tempFilePath = res.tempFilePaths[0];
-        try {
-          const url = await uploadFile(tempFilePath, undefined, '.jpg');
-          form.value.cover_image_url = url;
-        } catch (error: any) {
-          uni.showToast({
-            title: error.message || '上传失败',
-            icon: 'none',
-          });
-        }
-      },
-    });
-  } catch (error) {
-    console.error('选择图片失败:', error);
+    const url = await chooseAndUploadImage({ ext: '.jpg' });
+    form.value.cover_image_url = url;
+  } catch (error: any) {
+    if (error?.message && !error.message.includes('取消')) {
+      uni.showToast({ title: error.message || '上传失败', icon: 'none' });
+    }
   }
 };
 

@@ -189,6 +189,8 @@
       </view>
     </view>
   </view>
+
+  <UploadProgressOverlay :show="uploading" :progress="progress" />
 </template>
 
 <script setup lang="ts">
@@ -196,8 +198,11 @@ import { ref, computed, onMounted } from 'vue';
 import { onLoad } from '@dcloudio/uni-app';
 import { getCompanyDetailCached, updateCompany } from '@/subPackages/company/api/platform';
 import { getBanners } from '@/api/banner/index';
-import { uploadFile } from '@/api/upload';
+import { useImageUploadWithProgress } from '@/utils/useImageUploadWithProgress';
+import UploadProgressOverlay from '@/components/UploadProgressOverlay.vue';
 import type { BannerItem } from '@/types/companies';
+
+const { uploading, progress, chooseAndUploadImage, uploadWithProgress } = useImageUploadWithProgress();
 
 const companyId = ref<number | null>(null);
 /** 核查入口只读：不可编辑、保存 */
@@ -233,62 +238,37 @@ const getBannerImage = (banner: BannerItem | string): string => {
   return banner.file_url || '/static/default-banner.png';
 };
 
-// 上传Logo
+// 上传Logo（带进度）
 const uploadLogo = async () => {
   try {
-    uni.chooseImage({
-      count: 1,
-      success: async (res) => {
-        const tempFilePath = res.tempFilePaths[0];
-        try {
-          const url = await uploadFile(tempFilePath, undefined, '.jpg');
-          form.value.logo_url = url;
-        } catch (error: any) {
-          uni.showToast({
-            title: error.message || '上传失败',
-            icon: 'none',
-          });
-        }
-      },
-    });
-  } catch (error) {
-    console.error('选择图片失败:', error);
+    const url = await chooseAndUploadImage({ ext: '.jpg' });
+    form.value.logo_url = url;
+  } catch (error: any) {
+    if (error?.message && !error.message.includes('取消')) {
+      uni.showToast({ title: error.message || '上传失败', icon: 'none' });
+    }
   }
 };
 
 const uploadContactCode = async () => {
   try {
-    uni.chooseImage({
-      count: 1,
-      success: async (res) => {
-        try {
-          const url = await uploadFile(res.tempFilePaths[0], undefined, '.jpg');
-          form.value.contact_code = url;
-        } catch (error: any) {
-          uni.showToast({ title: error.message || '上传失败', icon: 'none' });
-        }
-      },
-    });
-  } catch (error) {
-    console.error('选择图片失败:', error);
+    const url = await chooseAndUploadImage({ ext: '.jpg' });
+    form.value.contact_code = url;
+  } catch (error: any) {
+    if (error?.message && !error.message.includes('取消')) {
+      uni.showToast({ title: error.message || '上传失败', icon: 'none' });
+    }
   }
 };
 
 const uploadWechatCode = async () => {
   try {
-    uni.chooseImage({
-      count: 1,
-      success: async (res) => {
-        try {
-          const url = await uploadFile(res.tempFilePaths[0], undefined, '.jpg');
-          form.value.wechat_code = url;
-        } catch (error: any) {
-          uni.showToast({ title: error.message || '上传失败', icon: 'none' });
-        }
-      },
-    });
-  } catch (error) {
-    console.error('选择图片失败:', error);
+    const url = await chooseAndUploadImage({ ext: '.jpg' });
+    form.value.wechat_code = url;
+  } catch (error: any) {
+    if (error?.message && !error.message.includes('取消')) {
+      uni.showToast({ title: error.message || '上传失败', icon: 'none' });
+    }
   }
 };
 
@@ -305,7 +285,7 @@ const resourceFileName = computed(() => {
   }
 });
 
-// 上传资源库文件（PDF、Word 等）
+// 上传资源库文件（PDF、Word 等，带进度）
 const uploadResourceFile = () => {
   // #ifdef MP-WEIXIN
   uni.chooseMessageFile({
@@ -317,14 +297,11 @@ const uploadResourceFile = () => {
       if (!file?.path) return;
       const ext = file.name ? (file.name.includes('.') ? '.' + file.name.split('.').pop() : '') : '';
       try {
-        uni.showLoading({ title: '上传中...' });
-        const url = await uploadFile(file.path, undefined, ext || '.pdf');
+        const url = await uploadWithProgress(file.path, ext || '.pdf');
         form.value.resource_file_url = url;
-        uni.hideLoading();
         uni.showToast({ title: '上传成功', icon: 'success' });
       } catch (error: any) {
-        uni.hideLoading();
-        uni.showToast({ title: error.message || '上传失败', icon: 'none' });
+        uni.showToast({ title: (error as any)?.message || '上传失败', icon: 'none' });
       }
     },
   });
@@ -338,26 +315,15 @@ const clearResourceFile = () => {
   form.value.resource_file_url = '';
 };
 
-// 上传轮播图
+// 上传轮播图（带进度）
 const uploadBannerImage = async () => {
   try {
-    uni.chooseImage({
-      count: 1,
-      success: async (res) => {
-        const tempFilePath = res.tempFilePaths[0];
-        try {
-          const url = await uploadFile(tempFilePath, undefined, '.jpg');
-          editingBanner.value.file_url = url;
-        } catch (error: any) {
-          uni.showToast({
-            title: error.message || '上传失败',
-            icon: 'none',
-          });
-        }
-      },
-    });
-  } catch (error) {
-    console.error('选择图片失败:', error);
+    const url = await chooseAndUploadImage({ ext: '.jpg' });
+    editingBanner.value.file_url = url;
+  } catch (error: any) {
+    if (error?.message && !error.message.includes('取消')) {
+      uni.showToast({ title: error.message || '上传失败', icon: 'none' });
+    }
   }
 };
 

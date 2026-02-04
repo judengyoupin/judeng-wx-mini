@@ -77,6 +77,7 @@ import { getPackageDetail } from '@/api/package/index';
 import { addToCart, getCartList } from '@/api/cart/index';
 import { user_token, userInfo, companyInfo } from '@/store/userStore';
 import { getCompanyUserRoleCached } from '@/utils/auth';
+import { safeNavigateBack } from '@/utils/navigation';
 import PageNavBar from '@/components/PageNavBar.vue';
 import DetailFooterBar from '@/components/DetailFooterBar.vue';
 import SkeletonScreen from '@/components/SkeletonScreen.vue';
@@ -205,9 +206,9 @@ const goToProductDetail = (productId?: number) => {
   }
 };
 
-// 返回
+// 返回（从分享进入时无上一页则回首页）
 const goBack = () => {
-  uni.navigateBack();
+  safeNavigateBack();
 };
 
 // 去首页
@@ -256,15 +257,28 @@ onShow(() => {
   loadCartCount();
 });
 
-onShareAppMessage(() => ({
-  title: packageDetail.value?.name || '套餐详情',
-  path: `/pages/package-detail/index?id=${packageId.value}`,
-}));
+// 分享带 companyId，别人点开可进入对应公司
+onShareAppMessage(() => {
+  const cid = companyInfo?.value?.id ?? uni.getStorageSync('companyId') ?? '';
+  const path = cid
+    ? `/pages/package-detail/index?id=${packageId.value}&companyId=${cid}`
+    : `/pages/package-detail/index?id=${packageId.value}`;
+  return {
+    title: packageDetail.value?.name || '套餐详情',
+    path,
+  };
+});
 
-onShareTimeline(() => ({
-  title: packageDetail.value?.name || '套餐详情',
-  query: `id=${packageId.value}`,
-}));
+onShareTimeline(() => {
+  const cid = companyInfo?.value?.id ?? uni.getStorageSync('companyId') ?? '';
+  const query = cid
+    ? `id=${packageId.value}&companyId=${cid}`
+    : `id=${packageId.value}`;
+  return {
+    title: packageDetail.value?.name || '套餐详情',
+    query,
+  };
+});
 </script>
 
 <style scoped>

@@ -88,6 +88,7 @@ import { onLoad } from '@dcloudio/uni-app';
 import { getProductList } from '@/api/product/index';
 import { userInfo, user_token, companyInfo } from '@/store/userStore';
 import { getCompanyUserRoleCached } from '@/utils/auth';
+import { safeNavigateBack } from '@/utils/navigation';
 import PageNavBar from '@/components/PageNavBar.vue';
 import SkeletonScreen from '@/components/SkeletonScreen.vue';
 
@@ -215,7 +216,7 @@ const goDetail = (product: any) => {
 };
 
 const goBack = () => {
-  uni.navigateBack();
+  safeNavigateBack();
 };
 
 onLoad(async (options?) => {

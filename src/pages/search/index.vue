@@ -131,6 +131,7 @@ import { getProductList } from '@/api/product/index';
 import { getPackageList } from '@/api/package/index';
 import { userInfo, user_token, companyInfo } from '@/store/userStore';
 import { getCompanyUserRoleCached } from '@/utils/auth';
+import { safeNavigateBack } from '@/utils/navigation';
 import PageNavBar from '@/components/PageNavBar.vue';
 import SkeletonScreen from '@/components/SkeletonScreen.vue';
 
@@ -275,7 +276,7 @@ const goPackageDetail = (id: number) => {
 };
 
 const goBack = () => {
-  uni.navigateBack();
+  safeNavigateBack();
 };
 
 onLoad(async (options?) => {

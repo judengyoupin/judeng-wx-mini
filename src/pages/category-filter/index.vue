@@ -120,6 +120,7 @@ import { getProductList } from '@/api/product/index';
 import { userInfo, user_token, companyInfo } from '@/store/userStore';
 import PageNavBar from '@/components/PageNavBar.vue';
 import { getCompanyUserRoleCached } from '@/utils/auth';
+import { safeNavigateBack } from '@/utils/navigation';
 
 const parentId = ref<number | null>(null);
 const pageTitle = ref('分类筛选');
@@ -309,7 +310,7 @@ const goDetail = (product: any) => {
 };
 
 const goBack = () => {
-  uni.navigateBack();
+  safeNavigateBack();
 };
 
 onLoad(async (options?) => {
