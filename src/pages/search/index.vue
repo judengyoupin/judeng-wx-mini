@@ -19,6 +19,12 @@
       </view>
     </view>
 
+    <!-- 传入分类筛选时：展示当前分类名称说明（左侧蓝条 + 分类名） -->
+    <view v-if="categoryName" class="category-desc-bar">
+      <view class="category-desc-line"></view>
+      <text class="category-desc-text">{{ categoryName }}</text>
+    </view>
+
     <!-- 骨架屏（首屏/搜索加载中且无数据时） -->
     <view
       v-if="loading && (searchType === 'product' ? products.length === 0 : packages.length === 0)"
@@ -335,6 +341,30 @@ onReady(() => {
   font-size: 32rpx;
   color: #999;
   padding: 10rpx;
+}
+
+/* 分类筛选说明：左侧蓝色竖条 + 分类名称 */
+.category-desc-bar {
+  display: flex;
+  align-items: center;
+  background: #fff;
+  padding: 20rpx 30rpx;
+  border-bottom: 1rpx solid #eee;
+  gap: 16rpx;
+}
+
+.category-desc-line {
+  width: 6rpx;
+  height: 32rpx;
+  background: #007aff;
+  border-radius: 3rpx;
+  flex-shrink: 0;
+}
+
+.category-desc-text {
+  font-size: 28rpx;
+  color: #333;
+  font-weight: 500;
 }
 
 .skeleton-area {

@@ -1,5 +1,6 @@
 /**
  * 兼容层：从 Pinia user store 导出 state/actions，保证原有 import 写法仍可用且响应式一致
+ * 需解包 ref，否则 companyInfo.value?.id 得到的是 Ref 而非公司对象，导致套餐/分类/商品管理页「只看自己公司」「只看总部」筛选失效
  */
 import { computed } from 'vue'
 import { getPinia } from './piniaInstance'
@@ -13,12 +14,18 @@ function getStore() {
   return useUserStore(p)
 }
 
-export const userInfo = computed(() => getStore().userInfo)
-export const user_token = computed(() => getStore().user_token)
-export const companyInfo = computed(() => getStore().companyInfo)
-export const defaultCompanyIdCache = computed(() => getStore().defaultCompanyIdCache)
-export const defaultCompanyIdCacheTime = computed(() => getStore().defaultCompanyIdCacheTime)
-export const homePageCache = computed(() => getStore().homePageCache)
+function unwrapRef<T>(v: T | { value: T } | undefined | null): T {
+  if (v == null) return undefined as T
+  if (typeof v === 'object' && v !== null && 'value' in v) return (v as { value: T }).value
+  return v as T
+}
+
+export const userInfo = computed(() => unwrapRef(getStore().userInfo) ?? {})
+export const user_token = computed(() => unwrapRef(getStore().user_token) ?? '')
+export const companyInfo = computed(() => unwrapRef(getStore().companyInfo) ?? {})
+export const defaultCompanyIdCache = computed(() => unwrapRef(getStore().defaultCompanyIdCache) ?? null)
+export const defaultCompanyIdCacheTime = computed(() => unwrapRef(getStore().defaultCompanyIdCacheTime) ?? 0)
+export const homePageCache = computed(() => unwrapRef(getStore().homePageCache) ?? null)
 export const companyDetailCache = computed(() => getStore().companyDetailCache)
 
 

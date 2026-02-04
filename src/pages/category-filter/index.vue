@@ -1,15 +1,22 @@
 <template>
   <view class="category-filter-page">
-    <!-- 统一导航栏：公司名称-上级分类名称 -->
+    <!-- 导航栏：展示分类时为 [分类名称]-分类，展示商品时为 [分类名称]-商品，不显示公司名 -->
     <PageNavBar :title="navTitle" :show-back="true" @back="goBack" />
 
-    <!-- 搜索框：点击跳转商品搜索页，带上当前分类则只在该分类下搜索 -->
-    <SearchBox
-      type="product"
-      placeholder="请输入商品名称"
-      :category-id="parentId"
-      :category-name="pageTitle !== '分类筛选' ? pageTitle : ''"
-    />
+    <!-- 搜索：展示分类时带关键词跳转搜索页；展示商品时在当前页按关键词筛选 -->
+    <view class="search-bar">
+      <view class="search-input-box">
+        <text class="search-icon">🔍</text>
+        <input
+          class="search-input"
+          v-model="searchKeyword"
+          placeholder="请输入商品名称"
+          confirm-type="search"
+          @confirm="onSearchConfirm"
+        />
+        <text v-if="searchKeyword" class="clear-icon" @click="clearSearchKeyword">×</text>
+      </view>
+    </view>
 
     <view class="content-container">
       <!-- 有子分类时：三列分类网格（图片绿框 + 名称） -->
@@ -58,9 +65,9 @@
           <text class="category-title">{{ currentCategory ? currentCategory.name : pageTitle }}</text>
         </view>
 
-        <view class="product-grid" v-if="products.length > 0">
+        <view class="product-grid" v-if="displayProducts.length > 0">
           <view
-            v-for="product in products"
+            v-for="product in displayProducts"
             :key="product.id"
             class="product-card"
             @click="goDetail(product)"
@@ -89,14 +96,14 @@
 
         <view v-else-if="!loading" class="empty-state">
           <image src="/static/default.png" mode="aspectFit" class="empty-icon" />
-          <text class="empty-text">该分类暂无商品</text>
+          <text class="empty-text">{{ searchKeyword ? '未找到匹配的商品' : '该分类暂无商品' }}</text>
         </view>
 
         <view v-if="loading" class="loading-more">
           <view class="loading-spinner"></view>
           <text>加载中...</text>
         </view>
-        <view v-else-if="products.length > 0 && !hasMore" class="no-more">
+        <view v-else-if="displayProducts.length > 0 && !hasMore" class="no-more">
           <text>没有更多了</text>
         </view>
         <view class="footer-placeholder"></view>
@@ -112,7 +119,6 @@ import { getCategoryChildren } from '@/api/category/index';
 import { getProductList } from '@/api/product/index';
 import { userInfo, user_token, companyInfo } from '@/store/userStore';
 import PageNavBar from '@/components/PageNavBar.vue';
-import SearchBox from '@/components/SearchBox.vue';
 import { getCompanyUserRoleCached } from '@/utils/auth';
 
 const parentId = ref<number | null>(null);
@@ -132,12 +138,40 @@ const currentCategory = computed(() => {
   return subCategories.value.find(c => c.id === currentCategoryId.value);
 });
 
-// 导航栏标题：公司名称-上级分类名称
+const searchKeyword = ref('');
+
+// 展示分类时无商品列表；展示商品时按关键词在当前页筛选
+const displayProducts = computed(() => {
+  const kw = (searchKeyword.value || '').trim().toLowerCase();
+  if (!kw) return products.value;
+  return products.value.filter(
+    (p: any) =>
+      (p.name || '').toLowerCase().includes(kw) ||
+      (p.description || '').toLowerCase().includes(kw)
+  );
+});
+
+// 展示分类时：带关键词跳转搜索页；展示商品时：仅当前页筛选（由 displayProducts 完成）
+const onSearchConfirm = () => {
+  if (subCategories.value.length > 0) {
+    const kw = (searchKeyword.value || '').trim();
+    let url = `/pages/search/index?type=product`;
+    if (parentId.value != null) url += `&categoryId=${parentId.value}`;
+    if (pageTitle.value && pageTitle.value !== '分类筛选') url += `&categoryName=${encodeURIComponent(pageTitle.value)}`;
+    if (kw) url += `&keyword=${encodeURIComponent(kw)}`;
+    uni.navigateTo({ url });
+  }
+};
+
+const clearSearchKeyword = () => {
+  searchKeyword.value = '';
+};
+
+// 导航栏标题：展示分类时 [分类名称]-分类，展示商品时 [分类名称]-商品，不显示公司名
 const navTitle = computed(() => {
-  const company = companyInfo.value?.name || '';
-  const parentName = pageTitle.value && pageTitle.value !== '分类筛选' ? pageTitle.value : '';
-  if (company && parentName) return `${company}-${parentName}`;
-  return company || pageTitle.value || '分类筛选';
+  const name = pageTitle.value && pageTitle.value !== '分类筛选' ? pageTitle.value : '分类筛选';
+  const suffix = subCategories.value.length > 0 ? '分类' : '商品';
+  return `${name}-${suffix}`;
 });
 
 const getMinPrice = (product: any) => {
@@ -303,6 +337,38 @@ onLoad(async (options?) => {
   flex: 1;
   overflow: hidden;
   background: #f5f5f5;
+}
+
+.search-bar {
+  padding: 20rpx 30rpx;
+  background: #fff;
+  border-bottom: 1rpx solid #e0e0e0;
+}
+
+.search-input-box {
+  display: flex;
+  align-items: center;
+  background: #f5f5f5;
+  border-radius: 50rpx;
+  padding: 16rpx 24rpx;
+  gap: 16rpx;
+}
+
+.search-input-box .search-icon {
+  font-size: 32rpx;
+  color: #999;
+  flex-shrink: 0;
+}
+
+.search-input-box .search-input {
+  flex: 1;
+  font-size: 28rpx;
+}
+
+.search-input-box .clear-icon {
+  font-size: 36rpx;
+  color: #999;
+  padding: 8rpx;
 }
 
 .main-content {

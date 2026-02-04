@@ -49,7 +49,7 @@
           <view class="divider-line"></view>
         </view>
 
-        <!-- 微信授权登录 -->
+        <!-- 手机号快捷登录 -->
         <button 
           class="wechat-login-button"
           open-type="getPhoneNumber"
@@ -57,12 +57,8 @@
           :disabled="isLoading"
         >
           <text class="wechat-icon">🔐</text>
-          <text>微信手机号授权登录</text>
+          <text>手机号快捷登录</text>
         </button>
-
-        <view class="form-footer">
-          <text class="link-text" @click="goToRegister">注册账号</text>
-        </view>
       </view>
     </view>
   </view>
@@ -219,15 +215,6 @@ const handleWechatLogin = async (e: any) => {
   }
 };
 
-// 跳转到注册页面
-const goToRegister = () => {
-  // TODO: 实现注册页面
-  uni.showToast({
-    title: '注册功能开发中',
-    icon: 'none',
-  });
-};
-
 onLoad((options) => {
   // 可以从参数中获取登录类型
   console.log('登录页面参数:', options);
@@ -373,16 +360,5 @@ onLoad((options) => {
 
 .wechat-icon {
   font-size: 36rpx;
-}
-
-.form-footer {
-  text-align: center;
-  margin-top: 40rpx;
-}
-
-.link-text {
-  font-size: 28rpx;
-  color: #667eea;
-  text-decoration: underline;
 }
 </style>

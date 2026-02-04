@@ -2,6 +2,7 @@ import client from "@/config-lib/hasura-graphql-client/hasura-graphql-client";
 import { getCompanyDetailFromCache } from "@/store/userStore";
 import { getDefaultCompanyIdCached } from "@/api/config/index";
 import { mapCategoryNode } from "@/api/category/index";
+import { getBanners } from "@/api/banner/index";
 import type { BannerArray } from "@/types/companies";
 
 export interface HomePageData {
@@ -63,10 +64,18 @@ export async function getHomePageData(
 
   try {
     const row = getCompanyDetailFromCache(currentCompanyId);
-    const top: BannerArray =
+    let top: BannerArray =
       row && Array.isArray(row.banner_top) ? row.banner_top : [];
-    const bottom: BannerArray =
+    let bottom: BannerArray =
       row && Array.isArray(row.banner_bottom) ? row.banner_bottom : [];
+    // 公司详情缓存可能尚未就绪（App syncCompanyInfo 晚于首页加载），轮播为空时直接请求接口兜底
+    if (top.length === 0 && bottom.length === 0) {
+      const bannerRes = await getBanners(currentCompanyId);
+      if (bannerRes?.code === 0 && bannerRes.data) {
+        top = bannerRes.data.top ?? [];
+        bottom = bannerRes.data.bottom ?? [];
+      }
+    }
     const hiddenCategoryIds: number[] = Array.isArray(row?.hidden_category_ids)
       ? row.hidden_category_ids.map((id) => Number(id))
       : [];

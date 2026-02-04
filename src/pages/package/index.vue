@@ -3,8 +3,20 @@
     <!-- 统一导航栏（含状态栏高度） -->
     <PageNavBar :title="companyInfo?.name || '套餐'" />
 
-    <!-- 搜索框：点击跳转搜索页并自动聚焦 -->
-    <SearchBox type="package" placeholder="请输入套餐名称" search-icon="/static/index/srch.png" />
+    <!-- 搜索框：当前页按名称/介绍筛选，不跳转 -->
+    <view class="search-bar">
+      <view class="search-input-box">
+        <image class="search-icon" src="/static/index/srch.png" mode="aspectFit" />
+        <input
+          class="search-input"
+          v-model="searchKeyword"
+          placeholder="请输入套餐名称"
+          confirm-type="search"
+          @confirm="onSearchConfirm"
+        />
+        <text v-if="searchKeyword" class="clear-icon" @click="searchKeyword = ''">×</text>
+      </view>
+    </view>
 
     <!-- 分类筛选 -->
     <view class="category-filter">
@@ -35,10 +47,10 @@
       <SkeletonScreen type="list-grid-3" :count="6" />
     </view>
 
-    <!-- 套餐列表：每行 3 个，参考图示卡片样式 -->
+    <!-- 套餐列表：每行 3 个，按关键词在当前页筛选 -->
     <view v-else class="package-list">
       <view
-        v-for="pkg in packages"
+        v-for="pkg in filteredPackages"
         :key="pkg.id"
         class="package-item"
         @click="goToPackageDetail(pkg.id)"
@@ -57,15 +69,15 @@
       </view>
 
       <!-- 空状态（跨整行） -->
-      <view v-if="packages.length === 0" class="empty-state full-row">
-        <text class="empty-text">暂无套餐</text>
+      <view v-if="filteredPackages.length === 0" class="empty-state full-row">
+        <text class="empty-text">{{ searchKeyword ? '未找到匹配的套餐' : '暂无套餐' }}</text>
       </view>
 
       <!-- 加载更多（跨整行） -->
       <view v-if="loading && packages.length > 0" class="load-more full-row">
         <text>加载中...</text>
       </view>
-      <view v-else-if="hasMore" class="load-more full-row" @click="loadMore">
+      <view v-else-if="hasMore && !searchKeyword" class="load-more full-row" @click="loadMore">
         <text>加载更多</text>
       </view>
     </view>
@@ -73,13 +85,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { onShow, onPullDownRefresh, onReachBottom } from '@dcloudio/uni-app';
 import { getPackageList } from '@/api/package/index';
 import { getCategoryTree } from '@/api/category/index';
 import { companyInfo } from '@/store/userStore';
 import PageNavBar from '@/components/PageNavBar.vue';
-import SearchBox from '@/components/SearchBox.vue';
 import SkeletonScreen from '@/components/SkeletonScreen.vue';
 
 const packages = ref<any[]>([]);
@@ -90,6 +101,22 @@ const hasMore = ref(true);
 const categories = ref<any[]>([]);
 const selectedCategoryId = ref<number | null>(null);
 const loadingCategories = ref(false);
+const searchKeyword = ref('');
+
+// 当前页按关键词筛选套餐（名称、介绍）
+const filteredPackages = computed(() => {
+  const kw = (searchKeyword.value || '').trim().toLowerCase();
+  if (!kw) return packages.value;
+  return packages.value.filter(
+    (p: any) =>
+      (p.name || '').toLowerCase().includes(kw) ||
+      (p.description || '').toLowerCase().includes(kw)
+  );
+});
+
+const onSearchConfirm = () => {
+  // 筛选由 computed 完成，无需额外逻辑
+};
 
 const PACKAGE_PAGE_CACHE_TTL = 5 * 60 * 1000;
 const packagePageCache = ref<{
@@ -236,6 +263,38 @@ onReachBottom(() => {
 .package-page {
   min-height: 100vh;
   background: #f5f5f5;
+}
+
+.search-bar {
+  padding: 20rpx 30rpx;
+  background: #fff;
+  border-bottom: 1rpx solid #e0e0e0;
+}
+
+.search-input-box {
+  display: flex;
+  align-items: center;
+  background: #f5f5f5;
+  border-radius: 50rpx;
+  padding: 16rpx 24rpx;
+  gap: 16rpx;
+}
+
+.search-input-box .search-icon {
+  width: 32rpx;
+  height: 32rpx;
+  flex-shrink: 0;
+}
+
+.search-input-box .search-input {
+  flex: 1;
+  font-size: 28rpx;
+}
+
+.search-input-box .clear-icon {
+  font-size: 36rpx;
+  color: #999;
+  padding: 8rpx;
 }
 
 .skeleton-area {

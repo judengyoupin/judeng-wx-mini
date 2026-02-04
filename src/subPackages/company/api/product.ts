@@ -70,7 +70,7 @@ export async function getProductListWithCompanyHidden(params: {
       products(
         where: {
           _and: [
-            { company_companies: { _eq: $companyId } }
+            { company_companies: { _eq: $companyId } },
             { is_deleted: { _eq: false } }
           ]
         }
@@ -83,7 +83,7 @@ export async function getProductListWithCompanyHidden(params: {
       products_aggregate(
         where: {
           _and: [
-            { company_companies: { _eq: $companyId } }
+            { company_companies: { _eq: $companyId } },
             { is_deleted: { _eq: false } }
           ]
         }

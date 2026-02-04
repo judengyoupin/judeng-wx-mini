@@ -149,7 +149,9 @@
 <script lang="ts">
 import { defineComponent, ref, watch } from "vue";
 import { getHomePageData } from "@/api/home/index";
-import { userInfo, companyInfo, getHomePageCacheValid, setHomePageCache } from "@/store/userStore";
+import { getPinia } from "@/store/piniaInstance";
+import { useUserStore } from "@/store/user";
+import { getHomePageCacheValid, setHomePageCache, userInfo, companyInfo } from "@/store/userStore";
 import { onLoad, onShow, onShareAppMessage } from "@dcloudio/uni-app";
 import type { BannerArray } from "@/types/companies";
 
@@ -175,6 +177,10 @@ interface CategoryItem {
 export default defineComponent({
   components: { PageNavBar, SearchBox },
   setup() {
+    const pinia = getPinia();
+    const userStore = pinia ? useUserStore(pinia) : null;
+    // 使用兼容层 companyInfo，切换公司后标题能实时更新
+
     const categoryList = ref<CategoryItem[]>([]);
     const loading = ref(true);
     const topBanners = ref<BannerArray>([]);
@@ -247,11 +253,14 @@ export default defineComponent({
       }
     };
 
-    // App 的 syncCompanyInfo 可能晚于首页 onShow，companyInfo 就绪后补拉一次以显示轮播/分类
+    // App 的 syncCompanyInfo 可能晚于首页 onShow，companyInfo 就绪后若缺分类或轮播则补拉一次（首次进入时轮播来自缓存，缓存可能尚未就绪）
     watch(
       () => companyInfo?.value?.id,
       (id) => {
-        if (id && categoryList.value.length === 0 && !loading.value) {
+        if (!id || loading.value) return;
+        const noCategories = categoryList.value.length === 0;
+        const noBanners = topBanners.value.length === 0 && bottomBanners.value.length === 0;
+        if (noCategories || noBanners) {
           fetchHomeData(true);
         }
       }
@@ -293,10 +302,10 @@ export default defineComponent({
       return "/static/default-banner.png";
     };
 
-    // 检查是否有轮播图
-    const hasBanners = (banners: any[]) => {
+    // 检查是否有轮播图（显式函数，避免构建后丢失）
+    function hasBanners(banners: any[]) {
       return banners && banners.length > 0;
-    };
+    }
 
     // 检查分类列表是否为空
     const isEmpty = (list: any[]) => {
