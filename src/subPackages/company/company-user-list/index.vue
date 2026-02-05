@@ -33,10 +33,23 @@
           管理员
         </view>
       </view>
+      <view class="filter-row level-filter-row">
+        <text class="level-filter-label">等级：</text>
+        <view
+          v-for="lv in levelOptions"
+          :key="lv.value"
+          class="filter-tab level-tab"
+          :class="{ active: levelFilter === lv.value }"
+          @click="setLevelFilter(lv.value)"
+        >
+          {{ lv.label }}
+        </view>
+      </view>
       <view class="count-row">
         <text class="count-text">{{ countText }}</text>
       </view>
       <view class="header-actions">
+        <button v-if="!isViewOnly" class="batch-btn" @click="showBatchModal = true">批量修改</button>
         <button v-if="!isViewOnly" class="add-btn" @click="showAddModal = true">+ 添加用户</button>
         <text v-else class="view-only-tip">仅查看，不可操作</text>
       </view>
@@ -66,6 +79,7 @@
               <text class="user-role" :class="{ 'role-admin': user.role === 'admin' }">
                 {{ user.role === 'admin' ? '管理员' : '用户' }}
               </text>
+              <text class="user-level">等级 {{ user.level || 'A' }}</text>
             </view>
             <view class="user-permissions">
               <text class="permission-tag" :class="{ 'tag-enabled': user.can_view_price }">
@@ -77,7 +91,6 @@
         </view>
         <view v-if="!isViewOnly" class="user-actions">
           <view class="action-btn" @click="editUser(user)">编辑</view>
-          <view class="action-btn delete" @click="handleDelete(user)">删除</view>
         </view>
       </view>
 
@@ -164,6 +177,21 @@
           </view>
 
           <view class="form-item">
+            <view class="label">客户等级</view>
+            <view class="level-options level-options-form">
+              <view
+                v-for="lv in batchLevelOptions"
+                :key="lv"
+                class="level-option"
+                :class="{ active: userForm.level === lv }"
+                @click="userForm.level = lv"
+              >
+                {{ lv }}
+              </view>
+            </view>
+          </view>
+
+          <view class="form-item">
             <view class="label">
               <checkbox 
                 :checked="userForm.can_view_price" 
@@ -198,6 +226,73 @@
         </view>
       </view>
     </view>
+
+    <!-- 批量修改弹窗 -->
+    <view v-if="showBatchModal" class="modal-overlay" @click="showBatchModal = false">
+      <view class="modal-content batch-modal" @click.stop>
+        <view class="modal-header">
+          <text class="modal-title">批量修改</text>
+          <text class="modal-close" @click="showBatchModal = false">×</text>
+        </view>
+        <view class="modal-body">
+          <view class="form-item">
+            <view class="label">修改类型</view>
+            <view class="batch-mode-options">
+              <view
+                class="batch-mode-option"
+                :class="{ active: batchMode === 'price_visible' }"
+                @click="batchMode = 'price_visible'"
+              >
+                批量显隐价格
+              </view>
+              <view
+                class="batch-mode-option"
+                :class="{ active: batchMode === 'price_factor' }"
+                @click="batchMode = 'price_factor'"
+              >
+                批量改价格系数
+              </view>
+            </view>
+          </view>
+          <view class="form-item">
+            <view class="label">选择等级</view>
+            <view class="level-options">
+              <view
+                v-for="lv in batchLevelOptions"
+                :key="lv"
+                class="level-option"
+                :class="{ active: batchLevel === lv }"
+                @click="batchLevel = lv"
+              >
+                {{ lv }}
+              </view>
+            </view>
+          </view>
+          <view v-if="batchMode === 'price_visible'" class="form-item">
+            <view class="label">
+              <checkbox
+                :checked="batchCanViewPrice"
+                @tap="batchCanViewPrice = !batchCanViewPrice"
+              />
+              <text style="margin-left: 10rpx;">是否展示价格</text>
+            </view>
+          </view>
+          <view v-else class="form-item">
+            <view class="label">价格系数 <text class="required">*</text></view>
+            <input
+              class="form-input"
+              type="digit"
+              v-model="batchPriceFactor"
+              placeholder="如 1 或 0.9 表示9折"
+            />
+          </view>
+        </view>
+        <view class="modal-footer">
+          <button class="modal-btn" :disabled="batchSubmitting" @click="confirmBatch">确定</button>
+          <button class="modal-btn cancel" @click="showBatchModal = false">取消</button>
+        </view>
+      </view>
+    </view>
   </view>
 </template>
 
@@ -206,7 +301,7 @@ import { ref, computed, watch } from 'vue';
 import { onLoad, onPullDownRefresh, onReachBottom, onShow } from '@dcloudio/uni-app';
 import { companyInfo } from '@/store/userStore';
 import { getCompanyDetailCached } from '@/subPackages/company/api/platform';
-import { getCompanyUserList, searchUserByMobile, createUserByMobile, addCompanyUser, updateCompanyUser, removeCompanyUser } from '@/subPackages/company/api/company-user';
+import { getCompanyUserList, searchUserByMobile, createUserByMobile, addCompanyUser, updateCompanyUser, batchUpdateCompanyUsersByLevel, COMPANY_USER_LEVELS, type CompanyUserLevel } from '@/subPackages/company/api/company-user';
 
 const users = ref<any[]>([]);
 const loading = ref(false);
@@ -214,14 +309,21 @@ const loading = ref(false);
 const listSearchKeyword = ref('');
 /** 角色筛选 */
 const roleFilter = ref<'' | 'user' | 'admin'>('');
+/** 等级筛选：空为全部，否则 A/B/C/D/E/F */
+const levelFilter = ref<'' | CompanyUserLevel>('');
 const totalCount = ref(0);
 
-// 当前筛选下的用户数量文案
+const levelOptions = [{ value: '' as const, label: '全部' }, ...COMPANY_USER_LEVELS.map((v) => ({ value: v as CompanyUserLevel, label: v }))];
+
+// 当前筛选下的用户数量文案（角色与等级同时筛选时用顿号连接，如：管理员、等级A 共 2 人）
 const countText = computed(() => {
   const n = totalCount.value;
-  if (roleFilter.value === 'user') return `普通用户 共 ${n} 人`;
-  if (roleFilter.value === 'admin') return `管理员 共 ${n} 人`;
-  return `共 ${n} 人`;
+  const parts: string[] = [];
+  if (roleFilter.value === 'user') parts.push('普通用户');
+  if (roleFilter.value === 'admin') parts.push('管理员');
+  if (levelFilter.value) parts.push(`等级${levelFilter.value}`);
+  if (parts.length === 0) return `共 ${n} 人`;
+  return `${parts.join('、')} 共 ${n} 人`;
 });
 
 // 列表搜索过滤（昵称、手机号）
@@ -262,9 +364,19 @@ const hasSearched = ref(false);
 const userForm = ref({
   mobile: '',
   role: 'user' as 'admin' | 'user',
+  level: 'A' as CompanyUserLevel,
   can_view_price: false,
   price_factor: '1',
 });
+
+// 批量修改弹窗
+const showBatchModal = ref(false);
+const batchMode = ref<'price_visible' | 'price_factor'>('price_visible');
+const batchLevel = ref<CompanyUserLevel>('A');
+const batchCanViewPrice = ref(false);
+const batchPriceFactor = ref('1');
+const batchSubmitting = ref(false);
+const batchLevelOptions = COMPANY_USER_LEVELS;
 
 // 加载公司默认配置（用于添加用户时默认填充）
 const loadCompanyDefaults = async () => {
@@ -292,6 +404,7 @@ function getDefaultUserForm() {
   return {
     mobile: '',
     role: 'user' as const,
+    level: 'A' as CompanyUserLevel,
     can_view_price: d?.default_for_can_view_price ?? false,
     price_factor: String(d?.default_for_price_factor ?? 1),
   };
@@ -325,6 +438,7 @@ const loadUsers = async (reset = false) => {
       limit: pageSize,
       offset: (page.value - 1) * pageSize,
       role: roleFilter.value || undefined,
+      level: levelFilter.value || undefined,
     });
 
     if (reset) {
@@ -353,6 +467,12 @@ const loadUsers = async (reset = false) => {
 // 角色筛选
 const setRoleFilter = (role: '' | 'user' | 'admin') => {
   roleFilter.value = role;
+  loadUsers(true);
+};
+
+// 等级筛选
+const setLevelFilter = (level: '' | CompanyUserLevel) => {
+  levelFilter.value = level;
   loadUsers(true);
 };
 
@@ -393,35 +513,48 @@ const editUser = (user: any) => {
   userForm.value = {
     mobile: user.user.mobile,
     role: user.role,
+    level: (user.level && COMPANY_USER_LEVELS.includes(user.level)) ? user.level : 'A',
     can_view_price: user.can_view_price,
     price_factor: String(user.price_factor),
   };
   showEditModal.value = true;
 };
 
-// 删除用户
-const handleDelete = (user: any) => {
-  uni.showModal({
-    title: '确认删除',
-    content: `确定要删除用户"${user.user?.nickname || user.user?.mobile}"吗？`,
-    success: async (res) => {
-      if (res.confirm) {
-        try {
-          await removeCompanyUser(user.id);
-          uni.showToast({
-            title: '删除成功',
-            icon: 'success',
-          });
-          loadUsers(true);
-        } catch (error: any) {
-          uni.showToast({
-            title: error.message || '删除失败',
-            icon: 'none',
-          });
-        }
-      }
-    },
-  });
+// 批量修改确认
+const confirmBatch = async () => {
+  const companyId = effectiveCompanyId();
+  if (!companyId) {
+    uni.showToast({ title: '公司信息不存在', icon: 'none' });
+    return;
+  }
+  if (batchMode.value === 'price_factor') {
+    const v = Number(batchPriceFactor.value);
+    if (isNaN(v) || v <= 0) {
+      uni.showToast({ title: '价格系数必须大于0', icon: 'none' });
+      return;
+    }
+  }
+  batchSubmitting.value = true;
+  try {
+    const updates: { can_view_price?: boolean; price_factor?: number } = {};
+    if (batchMode.value === 'price_visible') {
+      updates.can_view_price = batchCanViewPrice.value;
+    } else {
+      updates.price_factor = Number(batchPriceFactor.value);
+    }
+    const { updated } = await batchUpdateCompanyUsersByLevel({
+      companyId,
+      level: batchLevel.value,
+      updates,
+    });
+    uni.showToast({ title: `已更新 ${updated} 人`, icon: 'success' });
+    showBatchModal.value = false;
+    loadUsers(true);
+  } catch (error: any) {
+    uni.showToast({ title: error.message || '批量修改失败', icon: 'none' });
+  } finally {
+    batchSubmitting.value = false;
+  }
 };
 
 // 保存用户
@@ -465,6 +598,7 @@ const handleSaveUser = async () => {
       user_users: searchedUser.value.id,
       company_companies: companyId,
       role: userForm.value.role,
+      level: userForm.value.level,
       can_view_price: userForm.value.can_view_price,
       price_factor: priceFactor,
     };
@@ -532,6 +666,7 @@ const handleCreateAndAdd = async () => {
       user_users: newUser.id,
       company_companies: companyId,
       role: userForm.value.role,
+      level: userForm.value.level,
       can_view_price: userForm.value.can_view_price,
       price_factor: priceFactor,
     });
@@ -636,6 +771,69 @@ onReachBottom(() => {
 .filter-tab.active {
   background: #667eea;
   color: #ffffff;
+}
+
+.level-filter-row {
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.level-filter-label {
+  font-size: 26rpx;
+  color: #666;
+  margin-right: 12rpx;
+}
+
+.level-tab {
+  margin-right: 12rpx;
+  margin-bottom: 8rpx;
+}
+
+.user-level {
+  padding: 4rpx 12rpx;
+  background: #f0f0f0;
+  color: #666666;
+  border-radius: 4rpx;
+  font-size: 24rpx;
+}
+
+.batch-btn {
+  padding: 10rpx 20rpx;
+  background: #f0f0f0;
+  color: #333;
+  border-radius: 8rpx;
+  font-size: 26rpx;
+  border: none;
+  margin-right: 16rpx;
+}
+
+.batch-modal .batch-mode-options,
+.batch-modal .level-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16rpx;
+  margin-top: 12rpx;
+}
+
+.batch-mode-option,
+.level-option {
+  padding: 16rpx 28rpx;
+  font-size: 28rpx;
+  color: #666;
+  background: #f0f2f5;
+  border-radius: 12rpx;
+}
+
+.batch-mode-option.active,
+.level-option.active {
+  background: #667eea;
+  color: #fff;
+}
+
+.level-options-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16rpx;
 }
 
 .count-row {

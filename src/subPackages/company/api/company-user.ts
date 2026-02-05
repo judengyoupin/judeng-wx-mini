@@ -1,29 +1,43 @@
 import client from '@/config-lib/hasura-graphql-client/hasura-graphql-client';
 
+/** 客户等级 */
+export type CompanyUserLevel = 'A' | 'B' | 'C' | 'D' | 'E';
+
 export interface CompanyUserInput {
   user_users: number;
   company_companies: number;
   role: 'admin' | 'user';
   can_view_price: boolean;
   price_factor: number;
+  /** 客户等级，默认 A */
+  level?: CompanyUserLevel;
 }
 
+const LEVEL_VALUES: CompanyUserLevel[] = ['A', 'B', 'C', 'D', 'E'];
+
 /**
- * 获取公司用户列表，支持按角色筛选
+ * 获取公司用户列表，支持按角色、等级筛选
  */
 export async function getCompanyUserList(params: {
   companyId: number;
   limit?: number;
   offset?: number;
   role?: 'admin' | 'user';
+  level?: CompanyUserLevel;
 }) {
   const role = params.role === 'admin' || params.role === 'user' ? params.role : undefined;
-  const hasRole = !!role;
-  const whereBody = hasRole
-    ? `{ _and: [ { company_companies: { _eq: $companyId } }, { role: { _eq: $role } } ] }`
-    : '{ company_companies: { _eq: $companyId } }';
+  const level = params.level && LEVEL_VALUES.includes(params.level) ? params.level : undefined;
+  const conditions = ['{ company_companies: { _eq: $companyId } }'];
   const varDecls = ['$companyId: bigint!', '$limit: Int', '$offset: Int'];
-  if (hasRole) varDecls.push('$role: String!');
+  if (role) {
+    conditions.push('{ role: { _eq: $role } }');
+    varDecls.push('$role: String!');
+  }
+  if (level) {
+    conditions.push('{ level: { _eq: $level } }');
+    varDecls.push('$level: String!');
+  }
+  const whereBody = conditions.length > 1 ? `{ _and: [ ${conditions.join(', ')} ] }` : conditions[0];
 
   const query = `
     query GetCompanyUserList(${varDecls.join(', ')}) {
@@ -35,6 +49,7 @@ export async function getCompanyUserList(params: {
       ) {
         id
         role
+        level
         can_view_price
         price_factor
         created_at
@@ -58,7 +73,8 @@ export async function getCompanyUserList(params: {
     limit: params.limit || 20,
     offset: params.offset || 0,
   };
-  if (hasRole) variables.role = role;
+  if (role) variables.role = role;
+  if (level) variables.level = level;
 
   const result = await client.execute({
     query,
@@ -129,11 +145,20 @@ export async function searchUserByMobile(mobile: string) {
  * 添加公司用户
  */
 export async function addCompanyUser(user: CompanyUserInput) {
+  const payload: Record<string, unknown> = {
+    user_users: user.user_users,
+    company_companies: user.company_companies,
+    role: user.role,
+    can_view_price: user.can_view_price,
+    price_factor: user.price_factor,
+    level: user.level ?? 'A',
+  };
   const mutation = `
     mutation AddCompanyUser($user: company_users_insert_input!) {
       insert_company_users_one(object: $user) {
         id
         role
+        level
         can_view_price
         price_factor
         user {
@@ -147,7 +172,7 @@ export async function addCompanyUser(user: CompanyUserInput) {
 
   const result = await client.execute({
     query: mutation,
-    variables: { user },
+    variables: { user: payload },
   });
 
   return result?.insert_company_users_one;
@@ -160,6 +185,8 @@ export async function updateCompanyUser(
   userId: number,
   updates: Partial<CompanyUserInput>
 ) {
+  const set: Record<string, unknown> = { ...updates };
+  if (updates.level !== undefined) set.level = updates.level;
   const mutation = `
     mutation UpdateCompanyUser(
       $userId: bigint!
@@ -171,6 +198,7 @@ export async function updateCompanyUser(
       ) {
         id
         role
+        level
         can_view_price
         price_factor
         updated_at
@@ -182,7 +210,7 @@ export async function updateCompanyUser(
     query: mutation,
     variables: {
       userId,
-      updates,
+      updates: set,
     },
   });
 
@@ -207,4 +235,45 @@ export async function removeCompanyUser(userId: number) {
   });
 
   return result?.delete_company_users_by_pk;
+}
+
+/** 批量更新时按等级筛选的可选等级 */
+export const COMPANY_USER_LEVELS: CompanyUserLevel[] = ['A', 'B', 'C', 'D', 'E'];
+
+/**
+ * 按等级批量更新公司用户（显隐价格 或 价格系数）
+ */
+export async function batchUpdateCompanyUsersByLevel(params: {
+  companyId: number;
+  level: CompanyUserLevel;
+  updates: { can_view_price?: boolean; price_factor?: number };
+}) {
+  const query = `
+    query ListCompanyUserIdsByLevel($companyId: bigint!, $level: String!) {
+      company_users(
+        where: {
+          company_companies: { _eq: $companyId }
+          level: { _eq: $level }
+        }
+        limit: 5000
+      ) {
+        id
+      }
+    }
+  `;
+  const listRes = await client.execute<{ company_users: Array<{ id: number }> }>({
+    query,
+    variables: { companyId: params.companyId, level: params.level },
+  });
+  const ids = (listRes?.company_users ?? []).map((r) => r.id);
+  const set: Record<string, unknown> = {};
+  if (params.updates.can_view_price !== undefined) set.can_view_price = params.updates.can_view_price;
+  if (params.updates.price_factor !== undefined) set.price_factor = params.updates.price_factor;
+  if (Object.keys(set).length === 0) return { updated: 0 };
+  let updated = 0;
+  for (const id of ids) {
+    await updateCompanyUser(id, set as Partial<CompanyUserInput>);
+    updated++;
+  }
+  return { updated };
 }

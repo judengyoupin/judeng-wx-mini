@@ -3354,6 +3354,8 @@ export type Company_Users = {
   company_companies: Scalars['bigint']['output'];
   created_at: Scalars['timestamptz']['output'];
   id: Scalars['bigint']['output'];
+  /** 客户等级划分 1.A 2.B 3.C 4.D 5.E */
+  level: Scalars['String']['output'];
   /** 该用户在公司下看到的价格系数（大于0数值），默认为1表示和产品价格一致 */
   price_factor: Scalars['numeric']['output'];
   /** 用户在公司下的角色： 1.admin（可以管理公司的分类、公司的产品及套餐、授权公司用户）、2.user（普通用户） */
@@ -3477,6 +3479,7 @@ export type Company_Users_Bool_Exp = {
   company_companies?: InputMaybe<Bigint_Comparison_Exp>;
   created_at?: InputMaybe<Timestamptz_Comparison_Exp>;
   id?: InputMaybe<Bigint_Comparison_Exp>;
+  level?: InputMaybe<String_Comparison_Exp>;
   price_factor?: InputMaybe<Numeric_Comparison_Exp>;
   role?: InputMaybe<String_Comparison_Exp>;
   updated_at?: InputMaybe<Timestamptz_Comparison_Exp>;
@@ -3512,6 +3515,8 @@ export type Company_Users_Insert_Input = {
   company_companies?: InputMaybe<Scalars['bigint']['input']>;
   created_at?: InputMaybe<Scalars['timestamptz']['input']>;
   id?: InputMaybe<Scalars['bigint']['input']>;
+  /** 客户等级划分 1.A 2.B 3.C 4.D 5.E */
+  level?: InputMaybe<Scalars['String']['input']>;
   /** 该用户在公司下看到的价格系数（大于0数值），默认为1表示和产品价格一致 */
   price_factor?: InputMaybe<Scalars['numeric']['input']>;
   /** 用户在公司下的角色： 1.admin（可以管理公司的分类、公司的产品及套餐、授权公司用户）、2.user（普通用户） */
@@ -3529,6 +3534,8 @@ export type Company_Users_Max_Fields = {
   company_companies?: Maybe<Scalars['bigint']['output']>;
   created_at?: Maybe<Scalars['timestamptz']['output']>;
   id?: Maybe<Scalars['bigint']['output']>;
+  /** 客户等级划分 1.A 2.B 3.C 4.D 5.E */
+  level?: Maybe<Scalars['String']['output']>;
   /** 该用户在公司下看到的价格系数（大于0数值），默认为1表示和产品价格一致 */
   price_factor?: Maybe<Scalars['numeric']['output']>;
   /** 用户在公司下的角色： 1.admin（可以管理公司的分类、公司的产品及套餐、授权公司用户）、2.user（普通用户） */
@@ -3544,6 +3551,8 @@ export type Company_Users_Max_Order_By = {
   company_companies?: InputMaybe<Order_By>;
   created_at?: InputMaybe<Order_By>;
   id?: InputMaybe<Order_By>;
+  /** 客户等级划分 1.A 2.B 3.C 4.D 5.E */
+  level?: InputMaybe<Order_By>;
   /** 该用户在公司下看到的价格系数（大于0数值），默认为1表示和产品价格一致 */
   price_factor?: InputMaybe<Order_By>;
   /** 用户在公司下的角色： 1.admin（可以管理公司的分类、公司的产品及套餐、授权公司用户）、2.user（普通用户） */
@@ -3560,6 +3569,8 @@ export type Company_Users_Min_Fields = {
   company_companies?: Maybe<Scalars['bigint']['output']>;
   created_at?: Maybe<Scalars['timestamptz']['output']>;
   id?: Maybe<Scalars['bigint']['output']>;
+  /** 客户等级划分 1.A 2.B 3.C 4.D 5.E */
+  level?: Maybe<Scalars['String']['output']>;
   /** 该用户在公司下看到的价格系数（大于0数值），默认为1表示和产品价格一致 */
   price_factor?: Maybe<Scalars['numeric']['output']>;
   /** 用户在公司下的角色： 1.admin（可以管理公司的分类、公司的产品及套餐、授权公司用户）、2.user（普通用户） */
@@ -3575,6 +3586,8 @@ export type Company_Users_Min_Order_By = {
   company_companies?: InputMaybe<Order_By>;
   created_at?: InputMaybe<Order_By>;
   id?: InputMaybe<Order_By>;
+  /** 客户等级划分 1.A 2.B 3.C 4.D 5.E */
+  level?: InputMaybe<Order_By>;
   /** 该用户在公司下看到的价格系数（大于0数值），默认为1表示和产品价格一致 */
   price_factor?: InputMaybe<Order_By>;
   /** 用户在公司下的角色： 1.admin（可以管理公司的分类、公司的产品及套餐、授权公司用户）、2.user（普通用户） */
@@ -3607,6 +3620,7 @@ export type Company_Users_Order_By = {
   company_companies?: InputMaybe<Order_By>;
   created_at?: InputMaybe<Order_By>;
   id?: InputMaybe<Order_By>;
+  level?: InputMaybe<Order_By>;
   price_factor?: InputMaybe<Order_By>;
   role?: InputMaybe<Order_By>;
   updated_at?: InputMaybe<Order_By>;
@@ -3629,6 +3643,8 @@ export enum Company_Users_Select_Column {
   CreatedAt = 'created_at',
   /** column name */
   Id = 'id',
+  /** column name */
+  Level = 'level',
   /** column name */
   PriceFactor = 'price_factor',
   /** column name */
@@ -3659,6 +3675,8 @@ export type Company_Users_Set_Input = {
   company_companies?: InputMaybe<Scalars['bigint']['input']>;
   created_at?: InputMaybe<Scalars['timestamptz']['input']>;
   id?: InputMaybe<Scalars['bigint']['input']>;
+  /** 客户等级划分 1.A 2.B 3.C 4.D 5.E */
+  level?: InputMaybe<Scalars['String']['input']>;
   /** 该用户在公司下看到的价格系数（大于0数值），默认为1表示和产品价格一致 */
   price_factor?: InputMaybe<Scalars['numeric']['input']>;
   /** 用户在公司下的角色： 1.admin（可以管理公司的分类、公司的产品及套餐、授权公司用户）、2.user（普通用户） */
@@ -3753,6 +3771,8 @@ export type Company_Users_Stream_Cursor_Value_Input = {
   company_companies?: InputMaybe<Scalars['bigint']['input']>;
   created_at?: InputMaybe<Scalars['timestamptz']['input']>;
   id?: InputMaybe<Scalars['bigint']['input']>;
+  /** 客户等级划分 1.A 2.B 3.C 4.D 5.E */
+  level?: InputMaybe<Scalars['String']['input']>;
   /** 该用户在公司下看到的价格系数（大于0数值），默认为1表示和产品价格一致 */
   price_factor?: InputMaybe<Scalars['numeric']['input']>;
   /** 用户在公司下的角色： 1.admin（可以管理公司的分类、公司的产品及套餐、授权公司用户）、2.user（普通用户） */
@@ -3795,6 +3815,8 @@ export enum Company_Users_Update_Column {
   CreatedAt = 'created_at',
   /** column name */
   Id = 'id',
+  /** column name */
+  Level = 'level',
   /** column name */
   PriceFactor = 'price_factor',
   /** column name */
