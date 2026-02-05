@@ -20,6 +20,10 @@ export interface CategoryInput {
  */
 export async function getCategoryTree(companyId: number, type?: 'product' | 'package') {
   const typeCondition = type ? ', type: { _eq: $type }' : '';
+  const aggFields = `
+        products_aggregate(where: { is_deleted: { _eq: false } }) { aggregate { count } }
+        packages_aggregate { aggregate { count } }
+  `;
   const query = `
     query GetCategoryTree($companyId: bigint!${type ? ', $type: String!' : ''}) {
       categories(
@@ -39,6 +43,7 @@ export async function getCategoryTree(companyId: number, type?: 'product' | 'pac
         route_ui_style
         sort_order
         type
+        ${aggFields}
         categories(
           where: { is_deleted: { _eq: false }${typeCondition} }
           order_by: { sort_order: asc }
@@ -51,6 +56,7 @@ export async function getCategoryTree(companyId: number, type?: 'product' | 'pac
           route_ui_style
           sort_order
           type
+          ${aggFields}
           categories(
             where: { is_deleted: { _eq: false }${typeCondition} }
             order_by: { sort_order: asc }
@@ -63,6 +69,7 @@ export async function getCategoryTree(companyId: number, type?: 'product' | 'pac
             route_ui_style
             sort_order
             type
+            ${aggFields}
           }
         }
       }
@@ -78,6 +85,107 @@ export async function getCategoryTree(companyId: number, type?: 'product' | 'pac
   });
 
   return result?.categories || [];
+}
+
+/** 递归给节点打上 _companyId（用于多公司合并树） */
+function tagTreeWithCompanyId(nodes: any[]): any[] {
+  return nodes.map((node: any) => ({
+    ...node,
+    _companyId: node.company_companies,
+    categories: node.categories ? tagTreeWithCompanyId(node.categories) : [],
+  }));
+}
+
+/**
+ * 一次请求获取多公司分类树 + 指定公司的 hidden_category_ids（用于「全部」范围）
+ */
+export async function getCategoryTreeMultiCompany(params: {
+  companyIds: number[];
+  hiddenForCompanyId: number;
+  type?: 'product' | 'package';
+}) {
+  const typeCondition = params.type ? ', type: { _eq: $type }' : '';
+  const aggFields = `
+        products_aggregate(where: { is_deleted: { _eq: false } }) { aggregate { count } }
+        packages_aggregate { aggregate { count } }
+  `;
+  const query = `
+    query GetCategoryTreeMulti($companyIds: [bigint!]!, $hiddenForCompanyId: bigint!${params.type ? ', $type: String!' : ''}) {
+      company: companies_by_pk(id: $hiddenForCompanyId) { hidden_category_ids }
+      categories(
+        where: {
+          company_companies: { _in: $companyIds }
+          is_deleted: { _eq: false }
+          parent_categories: { _is_null: true }
+          ${params.type ? ', type: { _eq: $type }' : ''}
+        }
+        order_by: { sort_order: asc }
+      ) {
+        id
+        name
+        icon_url
+        parent_categories
+        level
+        route_ui_style
+        sort_order
+        type
+        company_companies
+        ${aggFields}
+        categories(
+          where: { is_deleted: { _eq: false }${typeCondition} }
+          order_by: { sort_order: asc }
+        ) {
+          id
+          name
+          icon_url
+          parent_categories
+          level
+          route_ui_style
+          sort_order
+          type
+          company_companies
+          ${aggFields}
+          categories(
+            where: { is_deleted: { _eq: false }${typeCondition} }
+            order_by: { sort_order: asc }
+          ) {
+            id
+            name
+            icon_url
+            parent_categories
+            level
+            route_ui_style
+            sort_order
+            type
+            company_companies
+            ${aggFields}
+          }
+        }
+      }
+    }
+  `;
+  const variables: Record<string, unknown> = {
+    companyIds: params.companyIds,
+    hiddenForCompanyId: params.hiddenForCompanyId,
+  };
+  if (params.type) variables.type = params.type;
+
+  const result = await client.execute<{
+    company: { hidden_category_ids: (string | number)[] | null } | null;
+    categories: any[];
+  }>({
+    query,
+    variables,
+  });
+
+  const hidden = result?.company?.hidden_category_ids;
+  const hiddenCategoryIds = Array.isArray(hidden) ? hidden.map((id) => Number(id)) : [];
+  const categories = tagTreeWithCompanyId(result?.categories ?? []);
+
+  return {
+    categories,
+    hiddenCategoryIds,
+  };
 }
 
 export async function createCategory(category: CategoryInput) {

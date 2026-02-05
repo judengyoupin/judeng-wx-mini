@@ -55,8 +55,31 @@
           只看总部
         </view>
       </view>
+      <view v-if="selectedScope !== 'mine'" class="scope-row visibility-row">
+        <view 
+          class="scope-tab" 
+          :class="{ active: visibilityFilter === 'all' }"
+          @click="visibilityFilter = 'all'"
+        >
+          全部
+        </view>
+        <view 
+          class="scope-tab" 
+          :class="{ active: visibilityFilter === 'visible' }"
+          @click="visibilityFilter = 'visible'"
+        >
+          展示中
+        </view>
+        <view 
+          class="scope-tab" 
+          :class="{ active: visibilityFilter === 'hidden' }"
+          @click="visibilityFilter = 'hidden'"
+        >
+          已隐藏
+        </view>
+      </view>
       <view class="search-row">
-        <input
+        <input :adjust-position="false"
           class="search-input"
           v-model="searchKeyword"
           placeholder="搜索商品名称"
@@ -65,7 +88,15 @@
       </view>
     </view>
 
-    <!-- 商品列表（按分类分区，可折叠） -->
+    <!-- 商品列表（仅此区域可滚动） -->
+    <scroll-view
+      scroll-y
+      class="product-list-scroll"
+      @scrolltolower="loadProducts()"
+      refresher-enabled
+      :refresher-triggered="refreshing"
+      @refresherrefresh="loadProducts(true)"
+    >
     <view class="product-list">
       <template v-for="section in groupedSections" :key="section.categoryName">
         <view 
@@ -97,7 +128,6 @@
                   {{ product.is_shelved ? '已下架' : '已上架' }}
                 </text>
                 <text v-if="isFromDefaultCompany(product)" class="tag-system">系统配置</text>
-                <text v-if="isFromDefaultCompany(product) && isProductHidden(product)" class="tag-hidden">已隐藏</text>
               </view>
             </view>
             <view v-if="!isViewOnly" class="product-actions">
@@ -141,6 +171,7 @@
         <text>加载中...</text>
       </view>
     </view>
+    </scroll-view>
   </view>
 </template>
 
@@ -148,7 +179,7 @@
 import { ref, computed, watch } from 'vue';
 import { onLoad, onPullDownRefresh, onReachBottom, onShow } from '@dcloudio/uni-app';
 import { companyInfo } from '@/store/userStore';
-import { getProductList, getProductListWithCompanyHidden, deleteProduct, updateProduct } from '@/subPackages/company/api/product';
+import { getProductList, getProductListWithCompanyHidden, getProductListMultiCompany, deleteProduct, updateProduct } from '@/subPackages/company/api/product';
 import { getDefaultCompanyIdCached } from '@/api/config/index';
 import { getCompanyDetailCached, updateCompany } from '@/subPackages/company/api/platform';
 import { exportProductsToExcel } from '@/utils/exportExcel';
@@ -164,6 +195,9 @@ const defaultCompanyId = ref<number | null>(null);
 const hiddenProductIds = ref<number[]>([]);
 const searchKeyword = ref('');
 const collapsedSections = ref<Set<string>>(new Set());
+/** 展示中/已隐藏筛选（仅在选择「全部」或「只看总部」时显示；只看自己公司无隐藏概念） */
+const visibilityFilter = ref<'all' | 'visible' | 'hidden'>('all');
+const refreshing = ref(false);
 
 // 超级管理员从公司管理点进来时传入的 companyId（仅查看，不编辑时用）
 const viewCompanyId = ref<number | null>(null);
@@ -206,11 +240,23 @@ function getCategoryPath(cat: any): string {
   return parts.length ? parts.join(' / ') : '未分类';
 }
 
-// 按关键词过滤（名称、描述）
+// 先按「展示中/已隐藏」筛选（仅对系统配置公司的商品生效）
+const visibilityFilteredProducts = computed(() => {
+  const list = products.value;
+  if (visibilityFilter.value === 'all') return list;
+  if (visibilityFilter.value === 'visible') {
+    return list.filter((p: any) => !isFromDefaultCompany(p) || !isProductHidden(p));
+  }
+  // 已隐藏：只显示系统配置公司且已隐藏的
+  return list.filter((p: any) => isFromDefaultCompany(p) && isProductHidden(p));
+});
+
+// 再按关键词过滤（名称、描述）
 const filteredProducts = computed(() => {
   const kw = (searchKeyword.value || '').trim().toLowerCase();
-  if (!kw) return products.value;
-  return products.value.filter((p: any) => {
+  const list = visibilityFilteredProducts.value;
+  if (!kw) return list;
+  return list.filter((p: any) => {
     const name = (p.name || '').toLowerCase();
     const desc = (p.description || '').toLowerCase();
     return name.includes(kw) || desc.includes(kw);
@@ -262,7 +308,7 @@ const loadProducts = async (reset = false) => {
     page.value = 1;
     hasMore.value = true;
     defaultCompanyId.value = await getDefaultCompanyIdCached();
-    // 「只看自己公司」时用合并接口一次拿 hidden + 列表，减少请求
+    // 「只看自己公司」时用合并接口一次拿 hidden + 列表
     if (selectedScope.value === 'mine') {
       const merged = await getProductListWithCompanyHidden({
         companyId: myId,
@@ -277,6 +323,7 @@ const loadProducts = async (reset = false) => {
       hasMore.value = merged.total > filtered.length;
       if (filtered.length > 0) page.value = 2;
       loading.value = false;
+      refreshing.value = false;
       uni.stopPullDownRefresh();
       return;
     }
@@ -286,6 +333,7 @@ const loadProducts = async (reset = false) => {
   }
 
   loading.value = true;
+  if (reset) refreshing.value = true;
 
   try {
     if (selectedScope.value === 'headquarters' && defaultCompanyId.value && defaultCompanyId.value !== myId) {
@@ -303,28 +351,21 @@ const loadProducts = async (reset = false) => {
       if (result.total <= products.value.length) hasMore.value = false;
       else page.value++;
     } else if (selectedScope.value === 'all' && defaultCompanyId.value && defaultCompanyId.value !== myId) {
-      // 全部：拉取当前公司 + 系统配置公司，合并并打标（每边最多 pageSize 条）
-      const [myRes, defaultRes] = await Promise.all([
-        getProductList({
-          companyId: myId,
-          limit: pageSize,
-          offset: reset ? 0 : (page.value - 1) * pageSize,
-        }),
-        getProductList({
-          companyId: defaultCompanyId.value,
-          limit: pageSize,
-          offset: reset ? 0 : (page.value - 1) * pageSize,
-        }),
-      ]);
-      const myList = (myRes.products || []).map((p: any) => ({ ...p, _companyId: myId }));
-      const defaultList = (defaultRes.products || []).map((p: any) => ({ ...p, _companyId: defaultCompanyId.value }));
-      let merged = [...myList, ...defaultList];
-      if (currentTab.value === 'shelved') merged = merged.filter((p: any) => !p.is_shelved);
-      else if (currentTab.value === 'unshelved') merged = merged.filter((p: any) => p.is_shelved);
-      if (reset) products.value = merged;
-      else products.value = [...products.value, ...merged];
-      hasMore.value = (myRes.products?.length === pageSize) || (defaultRes.products?.length === pageSize);
-      if (merged.length > 0) page.value++;
+      // 全部：单次请求，where company_companies _in [myId, defaultId]
+      const multi = await getProductListMultiCompany({
+        companyIds: [myId, defaultCompanyId.value],
+        hiddenForCompanyId: myId,
+        limit: pageSize,
+        offset: (page.value - 1) * pageSize,
+      });
+      hiddenProductIds.value = multi.hiddenProductIds;
+      let list = multi.products || [];
+      if (currentTab.value === 'shelved') list = list.filter((p: any) => !p.is_shelved);
+      else if (currentTab.value === 'unshelved') list = list.filter((p: any) => p.is_shelved);
+      if (reset) products.value = list;
+      else products.value = [...products.value, ...list];
+      hasMore.value = list.length === pageSize && products.value.length < multi.total;
+      if (list.length > 0) page.value++;
     } else {
       // 只看自己公司：仅当前公司，保持原有分页
       const where: any = {
@@ -346,6 +387,7 @@ const loadProducts = async (reset = false) => {
     uni.showToast({ title: error.message || '加载失败', icon: 'none' });
   } finally {
     loading.value = false;
+    refreshing.value = false;
     uni.stopPullDownRefresh();
   }
 };
@@ -515,8 +557,12 @@ onReachBottom(() => {
 
 <style scoped>
 .product-list-page {
+  display: flex;
+  flex-direction: column;
   min-height: 100vh;
+  height: 100vh;
   background: #f5f5f5;
+  box-sizing: border-box;
 }
 
 .header-bar {
@@ -697,6 +743,16 @@ onReachBottom(() => {
 .action-btn.unhide {
   background: #e6f7ff;
   color: #1890ff;
+}
+
+.product-list-scroll {
+  flex: 1;
+  height: 0;
+  overflow: hidden;
+}
+
+.visibility-row {
+  margin-top: 4rpx;
 }
 
 .product-list {

@@ -55,8 +55,31 @@
           只看总部
         </view>
       </view>
+      <view v-if="selectedScope !== 'mine'" class="scope-row visibility-row">
+        <view 
+          class="scope-tab" 
+          :class="{ active: visibilityFilter === 'all' }"
+          @click="visibilityFilter = 'all'"
+        >
+          全部
+        </view>
+        <view 
+          class="scope-tab" 
+          :class="{ active: visibilityFilter === 'visible' }"
+          @click="visibilityFilter = 'visible'"
+        >
+          展示中
+        </view>
+        <view 
+          class="scope-tab" 
+          :class="{ active: visibilityFilter === 'hidden' }"
+          @click="visibilityFilter = 'hidden'"
+        >
+          已隐藏
+        </view>
+      </view>
       <view class="search-row">
-        <input
+        <input :adjust-position="false"
           class="search-input"
           v-model="searchKeyword"
           placeholder="搜索套餐名称"
@@ -65,7 +88,15 @@
       </view>
     </view>
 
-    <!-- 套餐列表（按分类分区，可折叠） -->
+    <!-- 套餐列表（仅此区域可滚动） -->
+    <scroll-view
+      scroll-y
+      class="package-list-scroll"
+      @scrolltolower="loadPackages()"
+      refresher-enabled
+      :refresher-triggered="refreshing"
+      @refresherrefresh="loadPackages(true)"
+    >
     <view class="package-list">
       <template v-for="section in groupedSections" :key="section.categoryName">
         <view 
@@ -97,7 +128,6 @@
                   {{ pkg.is_shelved ? '已下架' : '已上架' }}
                 </text>
                 <text v-if="isFromDefaultCompany(pkg)" class="tag-system">系统配置</text>
-                <text v-if="isFromDefaultCompany(pkg) && isPackageHidden(pkg)" class="tag-hidden">已隐藏</text>
               </view>
               <view v-if="pkg.description" class="package-desc">
                 {{ pkg.description }}
@@ -142,6 +172,7 @@
         <text>加载中...</text>
       </view>
     </view>
+    </scroll-view>
   </view>
 </template>
 
@@ -149,7 +180,7 @@
 import { ref, computed } from 'vue';
 import { onLoad, onPullDownRefresh, onReachBottom, onShow } from '@dcloudio/uni-app';
 import { companyInfo } from '@/store/userStore';
-import { getPackageList, getPackageListWithCompanyHidden, deletePackage, updatePackage } from '@/subPackages/company/api/package';
+import { getPackageList, getPackageListWithCompanyHidden, getPackageListMultiCompany, deletePackage, updatePackage } from '@/subPackages/company/api/package';
 import { getDefaultCompanyIdCached } from '@/api/config/index';
 import { getCompanyDetailCached, updateCompany } from '@/subPackages/company/api/platform';
 import { exportPackagesToExcel } from '@/utils/exportExcel';
@@ -165,6 +196,8 @@ const defaultCompanyId = ref<number | null>(null);
 const hiddenPackageIds = ref<number[]>([]);
 const searchKeyword = ref('');
 const collapsedSections = ref<Set<string>>(new Set());
+const visibilityFilter = ref<'all' | 'visible' | 'hidden'>('all');
+const refreshing = ref(false);
 
 // 超级管理员从公司管理点进来时传入的 companyId（核查只读）
 const viewCompanyId = ref<number | null>(null);
@@ -207,11 +240,22 @@ function getCategoryPath(cat: any): string {
   return parts.length ? parts.join(' / ') : '未分类';
 }
 
-// 按关键词过滤（名称、介绍）
+// 先按「展示中/已隐藏」筛选
+const visibilityFilteredPackages = computed(() => {
+  const list = packages.value;
+  if (visibilityFilter.value === 'all') return list;
+  if (visibilityFilter.value === 'visible') {
+    return list.filter((p: any) => !isFromDefaultCompany(p) || !isPackageHidden(p));
+  }
+  return list.filter((p: any) => isFromDefaultCompany(p) && isPackageHidden(p));
+});
+
+// 再按关键词过滤（名称、介绍）
 const filteredPackages = computed(() => {
   const kw = (searchKeyword.value || '').trim().toLowerCase();
-  if (!kw) return packages.value;
-  return packages.value.filter((p: any) => {
+  const list = visibilityFilteredPackages.value;
+  if (!kw) return list;
+  return list.filter((p: any) => {
     const name = (p.name || '').toLowerCase();
     const desc = (p.description || '').toLowerCase();
     return name.includes(kw) || desc.includes(kw);
@@ -263,7 +307,6 @@ const loadPackages = async (reset = false) => {
     page.value = 1;
     hasMore.value = true;
     defaultCompanyId.value = await getDefaultCompanyIdCached();
-    // 「只看自己公司」时用合并接口一次拿 hidden + 列表，减少请求
     if (selectedScope.value === 'mine') {
       const merged = await getPackageListWithCompanyHidden({
         companyId: myId,
@@ -278,6 +321,7 @@ const loadPackages = async (reset = false) => {
       hasMore.value = merged.total > filtered.length;
       if (filtered.length > 0) page.value = 2;
       loading.value = false;
+      refreshing.value = false;
       uni.stopPullDownRefresh();
       return;
     }
@@ -287,6 +331,7 @@ const loadPackages = async (reset = false) => {
   }
 
   loading.value = true;
+  if (reset) refreshing.value = true;
 
   try {
     if (selectedScope.value === 'headquarters' && defaultCompanyId.value && defaultCompanyId.value !== myId) {
@@ -303,19 +348,20 @@ const loadPackages = async (reset = false) => {
       if (result.total <= packages.value.length) hasMore.value = false;
       else page.value++;
     } else if (selectedScope.value === 'all' && defaultCompanyId.value && defaultCompanyId.value !== myId) {
-      const [myRes, defaultRes] = await Promise.all([
-        getPackageList({ companyId: myId, limit: pageSize, offset: reset ? 0 : (page.value - 1) * pageSize }),
-        getPackageList({ companyId: defaultCompanyId.value, limit: pageSize, offset: reset ? 0 : (page.value - 1) * pageSize }),
-      ]);
-      const myList = (myRes.packages || []).map((p: any) => ({ ...p, _companyId: myId }));
-      const defaultList = (defaultRes.packages || []).map((p: any) => ({ ...p, _companyId: defaultCompanyId.value }));
-      let merged = [...myList, ...defaultList];
-      if (currentTab.value === 'shelved') merged = merged.filter((p: any) => !p.is_shelved);
-      else if (currentTab.value === 'unshelved') merged = merged.filter((p: any) => p.is_shelved);
-      if (reset) packages.value = merged;
-      else packages.value = [...packages.value, ...merged];
-      hasMore.value = (myRes.packages?.length === pageSize) || (defaultRes.packages?.length === pageSize);
-      if (merged.length > 0) page.value++;
+      const multi = await getPackageListMultiCompany({
+        companyIds: [myId, defaultCompanyId.value],
+        hiddenForCompanyId: myId,
+        limit: pageSize,
+        offset: (page.value - 1) * pageSize,
+      });
+      hiddenPackageIds.value = multi.hiddenPackageIds;
+      let list = multi.packages || [];
+      if (currentTab.value === 'shelved') list = list.filter((p: any) => !p.is_shelved);
+      else if (currentTab.value === 'unshelved') list = list.filter((p: any) => p.is_shelved);
+      if (reset) packages.value = list;
+      else packages.value = [...packages.value, ...list];
+      hasMore.value = list.length === pageSize && packages.value.length < multi.total;
+      if (list.length > 0) page.value++;
     } else {
       const result = await getPackageList({
         companyId: myId,
@@ -334,6 +380,7 @@ const loadPackages = async (reset = false) => {
     uni.showToast({ title: error.message || '加载失败', icon: 'none' });
   } finally {
     loading.value = false;
+    refreshing.value = false;
     uni.stopPullDownRefresh();
   }
 };
@@ -494,8 +541,12 @@ onReachBottom(() => {
 
 <style scoped>
 .package-list-page {
+  display: flex;
+  flex-direction: column;
   min-height: 100vh;
+  height: 100vh;
   background: #f5f5f5;
+  box-sizing: border-box;
 }
 
 .header-bar {
@@ -609,6 +660,16 @@ onReachBottom(() => {
 .view-only-tip {
   font-size: 26rpx;
   color: #999;
+}
+
+.visibility-row {
+  margin-top: 4rpx;
+}
+
+.package-list-scroll {
+  flex: 1;
+  height: 0;
+  overflow: hidden;
 }
 
 .package-list {

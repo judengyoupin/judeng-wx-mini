@@ -1,6 +1,7 @@
 <template>
   <view class="product-edit-page">
-    <scroll-view scroll-y class="scroll-content">
+    <!-- 使用普通 view 让页面整体滚动，键盘弹起时系统自动上推页面，输入框保持在键盘上方不错位 -->
+    <view class="page-content">
       <!-- 基本信息 -->
       <view class="section">
         <view class="section-title">基本信息</view>
@@ -227,7 +228,7 @@
         <button class="save-btn" @click="handleSave">保存</button>
         <button class="cancel-btn" @click="handleCancel">取消</button>
       </view>
-    </scroll-view>
+    </view>
 
     <!-- SKU编辑弹窗 -->
     <view v-if="showSkuModal" class="modal-overlay" @click="showSkuModal = false">
@@ -1146,12 +1147,13 @@ onLoad((options?: { id?: string }) => {
 @import '@/styles/form-inputs.css';
 
 .product-edit-page {
-  height: 100vh;
+  min-height: 100vh;
   background: #f5f5f5;
+  padding-bottom: env(safe-area-inset-bottom, 0);
 }
 
-.scroll-content {
-  height: 100%;
+.page-content {
+  padding-bottom: 60rpx;
 }
 
 .section {

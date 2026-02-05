@@ -1,6 +1,6 @@
 <template>
   <view class="package-edit-page">
-    <scroll-view scroll-y class="scroll-content">
+    <view class="page-content">
       <!-- 基本信息 -->
       <view class="section">
         <view class="section-title">基本信息</view>
@@ -104,7 +104,7 @@
         <button class="save-btn" @click="handleSave">保存</button>
         <button class="cancel-btn" @click="handleCancel">取消</button>
       </view>
-    </scroll-view>
+    </view>
 
     <CategoryPicker
       :show="showCategoryPicker"
@@ -626,12 +626,13 @@ onLoad((options: any) => {
 <style scoped>
 @import '@/styles/form-inputs.css';
 .package-edit-page {
-  height: 100vh;
+  min-height: 100vh;
   background: #f5f5f5;
+  padding-bottom: env(safe-area-inset-bottom, 0);
 }
 
-.scroll-content {
-  height: 100%;
+.page-content {
+  padding-bottom: 60rpx;
 }
 
 .section {

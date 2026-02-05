@@ -3,7 +3,7 @@
     <!-- 顶部：搜索 + 角色筛选 + 数量 -->
     <view class="header-bar">
       <view class="search-row">
-        <input
+        <input :adjust-position="false"
           class="search-input"
           v-model="listSearchKeyword"
           placeholder="搜索昵称或手机号"
@@ -55,8 +55,16 @@
       </view>
     </view>
 
-    <!-- 用户列表 -->
-    <view class="user-list">
+    <!-- 用户列表（仅此区域滚动） -->
+    <scroll-view 
+      scroll-y 
+      class="user-list-scroll"
+      refresher-enabled
+      :refresher-triggered="isRefreshing"
+      @refresherrefresh="onListRefresh"
+      @scrolltolower="loadMore"
+    >
+      <view class="user-list">
       <view 
         v-for="user in filteredUsers" 
         :key="user.id"
@@ -104,7 +112,8 @@
       <view v-if="loading" class="loading-state">
         <text>加载中...</text>
       </view>
-    </view>
+      </view>
+    </scroll-view>
 
     <!-- 添加/编辑用户弹窗 -->
     <view v-if="showAddModal || showEditModal" class="modal-overlay" @click="closeModal">
@@ -298,13 +307,14 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue';
-import { onLoad, onPullDownRefresh, onReachBottom, onShow } from '@dcloudio/uni-app';
+import { onLoad, onPullDownRefresh, onShow } from '@dcloudio/uni-app';
 import { companyInfo } from '@/store/userStore';
 import { getCompanyDetailCached } from '@/subPackages/company/api/platform';
 import { getCompanyUserList, searchUserByMobile, createUserByMobile, addCompanyUser, updateCompanyUser, batchUpdateCompanyUsersByLevel, COMPANY_USER_LEVELS, type CompanyUserLevel } from '@/subPackages/company/api/company-user';
 
 const users = ref<any[]>([]);
 const loading = ref(false);
+const isRefreshing = ref(false);
 /** 列表页搜索：昵称或手机号 */
 const listSearchKeyword = ref('');
 /** 角色筛选 */
@@ -419,6 +429,7 @@ const loadUsers = async (reset = false) => {
   if (reset) {
     page.value = 1;
     hasMore.value = true;
+    isRefreshing.value = true;
   }
 
   const companyId = effectiveCompanyId();
@@ -460,9 +471,18 @@ const loadUsers = async (reset = false) => {
     });
   } finally {
     loading.value = false;
+    isRefreshing.value = false;
     uni.stopPullDownRefresh();
   }
 };
+
+function onListRefresh() {
+  loadUsers(true);
+}
+
+function loadMore() {
+  loadUsers();
+}
 
 // 角色筛选
 const setRoleFilter = (role: '' | 'user' | 'admin') => {
@@ -714,26 +734,32 @@ onShow(() => {
 onPullDownRefresh(() => {
   loadUsers(true);
 });
-
-onReachBottom(() => {
-  loadUsers();
-});
 </script>
 
 <style scoped>
 @import '@/styles/form-inputs.css';
 .company-user-list-page {
-  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
   background: #f5f5f5;
+  box-sizing: border-box;
 }
 
 .header-bar {
+  flex-shrink: 0;
   background: #ffffff;
   padding: 20rpx 30rpx;
   border-bottom: 1rpx solid #e0e0e0;
   display: flex;
   flex-direction: column;
   gap: 16rpx;
+}
+
+.user-list-scroll {
+  flex: 1;
+  height: 0;
+  overflow: hidden;
 }
 
 .search-row {
@@ -866,6 +892,7 @@ onReachBottom(() => {
 
 .user-list {
   padding: 20rpx;
+  padding-bottom: 60rpx;
 }
 
 .user-item {

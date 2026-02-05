@@ -96,6 +96,89 @@ export async function getPackageListWithCompanyHidden(params: {
   };
 }
 
+/** 一次请求：按公司 id 列表拉取套餐 + 当前公司的 hidden_package_ids（用于「全部」范围单次请求） */
+const PACKAGE_LIST_FIELDS_WITH_COMPANY = `
+  id
+  name
+  cover_image_url
+  description
+  category_categories
+  is_shelved
+  company_companies
+  category {
+    id
+    name
+    category {
+      id
+      name
+      category { id name }
+    }
+  }
+  created_at
+  updated_at
+  package_product_skus(order_by: [{ sort_order: asc }, { id: asc }]) {
+    id
+    quantity
+    sort_order
+    product_sku {
+      id
+      name
+      price
+      product { name }
+    }
+  }
+`;
+
+export async function getPackageListMultiCompany(params: {
+  companyIds: number[];
+  hiddenForCompanyId: number;
+  limit?: number;
+  offset?: number;
+}) {
+  const limit = params.limit ?? 20;
+  const offset = params.offset ?? 0;
+  const query = `
+    query GetPackageListMulti($companyIds: [bigint!]!, $hiddenForCompanyId: bigint!, $limit: Int!, $offset: Int!) {
+      company: companies_by_pk(id: $hiddenForCompanyId) { hidden_package_ids }
+      packages(
+        where: { company_companies: { _in: $companyIds } }
+        limit: $limit
+        offset: $offset
+        order_by: [{ sort_order: asc }, { created_at: desc }]
+      ) {
+        ${PACKAGE_LIST_FIELDS_WITH_COMPANY}
+      }
+      packages_aggregate(where: { company_companies: { _in: $companyIds } }) {
+        aggregate { count }
+      }
+    }
+  `;
+  const result = await client.execute<{
+    company: { hidden_package_ids: (string | number)[] | null } | null;
+    packages: any[];
+    packages_aggregate: { aggregate: { count: number } };
+  }>({
+    query,
+    variables: {
+      companyIds: params.companyIds,
+      hiddenForCompanyId: params.hiddenForCompanyId,
+      limit,
+      offset,
+    },
+  });
+  const hidden = result?.company?.hidden_package_ids;
+  const hiddenPackageIds = Array.isArray(hidden) ? hidden.map((id) => Number(id)) : [];
+  const packages = (result?.packages ?? []).map((p: any) => ({
+    ...p,
+    _companyId: p.company_companies,
+  }));
+  return {
+    hiddenPackageIds,
+    packages,
+    total: result?.packages_aggregate?.aggregate?.count ?? 0,
+  };
+}
+
 /**
  * 获取套餐列表（可选按公司筛选）
  */

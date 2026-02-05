@@ -6,7 +6,7 @@
     <view class="search-bar">
       <view class="search-input-box">
         <text class="search-icon">🔍</text>
-        <input
+        <input :adjust-position="false"
           class="search-input"
           v-model="keyword"
           :placeholder="searchPlaceholder"

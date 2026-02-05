@@ -3,7 +3,7 @@
     <!-- 筛选区固定顶部：搜索 + 订单/支付状态 -->
     <view class="header-bar header-bar-fixed">
       <view class="search-row">
-        <input
+        <input :adjust-position="false"
           class="search-input"
           v-model="searchKeyword"
           placeholder="订单号 / 收货人 / 用户手机号"
@@ -167,7 +167,7 @@
         </view>
         <view class="edit-actual-row">
           <text class="edit-actual-label">实际收款金额</text>
-          <input
+          <input :adjust-position="false"
             class="edit-actual-input"
             type="digit"
             placeholder="请输入实际收款金额"
@@ -196,7 +196,7 @@
         </view>
         <view class="edit-actual-row">
           <text class="edit-actual-label">实际收款金额</text>
-          <input
+          <input :adjust-position="false"
             class="edit-actual-input"
             type="digit"
             placeholder="请输入实际收款金额"

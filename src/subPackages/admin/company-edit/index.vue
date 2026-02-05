@@ -1,6 +1,6 @@
 <template>
   <view class="company-edit-page">
-    <scroll-view scroll-y class="scroll-content">
+    <view class="page-content">
       <view class="form-section">
         <view class="form-item">
           <view class="form-label">公司名称 <text class="required">*</text></view>
@@ -79,7 +79,7 @@
         </button>
         <button class="cancel-btn" @click="handleCancel">取消</button>
       </view>
-    </scroll-view>
+    </view>
 
     <!-- 授权管理员弹窗 -->
     <view v-if="showAuthorizeModal" class="modal-overlay" @click="skipAuthorize">
@@ -455,12 +455,13 @@ onLoad((options?) => {
 @import '@/styles/form-inputs.css';
 
 .company-edit-page {
-  height: 100vh;
+  min-height: 100vh;
   background: #f5f5f5;
+  padding-bottom: env(safe-area-inset-bottom, 0);
 }
 
-.scroll-content {
-  height: 100%;
+.page-content {
+  padding-bottom: 60rpx;
 }
 
 .form-section {

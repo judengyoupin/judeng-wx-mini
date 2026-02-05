@@ -188,7 +188,7 @@
         </view>
         <view class="approve-modal-row">
           <text class="approve-modal-label">实际收款金额</text>
-          <input
+          <input :adjust-position="false"
             class="approve-modal-input"
             type="digit"
             placeholder="请输入实际收款金额"
@@ -213,7 +213,7 @@
         </view>
         <view class="approve-modal-row">
           <text class="approve-modal-label">实际收款金额</text>
-          <input
+          <input :adjust-position="false"
             class="approve-modal-input"
             type="digit"
             placeholder="请输入实际收款金额"

@@ -49,15 +49,39 @@
             只看总部
           </view>
         </view>
+        <view v-if="selectedScope !== 'mine'" class="scope-tabs visibility-row">
+          <view 
+            class="scope-tab" 
+            :class="{ active: visibilityFilter === 'all' }"
+            @click="visibilityFilter = 'all'"
+          >
+            全部
+          </view>
+          <view 
+            class="scope-tab" 
+            :class="{ active: visibilityFilter === 'visible' }"
+            @click="visibilityFilter = 'visible'"
+          >
+            展示中
+          </view>
+          <view 
+            class="scope-tab" 
+            :class="{ active: visibilityFilter === 'hidden' }"
+            @click="visibilityFilter = 'hidden'"
+          >
+            已隐藏
+          </view>
+        </view>
       </view>
       <button v-if="!isViewOnly" class="add-btn" @click="goToAddCategory">+ 添加</button>
       <text v-else class="view-only-tip">仅查看，不可操作</text>
     </view>
 
-    <!-- 分类树：按层级逐层展开 -->
+    <!-- 分类树：仅此区域可滚动 -->
+    <scroll-view scroll-y class="category-list-scroll" refresher-enabled :refresher-triggered="refreshing" @refresherrefresh="loadCategories">
     <view class="category-tree">
       <view
-        v-for="item in flatList"
+        v-for="item in visibilityFlatList"
         :key="item.node.id"
         class="category-row"
         :class="[`depth-${item.depth}`, { 'has-children': hasChildren(item.node) }]"
@@ -86,7 +110,7 @@
           <view v-else class="row-icon placeholder-icon">
             <text class="placeholder-text">{{ (item.node.name || '')[0] }}</text>
           </view>
-          <view class="row-info">
+            <view class="row-info">
             <text class="row-name">{{ item.node.name }}</text>
             <view class="row-meta">
               <text class="row-type" :class="getTypeClass(item.node.type)">
@@ -94,7 +118,7 @@
               </text>
               <text class="row-level">L{{ item.node.level }}</text>
               <text v-if="isFromDefaultCompany(item.node)" class="row-tag-system">系统配置</text>
-              <text v-if="isFromDefaultCompany(item.node) && isCategoryHidden(item.node)" class="row-tag-hidden">已隐藏</text>
+              <text class="row-counts">{{ getCategoryCounts(item.node) }}</text>
             </view>
           </view>
           <view v-if="!isViewOnly" class="row-actions" @click.stop>
@@ -111,7 +135,7 @@
       </view>
 
       <!-- 空状态 -->
-      <view v-if="flatList.length === 0 && !loading" class="empty-state">
+      <view v-if="visibilityFlatList.length === 0 && !loading" class="empty-state">
         <text class="empty-icon">📁</text>
         <text class="empty-text">暂无分类</text>
         <text class="empty-hint">{{ isViewOnly ? '当前为查看模式' : '点击右上角添加分类' }}</text>
@@ -124,6 +148,7 @@
         <text>加载中...</text>
       </view>
     </view>
+    </scroll-view>
   </view>
 </template>
 
@@ -131,7 +156,7 @@
 import { ref, computed } from 'vue';
 import { onLoad, onPullDownRefresh, onShow } from '@dcloudio/uni-app';
 import { companyInfo } from '@/store/userStore';
-import { getCategoryTree, deleteCategory } from '@/api/category-management';
+import { getCategoryTree, getCategoryTreeMultiCompany, deleteCategory } from '@/api/category-management';
 import { getDefaultCompanyIdCached } from '@/api/config/index';
 import { getCompanyDetailCached, updateCompany } from '@/subPackages/company/api/platform';
 
@@ -149,6 +174,8 @@ const selectedScope = ref<'all' | 'mine' | 'headquarters'>('all');
 const defaultCompanyId = ref<number | null>(null);
 /** 当前公司的隐藏分类 id 列表（用于展示已隐藏状态与取消隐藏） */
 const hiddenCategoryIds = ref<number[]>([]);
+const visibilityFilter = ref<'all' | 'visible' | 'hidden'>('all');
+const refreshing = ref(false);
 
 /** 给树节点递归打上 _companyId */
 function tagTree(nodes: any[], companyId: number): any[] {
@@ -171,11 +198,11 @@ function isCategoryHidden(node: any): boolean {
   return hiddenCategoryIds.value.includes(Number(node.id));
 }
 
-// 确保每个节点都有 expanded，并只保留当前类型
+// 确保每个节点都有 expanded，默认展开
 function ensureExpanded(nodes: any[]): any[] {
   return nodes.map((cat: any) => ({
     ...cat,
-    expanded: cat.expanded === true,
+    expanded: cat.expanded !== false,
     categories: cat.categories ? ensureExpanded(cat.categories) : [],
   }));
 }
@@ -193,6 +220,32 @@ function flattenTree(nodes: any[], depth: number): { node: any; depth: number }[
 }
 
 const flatList = computed(() => flattenTree(categories.value, 0));
+
+// 按展示中/已隐藏筛选（仅对系统配置公司的分类生效）
+const visibilityFlatList = computed(() => {
+  const list = flatList.value;
+  if (visibilityFilter.value === 'all') return list;
+  if (visibilityFilter.value === 'visible') {
+    return list.filter((item) => !isFromDefaultCompany(item.node) || !isCategoryHidden(item.node));
+  }
+  return list.filter((item) => isFromDefaultCompany(item.node) && isCategoryHidden(item.node));
+});
+
+/** 当前分类下子分类个数、商品/套餐个数文案 */
+function getCategoryCounts(node: any): string {
+  const childCount = node.categories?.length ?? 0;
+  const productCount = node.products_aggregate?.aggregate?.count ?? 0;
+  const packageCount = node.packages_aggregate?.aggregate?.count ?? 0;
+  const parts: string[] = [];
+  if (childCount > 0) parts.push(`${childCount} 个子分类`);
+  if (node.type === 'product' && productCount > 0) parts.push(`${productCount} 个商品`);
+  if (node.type === 'package' && packageCount > 0) parts.push(`${packageCount} 个套餐`);
+  if (node.type !== 'product' && node.type !== 'package') {
+    if (productCount > 0) parts.push(`${productCount} 个商品`);
+    if (packageCount > 0) parts.push(`${packageCount} 个套餐`);
+  }
+  return parts.length ? parts.join('、') : '0';
+}
 
 function hasChildren(node: any): boolean {
   return node.categories && node.categories.length > 0;
@@ -236,7 +289,7 @@ function filterCategories() {
   if (!selectedType.value) {
     categories.value = list.map((cat: any) => ({
       ...cat,
-      expanded: false,
+      expanded: true,
       categories: cat.categories ? ensureExpanded(cat.categories) : [],
     }));
   } else {
@@ -245,7 +298,7 @@ function filterCategories() {
         .filter((cat: any) => cat.type === selectedType.value)
         .map((cat: any) => ({
           ...cat,
-          expanded: false,
+          expanded: true,
           categories: cat.categories ? filterByType(cat.categories) : [],
         }));
     }
@@ -266,27 +319,33 @@ async function loadCategories() {
     return;
   }
   loading.value = true;
+  refreshing.value = true;
   try {
     defaultCompanyId.value = await getDefaultCompanyIdCached();
-    const [companyDetail, myTree] = await Promise.all([
-      getCompanyDetailCached(myId),
-      getCategoryTree(myId),
-    ]);
-    const hidden = companyDetail?.hidden_category_ids;
-    hiddenCategoryIds.value = Array.isArray(hidden) ? hidden.map((id: any) => Number(id)) : [];
-    const myTagged = tagTree(Array.isArray(myTree) ? myTree : [], myId);
+
     if (defaultCompanyId.value && defaultCompanyId.value !== myId) {
-      const defaultTree = await getCategoryTree(defaultCompanyId.value);
-      const defaultTagged = tagTree(Array.isArray(defaultTree) ? defaultTree : [], defaultCompanyId.value);
-      allCategories.value = [...myTagged, ...defaultTagged];
+      // 一次请求获取当前公司 + 总部公司的分类及当前公司的隐藏列表（类型在前端筛选）
+      const { categories, hiddenCategoryIds: hidden } = await getCategoryTreeMultiCompany({
+        companyIds: [myId, defaultCompanyId.value],
+        hiddenForCompanyId: myId,
+      });
+      hiddenCategoryIds.value = hidden;
+      allCategories.value = Array.isArray(categories) ? categories : [];
     } else {
-      allCategories.value = myTagged;
+      const [companyDetail, myTree] = await Promise.all([
+        getCompanyDetailCached(myId),
+        getCategoryTree(myId),
+      ]);
+      const hidden = companyDetail?.hidden_category_ids;
+      hiddenCategoryIds.value = Array.isArray(hidden) ? hidden.map((id: any) => Number(id)) : [];
+      allCategories.value = tagTree(Array.isArray(myTree) ? myTree : [], myId);
     }
     filterCategories();
   } catch (error: any) {
     uni.showToast({ title: error.message || '加载失败', icon: 'none' });
   } finally {
     loading.value = false;
+    refreshing.value = false;
     uni.stopPullDownRefresh();
   }
 }
@@ -380,8 +439,12 @@ onPullDownRefresh(() => {
 
 <style scoped>
 .category-list-page {
+  display: flex;
+  flex-direction: column;
   min-height: 100vh;
+  height: 100vh;
   background: linear-gradient(180deg, #f8f9fc 0%, #eef0f5 100%);
+  box-sizing: border-box;
 }
 
 /* 顶部栏：紧凑布局 */
@@ -459,6 +522,16 @@ onPullDownRefresh(() => {
 
 .add-btn::after {
   border: none;
+}
+
+.visibility-row {
+  margin-top: 4rpx;
+}
+
+.category-list-scroll {
+  flex: 1;
+  height: 0;
+  overflow: hidden;
 }
 
 /* 树形列表 */
@@ -578,7 +651,6 @@ onPullDownRefresh(() => {
 
 .row-tag-system {
   font-size: 20rpx;
-  color: #999;
   padding: 2rpx 8rpx;
   background: #fff7e6;
   color: #d48806;
@@ -586,12 +658,9 @@ onPullDownRefresh(() => {
   margin-left: 8rpx;
 }
 
-.row-tag-hidden {
-  font-size: 20rpx;
+.row-counts {
+  font-size: 22rpx;
   color: #999;
-  padding: 2rpx 8rpx;
-  background: #f5f5f5;
-  border-radius: 4rpx;
   margin-left: 8rpx;
 }
 

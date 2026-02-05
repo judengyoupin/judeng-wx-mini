@@ -1,11 +1,11 @@
 <template>
   <view class="company-settings-page">
     <view v-if="isAuditMode" class="audit-tip">仅查看，不可操作</view>
-    <scroll-view scroll-y class="scroll-content">
+    <view class="page-content">
       <view class="form-section">
         <view class="form-item">
           <view class="form-label">公司名称 <text class="required">*</text></view>
-          <input 
+          <input
             class="form-input" 
             v-model="form.name" 
             placeholder="请输入公司名称"
@@ -152,7 +152,7 @@
         </button>
         <button class="cancel-btn" @click="handleCancel">取消</button>
       </view>
-    </scroll-view>
+    </view>
 
     <!-- 轮播图编辑弹窗 -->
     <view v-if="showBannerModal" class="modal-overlay" @click="closeBannerModal">
@@ -180,7 +180,7 @@
 
           <view class="form-item">
             <view class="form-label">标题</view>
-            <input 
+            <input
               class="form-input" 
               v-model="editingBanner.title" 
               placeholder="请输入标题（可选）"
@@ -190,7 +190,7 @@
 
           <view class="form-item">
             <view class="form-label">跳转链接</view>
-            <input 
+            <input
               class="form-input" 
               v-model="editingBanner.link" 
               placeholder="请输入跳转链接（可选）"
@@ -200,7 +200,7 @@
 
           <view class="form-item">
             <view class="form-label">排序</view>
-            <input 
+            <input
               class="form-input" 
               v-model.number="editingBanner.sort" 
               placeholder="数字越小越靠前"
@@ -220,7 +220,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed } from 'vue';
 import { onLoad } from '@dcloudio/uni-app';
 import { getCompanyDetailCached, updateCompany } from '@/subPackages/company/api/platform';
 import { getBanners } from '@/api/banner/index';
@@ -229,7 +229,6 @@ import UploadProgressOverlay from '@/components/UploadProgressOverlay.vue';
 import type { BannerItem } from '@/types/companies';
 
 const { uploading, progress, chooseAndUploadImage, uploadWithProgress } = useImageUploadWithProgress();
-
 const companyId = ref<number | null>(null);
 /** 核查入口只读：不可编辑、保存 */
 const isAuditMode = ref(false);
@@ -596,8 +595,9 @@ onLoad((options?: { id?: string; companyId?: string; audit?: string }) => {
 @import '@/styles/form-inputs.css';
 
 .company-settings-page {
-  height: 100vh;
+  min-height: 100vh;
   background: #f5f5f5;
+  padding-bottom: env(safe-area-inset-bottom, 0);
 }
 
 .audit-tip {
@@ -613,8 +613,8 @@ onLoad((options?: { id?: string; companyId?: string; audit?: string }) => {
   opacity: 0.8;
 }
 
-.scroll-content {
-  height: 100%;
+.page-content {
+  padding-bottom: 60rpx;
 }
 
 .form-section {

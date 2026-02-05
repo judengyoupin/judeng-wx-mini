@@ -7,7 +7,7 @@
     <view class="search-bar">
       <view class="search-input-box">
         <image class="search-icon" src="/static/index/srch.png" mode="aspectFit" />
-        <input
+        <input :adjust-position="false"
           class="search-input"
           v-model="searchKeyword"
           placeholder="请输入套餐名称"

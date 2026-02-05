@@ -42,7 +42,7 @@
               </view>
             </view>
           </view>
-          <input
+          <input :adjust-position="false"
             class="item-remark-input"
             v-model="itemRemarks[item.id]"
             placeholder="选填：该规格的备注"
@@ -55,7 +55,7 @@
       <!-- 备注 -->
       <view class="section remark-section">
         <view class="remark-label">订单备注</view>
-        <input
+        <input :adjust-position="false"
           class="remark-input"
           v-model="remark"
           placeholder="选填，如配送时间等"

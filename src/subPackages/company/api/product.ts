@@ -114,6 +114,102 @@ export async function getProductListWithCompanyHidden(params: {
   };
 }
 
+/** 一次请求：按公司 id 列表拉取商品 + 当前公司的 hidden_product_ids（用于「全部」范围单次请求） */
+const PRODUCT_LIST_FIELDS_WITH_COMPANY = `
+  id
+  name
+  cover_image_url
+  description
+  tags
+  detail_medias
+  scene_medias
+  category_categories
+  is_shelved
+  company_companies
+  created_at
+  updated_at
+  category {
+    id
+    name
+    category {
+      id
+      name
+      category { id name }
+    }
+  }
+  product_skus(where: { is_deleted: { _eq: false } }, order_by: [{ sort_order: asc }, { id: asc }]) {
+    id
+    name
+    image_url
+    price
+    stock
+    is_shelved
+    sort_order
+  }
+`;
+
+export async function getProductListMultiCompany(params: {
+  companyIds: number[];
+  hiddenForCompanyId: number;
+  limit?: number;
+  offset?: number;
+}) {
+  const limit = params.limit ?? 20;
+  const offset = params.offset ?? 0;
+  const query = `
+    query GetProductListMulti($companyIds: [bigint!]!, $hiddenForCompanyId: bigint!, $limit: Int!, $offset: Int!) {
+      company: companies_by_pk(id: $hiddenForCompanyId) { hidden_product_ids }
+      products(
+        where: {
+          _and: [
+            { company_companies: { _in: $companyIds } },
+            { is_deleted: { _eq: false } }
+          ]
+        }
+        limit: $limit
+        offset: $offset
+        order_by: [{ sort_order: asc }, { created_at: desc }]
+      ) {
+        ${PRODUCT_LIST_FIELDS_WITH_COMPANY}
+      }
+      products_aggregate(
+        where: {
+          _and: [
+            { company_companies: { _in: $companyIds } },
+            { is_deleted: { _eq: false } }
+          ]
+        }
+      ) {
+        aggregate { count }
+      }
+    }
+  `;
+  const result = await client.execute<{
+    company: { hidden_product_ids: (string | number)[] | null } | null;
+    products: any[];
+    products_aggregate: { aggregate: { count: number } };
+  }>({
+    query,
+    variables: {
+      companyIds: params.companyIds,
+      hiddenForCompanyId: params.hiddenForCompanyId,
+      limit,
+      offset,
+    },
+  });
+  const hidden = result?.company?.hidden_product_ids;
+  const hiddenProductIds = Array.isArray(hidden) ? hidden.map((id) => Number(id)) : [];
+  const products = (result?.products ?? []).map((p: any) => ({
+    ...p,
+    _companyId: p.company_companies,
+  }));
+  return {
+    hiddenProductIds,
+    products,
+    total: result?.products_aggregate?.aggregate?.count ?? 0,
+  };
+}
+
 /**
  * 获取商品列表
  */

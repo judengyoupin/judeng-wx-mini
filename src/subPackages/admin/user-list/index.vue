@@ -3,7 +3,7 @@
     <!-- 顶部：搜索 + 角色筛选 + 数量 -->
     <view class="header-bar">
       <view class="search-box">
-        <input 
+        <input :adjust-position="false" 
           class="search-input" 
           v-model="keyword" 
           placeholder="搜索手机号或昵称"
@@ -323,13 +323,15 @@ onShow(() => {
 
 <style scoped>
 .user-list-page {
-  min-height: 100vh;
-  background: #f5f5f5;
   display: flex;
   flex-direction: column;
+  height: 100vh;
+  background: #f5f5f5;
+  box-sizing: border-box;
 }
 
 .header-bar {
+  flex-shrink: 0;
   background: #ffffff;
   padding: 20rpx 30rpx;
   border-bottom: 1rpx solid #e0e0e0;
@@ -391,6 +393,7 @@ onShow(() => {
 
 .user-list {
   flex: 1;
+  height: 0;
   padding: 20rpx;
 }
 

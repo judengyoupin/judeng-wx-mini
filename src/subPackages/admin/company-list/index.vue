@@ -5,8 +5,9 @@
       <button class="add-btn" @click="goToAddCompany">+ 添加公司</button>
     </view>
 
-    <!-- 公司列表 -->
-    <view class="company-list">
+    <!-- 公司列表（仅此区域滚动） -->
+    <scroll-view scroll-y class="company-list-scroll">
+      <view class="company-list">
       <view 
         v-for="company in companies" 
         :key="company.id"
@@ -70,7 +71,8 @@
       <view v-if="loading" class="loading-state">
         <text>加载中...</text>
       </view>
-    </view>
+      </view>
+    </scroll-view>
 
     <!-- 授权管理员弹窗 -->
     <view v-if="showAuthorizeModal" class="modal-overlay" @click="showAuthorizeModal = false">
@@ -396,16 +398,26 @@ onReachBottom(() => {
 
 <style scoped>
 .company-list-page {
-  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
   background: #f5f5f5;
+  box-sizing: border-box;
 }
 
 .header-bar {
+  flex-shrink: 0;
   background: #ffffff;
   padding: 20rpx 30rpx;
   border-bottom: 1rpx solid #e0e0e0;
   display: flex;
   justify-content: flex-end;
+}
+
+.company-list-scroll {
+  flex: 1;
+  height: 0;
+  overflow: hidden;
 }
 
 .add-btn {

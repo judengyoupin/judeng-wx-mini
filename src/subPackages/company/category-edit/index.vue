@@ -1,6 +1,6 @@
 <template>
   <view class="category-edit-page">
-    <scroll-view scroll-y class="scroll-content">
+    <view class="page-content">
       <view class="form-section">
         <view class="form-item">
           <view class="form-label">分类名称 <text class="required">*</text></view>
@@ -91,7 +91,7 @@
         <button class="save-btn" @click="handleSave">保存</button>
         <button class="cancel-btn" @click="handleCancel">取消</button>
       </view>
-    </scroll-view>
+    </view>
 
     <UploadProgressOverlay :show="uploading" :progress="progress" />
   </view>
@@ -305,12 +305,13 @@ onLoad((options?: { id?: string }) => {
 @import '@/styles/form-inputs.css';
 
 .category-edit-page {
-  height: 100vh;
+  min-height: 100vh;
   background: #f5f5f5;
+  padding-bottom: env(safe-area-inset-bottom, 0);
 }
 
-.scroll-content {
-  height: 100%;
+.page-content {
+  padding-bottom: 60rpx;
 }
 
 .form-section {
