@@ -10,7 +10,7 @@ import {
   getDefaultCompanyIdFromStorage,
   ensureUserInfoCached,
 } from "@/store/userStore";
-import { addCompanyUserAsNormal } from "@/api/company-user";
+import { addCompanyUserAsNormal, getCompanyUserDefaults } from "@/api/company-user";
 import { isCompanyUser, getCompanyUserRoleCached, clearCompanyUserRoleCache } from "@/utils/auth";
 import { setAppReady } from "@/utils/appReady";
 
@@ -28,18 +28,22 @@ async function applyCompanyAndRefreshUserRole(companyId: number) {
     try {
       await ensureUserInfoCached(true);
       const userId = Number(userInfo.value?.id ?? 0);
-      if (userId && companyId) {
-        const already = await isCompanyUser(companyId);
-        if (!already) {
-          try {
-            await addCompanyUserAsNormal(userId, companyId);
-            clearCompanyUserRoleCache();
-            console.log("已自动注册为当前公司普通用户");
-          } catch (err) {
-            console.warn("自动注册公司用户失败（可能已存在）:", err);
+        if (userId && companyId) {
+          const already = await isCompanyUser(companyId);
+          if (!already) {
+            try {
+              const defaults = await getCompanyUserDefaults(companyId);
+              await addCompanyUserAsNormal(userId, companyId, {
+                can_view_price: defaults.can_view_price,
+                price_factor: defaults.price_factor,
+              });
+              clearCompanyUserRoleCache();
+              console.log("已自动注册为当前公司普通用户");
+            } catch (err) {
+              console.warn("自动注册公司用户失败（可能已存在）:", err);
+            }
           }
         }
-      }
       await getCompanyUserRoleCached(undefined, true);
     } catch (e) {
       console.error("预拉用户/角色失败:", e);

@@ -17,6 +17,10 @@ export interface CompanyInput {
   contact_code?: string;
   wechat_code?: string;
   resource_file_url?: string;
+  /** 公司配置的初始用户能否查看价格，默认 false */
+  default_for_can_view_price?: boolean;
+  /** 公司配置的初始用户价格系数，默认 1 */
+  default_for_price_factor?: number;
 }
 
 export async function getCompanyList(params: {
@@ -87,6 +91,8 @@ export async function getCompanyDetail(companyId: number) {
         contact_code
         wechat_code
         resource_file_url
+        default_for_can_view_price
+        default_for_price_factor
         created_at
         updated_at
         company_users(

@@ -202,9 +202,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { onLoad, onPullDownRefresh, onReachBottom, onShow } from '@dcloudio/uni-app';
 import { companyInfo } from '@/store/userStore';
+import { getCompanyDetailCached } from '@/subPackages/company/api/platform';
 import { getCompanyUserList, searchUserByMobile, createUserByMobile, addCompanyUser, updateCompanyUser, removeCompanyUser } from '@/subPackages/company/api/company-user';
 
 const users = ref<any[]>([]);
@@ -237,6 +238,8 @@ const filteredUsers = computed(() => {
 // 超级管理员从公司管理点进来时传入的 companyId（核查只读）
 const viewCompanyId = ref<number | null>(null);
 const effectiveCompanyId = () => viewCompanyId.value ?? companyInfo.value?.id ?? null;
+/** 公司配置的新用户默认：能否查看价格、价格系数，用于添加用户时默认填充 */
+const companyDefaults = ref<{ default_for_can_view_price: boolean; default_for_price_factor: number } | null>(null);
 /** 核查入口只读：不显示添加/编辑/删除 */
 const isViewOnly = computed(() => !!viewCompanyId.value);
 const page = ref(1);
@@ -259,9 +262,40 @@ const hasSearched = ref(false);
 const userForm = ref({
   mobile: '',
   role: 'user' as 'admin' | 'user',
-  can_view_price: true,
+  can_view_price: false,
   price_factor: '1',
 });
+
+// 加载公司默认配置（用于添加用户时默认填充）
+const loadCompanyDefaults = async () => {
+  const cid = effectiveCompanyId();
+  if (!cid) return;
+  try {
+    const company = await getCompanyDetailCached(cid);
+    if (company) {
+      const c = company as any;
+      companyDefaults.value = {
+        default_for_can_view_price: c.default_for_can_view_price ?? false,
+        default_for_price_factor: Number(c.default_for_price_factor) || 1,
+      };
+    } else {
+      companyDefaults.value = { default_for_can_view_price: false, default_for_price_factor: 1 };
+    }
+  } catch {
+    companyDefaults.value = { default_for_can_view_price: false, default_for_price_factor: 1 };
+  }
+};
+
+/** 添加用户时的表单默认值（来自公司配置） */
+function getDefaultUserForm() {
+  const d = companyDefaults.value;
+  return {
+    mobile: '',
+    role: 'user' as const,
+    can_view_price: d?.default_for_can_view_price ?? false,
+    price_factor: String(d?.default_for_price_factor ?? 1),
+  };
+}
 
 // 加载用户列表
 const loadUsers = async (reset = false) => {
@@ -521,12 +555,7 @@ const closeModal = () => {
   searchedUser.value = null;
   showCreateAndAddMode.value = false;
   hasSearched.value = false;
-  userForm.value = {
-    mobile: '',
-    role: 'user',
-    can_view_price: true,
-    price_factor: '1',
-  };
+  userForm.value = getDefaultUserForm();
 };
 
 onLoad((options?: { companyId?: string }) => {
@@ -535,7 +564,15 @@ onLoad((options?: { companyId?: string }) => {
   }
 });
 
+// 打开添加弹窗时用公司默认填充表单
+watch(showAddModal, (visible) => {
+  if (visible && !showEditModal.value) {
+    userForm.value = getDefaultUserForm();
+  }
+});
+
 onShow(() => {
+  loadCompanyDefaults();
   loadUsers(true);
 });
 

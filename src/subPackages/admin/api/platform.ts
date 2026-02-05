@@ -17,6 +17,8 @@ export interface CompanyInput {
   contact_code?: string;
   wechat_code?: string;
   resource_file_url?: string;
+  default_for_can_view_price?: boolean;
+  default_for_price_factor?: number;
 }
 
 export async function getCompanyList(params: {
@@ -87,6 +89,8 @@ export async function getCompanyDetail(companyId: number) {
         contact_code
         wechat_code
         resource_file_url
+        default_for_can_view_price
+        default_for_price_factor
         created_at
         updated_at
         company_users(

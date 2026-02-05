@@ -118,6 +118,32 @@
             </view>
           </view>
         </view>
+
+        <view class="form-item section-label">新用户默认权限</view>
+        <view class="form-item switch-row">
+          <view class="switch-label-wrap">
+            <view class="form-label">默认能否查看价格</view>
+            <view class="form-hint">新加入用户、C 端自动注册用户默认是否可查看价格</view>
+          </view>
+          <switch
+            :checked="form.default_for_can_view_price"
+            :disabled="isAuditMode"
+            color="#667eea"
+            @change="(e: any) => form.default_for_can_view_price = e.detail.value"
+          />
+        </view>
+        <view class="form-item">
+          <view class="form-label">默认价格系数</view>
+          <input
+            class="form-input"
+            v-model="form.default_for_price_factor"
+            type="digit"
+            placeholder="如 1 表示原价，0.9 表示 9 折"
+            :disabled="isAuditMode"
+            @input="onDefaultPriceFactorInput"
+          />
+          <view class="form-hint">新加入用户默认价格系数，1 表示原价</view>
+        </view>
       </view>
 
       <view v-if="!isAuditMode" class="footer-actions">
@@ -214,6 +240,8 @@ const form = ref({
   contact_code: '',
   wechat_code: '',
   resource_file_url: '',
+  default_for_can_view_price: false,
+  default_for_price_factor: '1',
 });
 const topBanners = ref<BannerItem[]>([]);
 const bottomBanners = ref<BannerItem[]>([]);
@@ -313,6 +341,16 @@ const uploadResourceFile = () => {
 
 const clearResourceFile = () => {
   form.value.resource_file_url = '';
+};
+
+const onDefaultPriceFactorInput = (e: any) => {
+  const raw = (e?.detail?.value ?? e?.target?.value ?? '') as string;
+  let s = raw.replace(/[^\d.]/g, '');
+  const idx = s.indexOf('.');
+  if (idx >= 0) {
+    s = s.slice(0, idx + 1) + s.slice(idx + 1).replace(/\./g, '');
+  }
+  form.value.default_for_price_factor = s;
 };
 
 // 上传轮播图（带进度）
@@ -448,13 +486,16 @@ const loadCompanyDetail = async () => {
   try {
     const company = await getCompanyDetailCached(companyId.value!);
     if (company) {
+      const c = company as any;
       form.value = {
         name: company.name,
         logo_url: company.logo_url || '',
-        description: (company as any).description || '',
-        contact_code: (company as any).contact_code || '',
-        wechat_code: (company as any).wechat_code || '',
-        resource_file_url: (company as any).resource_file_url || '',
+        description: c.description || '',
+        contact_code: c.contact_code || '',
+        wechat_code: c.wechat_code || '',
+        resource_file_url: c.resource_file_url || '',
+        default_for_can_view_price: c.default_for_can_view_price ?? false,
+        default_for_price_factor: c.default_for_price_factor != null ? String(c.default_for_price_factor) : '1',
       };
     }
 
@@ -496,6 +537,13 @@ const handleSave = async () => {
 
   loading.value = true;
 
+  const defaultFactor = Number(form.value.default_for_price_factor);
+  if (Number.isNaN(defaultFactor) || defaultFactor <= 0) {
+    uni.showToast({ title: '默认价格系数需大于 0', icon: 'none' });
+    loading.value = false;
+    return;
+  }
+
   try {
     await updateCompany(companyId.value, {
       name: form.value.name,
@@ -506,6 +554,8 @@ const handleSave = async () => {
       contact_code: form.value.contact_code || undefined,
       wechat_code: form.value.wechat_code || undefined,
       resource_file_url: form.value.resource_file_url || undefined,
+      default_for_can_view_price: form.value.default_for_can_view_price,
+      default_for_price_factor: defaultFactor,
     });
 
     uni.showToast({
@@ -576,6 +626,30 @@ onLoad((options?: { id?: string; companyId?: string; audit?: string }) => {
 
 .form-item {
   margin-bottom: 30rpx;
+}
+
+.form-item.section-label {
+  margin-top: 24rpx;
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #333;
+}
+
+.switch-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24rpx;
+}
+
+.switch-row .switch-label-wrap {
+  flex: 1;
+  min-width: 0;
+}
+
+.switch-row .form-hint {
+  margin-top: 8rpx;
+  margin-bottom: 0;
 }
 
 .uploaded-image {
