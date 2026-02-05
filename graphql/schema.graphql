@@ -8278,6 +8278,9 @@ type package_product_skus {
 
   """SKU数量"""
   quantity: bigint!
+
+  """排序，越小越前"""
+  sort_order: bigint!
   updated_at: timestamptz!
 }
 
@@ -8356,6 +8359,9 @@ type package_product_skus_avg_fields {
 
   """SKU数量"""
   quantity: Float
+
+  """排序，越小越前"""
+  sort_order: Float
 }
 
 """
@@ -8372,6 +8378,9 @@ input package_product_skus_avg_order_by {
 
   """SKU数量"""
   quantity: order_by
+
+  """排序，越小越前"""
+  sort_order: order_by
 }
 
 """
@@ -8388,6 +8397,7 @@ input package_product_skus_bool_exp {
   product_sku: product_skus_bool_exp
   product_sku_product_skus: bigint_comparison_exp
   quantity: bigint_comparison_exp
+  sort_order: bigint_comparison_exp
   updated_at: timestamptz_comparison_exp
 }
 
@@ -8420,6 +8430,9 @@ input package_product_skus_inc_input {
 
   """SKU数量"""
   quantity: bigint
+
+  """排序，越小越前"""
+  sort_order: bigint
 }
 
 """
@@ -8439,6 +8452,9 @@ input package_product_skus_insert_input {
 
   """SKU数量"""
   quantity: bigint
+
+  """排序，越小越前"""
+  sort_order: bigint
   updated_at: timestamptz
 }
 
@@ -8455,6 +8471,9 @@ type package_product_skus_max_fields {
 
   """SKU数量"""
   quantity: bigint
+
+  """排序，越小越前"""
+  sort_order: bigint
   updated_at: timestamptz
 }
 
@@ -8473,6 +8492,9 @@ input package_product_skus_max_order_by {
 
   """SKU数量"""
   quantity: order_by
+
+  """排序，越小越前"""
+  sort_order: order_by
   updated_at: order_by
 }
 
@@ -8489,6 +8511,9 @@ type package_product_skus_min_fields {
 
   """SKU数量"""
   quantity: bigint
+
+  """排序，越小越前"""
+  sort_order: bigint
   updated_at: timestamptz
 }
 
@@ -8507,6 +8532,9 @@ input package_product_skus_min_order_by {
 
   """SKU数量"""
   quantity: order_by
+
+  """排序，越小越前"""
+  sort_order: order_by
   updated_at: order_by
 }
 
@@ -8539,6 +8567,7 @@ input package_product_skus_order_by {
   product_sku: product_skus_order_by
   product_sku_product_skus: order_by
   quantity: order_by
+  sort_order: order_by
   updated_at: order_by
 }
 
@@ -8567,6 +8596,9 @@ enum package_product_skus_select_column {
   quantity
 
   """column name"""
+  sort_order
+
+  """column name"""
   updated_at
 }
 
@@ -8585,6 +8617,9 @@ input package_product_skus_set_input {
 
   """SKU数量"""
   quantity: bigint
+
+  """排序，越小越前"""
+  sort_order: bigint
   updated_at: timestamptz
 }
 
@@ -8600,6 +8635,9 @@ type package_product_skus_stddev_fields {
 
   """SKU数量"""
   quantity: Float
+
+  """排序，越小越前"""
+  sort_order: Float
 }
 
 """
@@ -8616,6 +8654,9 @@ input package_product_skus_stddev_order_by {
 
   """SKU数量"""
   quantity: order_by
+
+  """排序，越小越前"""
+  sort_order: order_by
 }
 
 """aggregate stddev_pop on columns"""
@@ -8630,6 +8671,9 @@ type package_product_skus_stddev_pop_fields {
 
   """SKU数量"""
   quantity: Float
+
+  """排序，越小越前"""
+  sort_order: Float
 }
 
 """
@@ -8646,6 +8690,9 @@ input package_product_skus_stddev_pop_order_by {
 
   """SKU数量"""
   quantity: order_by
+
+  """排序，越小越前"""
+  sort_order: order_by
 }
 
 """aggregate stddev_samp on columns"""
@@ -8660,6 +8707,9 @@ type package_product_skus_stddev_samp_fields {
 
   """SKU数量"""
   quantity: Float
+
+  """排序，越小越前"""
+  sort_order: Float
 }
 
 """
@@ -8676,6 +8726,9 @@ input package_product_skus_stddev_samp_order_by {
 
   """SKU数量"""
   quantity: order_by
+
+  """排序，越小越前"""
+  sort_order: order_by
 }
 
 """
@@ -8702,6 +8755,9 @@ input package_product_skus_stream_cursor_value_input {
 
   """SKU数量"""
   quantity: bigint
+
+  """排序，越小越前"""
+  sort_order: bigint
   updated_at: timestamptz
 }
 
@@ -8717,6 +8773,9 @@ type package_product_skus_sum_fields {
 
   """SKU数量"""
   quantity: bigint
+
+  """排序，越小越前"""
+  sort_order: bigint
 }
 
 """
@@ -8733,6 +8792,9 @@ input package_product_skus_sum_order_by {
 
   """SKU数量"""
   quantity: order_by
+
+  """排序，越小越前"""
+  sort_order: order_by
 }
 
 """
@@ -8753,6 +8815,9 @@ enum package_product_skus_update_column {
 
   """column name"""
   quantity
+
+  """column name"""
+  sort_order
 
   """column name"""
   updated_at
@@ -8781,6 +8846,9 @@ type package_product_skus_var_pop_fields {
 
   """SKU数量"""
   quantity: Float
+
+  """排序，越小越前"""
+  sort_order: Float
 }
 
 """
@@ -8797,6 +8865,9 @@ input package_product_skus_var_pop_order_by {
 
   """SKU数量"""
   quantity: order_by
+
+  """排序，越小越前"""
+  sort_order: order_by
 }
 
 """aggregate var_samp on columns"""
@@ -8811,6 +8882,9 @@ type package_product_skus_var_samp_fields {
 
   """SKU数量"""
   quantity: Float
+
+  """排序，越小越前"""
+  sort_order: Float
 }
 
 """
@@ -8827,6 +8901,9 @@ input package_product_skus_var_samp_order_by {
 
   """SKU数量"""
   quantity: order_by
+
+  """排序，越小越前"""
+  sort_order: order_by
 }
 
 """aggregate variance on columns"""
@@ -8841,6 +8918,9 @@ type package_product_skus_variance_fields {
 
   """SKU数量"""
   quantity: Float
+
+  """排序，越小越前"""
+  sort_order: Float
 }
 
 """
@@ -8857,6 +8937,9 @@ input package_product_skus_variance_order_by {
 
   """SKU数量"""
   quantity: order_by
+
+  """排序，越小越前"""
+  sort_order: order_by
 }
 
 """套餐表"""
@@ -8922,6 +9005,9 @@ type packages {
     """filter the rows returned"""
     where: package_product_skus_bool_exp
   ): package_product_skus_aggregate!
+
+  """排序，越小的在前面"""
+  sort_order: bigint!
 
   """标签，多个用｜隔开"""
   tags: String
@@ -9015,6 +9101,9 @@ type packages_avg_fields {
   """哪个公司的套餐"""
   company_companies: Float
   id: Float
+
+  """排序，越小的在前面"""
+  sort_order: Float
 }
 
 """
@@ -9027,6 +9116,9 @@ input packages_avg_order_by {
   """哪个公司的套餐"""
   company_companies: order_by
   id: order_by
+
+  """排序，越小的在前面"""
+  sort_order: order_by
 }
 
 """
@@ -9048,6 +9140,7 @@ input packages_bool_exp {
   name: String_comparison_exp
   package_product_skus: package_product_skus_bool_exp
   package_product_skus_aggregate: package_product_skus_aggregate_bool_exp
+  sort_order: bigint_comparison_exp
   tags: String_comparison_exp
   updated_at: timestamptz_comparison_exp
 }
@@ -9072,6 +9165,9 @@ input packages_inc_input {
   """哪个公司的套餐"""
   company_companies: bigint
   id: bigint
+
+  """排序，越小的在前面"""
+  sort_order: bigint
 }
 
 """
@@ -9102,6 +9198,9 @@ input packages_insert_input {
   name: String
   package_product_skus: package_product_skus_arr_rel_insert_input
 
+  """排序，越小的在前面"""
+  sort_order: bigint
+
   """标签，多个用｜隔开"""
   tags: String
   updated_at: timestamptz
@@ -9125,6 +9224,9 @@ type packages_max_fields {
 
   """套餐名称"""
   name: String
+
+  """排序，越小的在前面"""
+  sort_order: bigint
 
   """标签，多个用｜隔开"""
   tags: String
@@ -9152,6 +9254,9 @@ input packages_max_order_by {
   """套餐名称"""
   name: order_by
 
+  """排序，越小的在前面"""
+  sort_order: order_by
+
   """标签，多个用｜隔开"""
   tags: order_by
   updated_at: order_by
@@ -9175,6 +9280,9 @@ type packages_min_fields {
 
   """套餐名称"""
   name: String
+
+  """排序，越小的在前面"""
+  sort_order: bigint
 
   """标签，多个用｜隔开"""
   tags: String
@@ -9201,6 +9309,9 @@ input packages_min_order_by {
 
   """套餐名称"""
   name: order_by
+
+  """排序，越小的在前面"""
+  sort_order: order_by
 
   """标签，多个用｜隔开"""
   tags: order_by
@@ -9250,6 +9361,7 @@ input packages_order_by {
   is_shelved: order_by
   name: order_by
   package_product_skus_aggregate: package_product_skus_aggregate_order_by
+  sort_order: order_by
   tags: order_by
   updated_at: order_by
 }
@@ -9286,6 +9398,9 @@ enum packages_select_column {
 
   """column name"""
   name
+
+  """column name"""
+  sort_order
 
   """column name"""
   tags
@@ -9334,6 +9449,9 @@ input packages_set_input {
   """套餐名称"""
   name: String
 
+  """排序，越小的在前面"""
+  sort_order: bigint
+
   """标签，多个用｜隔开"""
   tags: String
   updated_at: timestamptz
@@ -9347,6 +9465,9 @@ type packages_stddev_fields {
   """哪个公司的套餐"""
   company_companies: Float
   id: Float
+
+  """排序，越小的在前面"""
+  sort_order: Float
 }
 
 """
@@ -9359,6 +9480,9 @@ input packages_stddev_order_by {
   """哪个公司的套餐"""
   company_companies: order_by
   id: order_by
+
+  """排序，越小的在前面"""
+  sort_order: order_by
 }
 
 """aggregate stddev_pop on columns"""
@@ -9369,6 +9493,9 @@ type packages_stddev_pop_fields {
   """哪个公司的套餐"""
   company_companies: Float
   id: Float
+
+  """排序，越小的在前面"""
+  sort_order: Float
 }
 
 """
@@ -9381,6 +9508,9 @@ input packages_stddev_pop_order_by {
   """哪个公司的套餐"""
   company_companies: order_by
   id: order_by
+
+  """排序，越小的在前面"""
+  sort_order: order_by
 }
 
 """aggregate stddev_samp on columns"""
@@ -9391,6 +9521,9 @@ type packages_stddev_samp_fields {
   """哪个公司的套餐"""
   company_companies: Float
   id: Float
+
+  """排序，越小的在前面"""
+  sort_order: Float
 }
 
 """
@@ -9403,6 +9536,9 @@ input packages_stddev_samp_order_by {
   """哪个公司的套餐"""
   company_companies: order_by
   id: order_by
+
+  """排序，越小的在前面"""
+  sort_order: order_by
 }
 
 """
@@ -9438,6 +9574,9 @@ input packages_stream_cursor_value_input {
   """套餐名称"""
   name: String
 
+  """排序，越小的在前面"""
+  sort_order: bigint
+
   """标签，多个用｜隔开"""
   tags: String
   updated_at: timestamptz
@@ -9451,6 +9590,9 @@ type packages_sum_fields {
   """哪个公司的套餐"""
   company_companies: bigint
   id: bigint
+
+  """排序，越小的在前面"""
+  sort_order: bigint
 }
 
 """
@@ -9463,6 +9605,9 @@ input packages_sum_order_by {
   """哪个公司的套餐"""
   company_companies: order_by
   id: order_by
+
+  """排序，越小的在前面"""
+  sort_order: order_by
 }
 
 """
@@ -9494,6 +9639,9 @@ enum packages_update_column {
   name
 
   """column name"""
+  sort_order
+
+  """column name"""
   tags
 
   """column name"""
@@ -9519,6 +9667,9 @@ type packages_var_pop_fields {
   """哪个公司的套餐"""
   company_companies: Float
   id: Float
+
+  """排序，越小的在前面"""
+  sort_order: Float
 }
 
 """
@@ -9531,6 +9682,9 @@ input packages_var_pop_order_by {
   """哪个公司的套餐"""
   company_companies: order_by
   id: order_by
+
+  """排序，越小的在前面"""
+  sort_order: order_by
 }
 
 """aggregate var_samp on columns"""
@@ -9541,6 +9695,9 @@ type packages_var_samp_fields {
   """哪个公司的套餐"""
   company_companies: Float
   id: Float
+
+  """排序，越小的在前面"""
+  sort_order: Float
 }
 
 """
@@ -9553,6 +9710,9 @@ input packages_var_samp_order_by {
   """哪个公司的套餐"""
   company_companies: order_by
   id: order_by
+
+  """排序，越小的在前面"""
+  sort_order: order_by
 }
 
 """aggregate variance on columns"""
@@ -9563,6 +9723,9 @@ type packages_variance_fields {
   """哪个公司的套餐"""
   company_companies: Float
   id: Float
+
+  """排序，越小的在前面"""
+  sort_order: Float
 }
 
 """
@@ -9575,6 +9738,9 @@ input packages_variance_order_by {
   """哪个公司的套餐"""
   company_companies: order_by
   id: order_by
+
+  """排序，越小的在前面"""
+  sort_order: order_by
 }
 
 """产品下的规格"""
@@ -9716,6 +9882,9 @@ type product_skus {
   """关联产品id"""
   product_products: bigint!
 
+  """排序，越小的在前"""
+  sort_order: bigint!
+
   """库存"""
   stock: bigint!
   updated_at: timestamptz!
@@ -9812,6 +9981,9 @@ type product_skus_avg_fields {
   """关联产品id"""
   product_products: Float
 
+  """排序，越小的在前"""
+  sort_order: Float
+
   """库存"""
   stock: Float
 }
@@ -9829,6 +10001,9 @@ input product_skus_avg_order_by {
 
   """关联产品id"""
   product_products: order_by
+
+  """排序，越小的在前"""
+  sort_order: order_by
 
   """库存"""
   stock: order_by
@@ -9858,6 +10033,7 @@ input product_skus_bool_exp {
   price: numeric_comparison_exp
   product: products_bool_exp
   product_products: bigint_comparison_exp
+  sort_order: bigint_comparison_exp
   stock: bigint_comparison_exp
   updated_at: timestamptz_comparison_exp
 }
@@ -9885,6 +10061,9 @@ input product_skus_inc_input {
 
   """关联产品id"""
   product_products: bigint
+
+  """排序，越小的在前"""
+  sort_order: bigint
 
   """库存"""
   stock: bigint
@@ -9923,6 +10102,9 @@ input product_skus_insert_input {
   """关联产品id"""
   product_products: bigint
 
+  """排序，越小的在前"""
+  sort_order: bigint
+
   """库存"""
   stock: bigint
   updated_at: timestamptz
@@ -9946,6 +10128,9 @@ type product_skus_max_fields {
 
   """关联产品id"""
   product_products: bigint
+
+  """排序，越小的在前"""
+  sort_order: bigint
 
   """库存"""
   stock: bigint
@@ -9973,6 +10158,9 @@ input product_skus_max_order_by {
   """关联产品id"""
   product_products: order_by
 
+  """排序，越小的在前"""
+  sort_order: order_by
+
   """库存"""
   stock: order_by
   updated_at: order_by
@@ -9996,6 +10184,9 @@ type product_skus_min_fields {
 
   """关联产品id"""
   product_products: bigint
+
+  """排序，越小的在前"""
+  sort_order: bigint
 
   """库存"""
   stock: bigint
@@ -10022,6 +10213,9 @@ input product_skus_min_order_by {
 
   """关联产品id"""
   product_products: order_by
+
+  """排序，越小的在前"""
+  sort_order: order_by
 
   """库存"""
   stock: order_by
@@ -10074,6 +10268,7 @@ input product_skus_order_by {
   price: order_by
   product: products_order_by
   product_products: order_by
+  sort_order: order_by
   stock: order_by
   updated_at: order_by
 }
@@ -10113,6 +10308,9 @@ enum product_skus_select_column {
 
   """column name"""
   product_products
+
+  """column name"""
+  sort_order
 
   """column name"""
   stock
@@ -10170,6 +10368,9 @@ input product_skus_set_input {
   """关联产品id"""
   product_products: bigint
 
+  """排序，越小的在前"""
+  sort_order: bigint
+
   """库存"""
   stock: bigint
   updated_at: timestamptz
@@ -10186,6 +10387,9 @@ type product_skus_stddev_fields {
 
   """关联产品id"""
   product_products: Float
+
+  """排序，越小的在前"""
+  sort_order: Float
 
   """库存"""
   stock: Float
@@ -10205,6 +10409,9 @@ input product_skus_stddev_order_by {
   """关联产品id"""
   product_products: order_by
 
+  """排序，越小的在前"""
+  sort_order: order_by
+
   """库存"""
   stock: order_by
 }
@@ -10220,6 +10427,9 @@ type product_skus_stddev_pop_fields {
 
   """关联产品id"""
   product_products: Float
+
+  """排序，越小的在前"""
+  sort_order: Float
 
   """库存"""
   stock: Float
@@ -10239,6 +10449,9 @@ input product_skus_stddev_pop_order_by {
   """关联产品id"""
   product_products: order_by
 
+  """排序，越小的在前"""
+  sort_order: order_by
+
   """库存"""
   stock: order_by
 }
@@ -10254,6 +10467,9 @@ type product_skus_stddev_samp_fields {
 
   """关联产品id"""
   product_products: Float
+
+  """排序，越小的在前"""
+  sort_order: Float
 
   """库存"""
   stock: Float
@@ -10272,6 +10488,9 @@ input product_skus_stddev_samp_order_by {
 
   """关联产品id"""
   product_products: order_by
+
+  """排序，越小的在前"""
+  sort_order: order_by
 
   """库存"""
   stock: order_by
@@ -10313,6 +10532,9 @@ input product_skus_stream_cursor_value_input {
   """关联产品id"""
   product_products: bigint
 
+  """排序，越小的在前"""
+  sort_order: bigint
+
   """库存"""
   stock: bigint
   updated_at: timestamptz
@@ -10329,6 +10551,9 @@ type product_skus_sum_fields {
 
   """关联产品id"""
   product_products: bigint
+
+  """排序，越小的在前"""
+  sort_order: bigint
 
   """库存"""
   stock: bigint
@@ -10347,6 +10572,9 @@ input product_skus_sum_order_by {
 
   """关联产品id"""
   product_products: order_by
+
+  """排序，越小的在前"""
+  sort_order: order_by
 
   """库存"""
   stock: order_by
@@ -10384,6 +10612,9 @@ enum product_skus_update_column {
   product_products
 
   """column name"""
+  sort_order
+
+  """column name"""
   stock
 
   """column name"""
@@ -10413,6 +10644,9 @@ type product_skus_var_pop_fields {
   """关联产品id"""
   product_products: Float
 
+  """排序，越小的在前"""
+  sort_order: Float
+
   """库存"""
   stock: Float
 }
@@ -10431,6 +10665,9 @@ input product_skus_var_pop_order_by {
   """关联产品id"""
   product_products: order_by
 
+  """排序，越小的在前"""
+  sort_order: order_by
+
   """库存"""
   stock: order_by
 }
@@ -10446,6 +10683,9 @@ type product_skus_var_samp_fields {
 
   """关联产品id"""
   product_products: Float
+
+  """排序，越小的在前"""
+  sort_order: Float
 
   """库存"""
   stock: Float
@@ -10465,6 +10705,9 @@ input product_skus_var_samp_order_by {
   """关联产品id"""
   product_products: order_by
 
+  """排序，越小的在前"""
+  sort_order: order_by
+
   """库存"""
   stock: order_by
 }
@@ -10480,6 +10723,9 @@ type product_skus_variance_fields {
 
   """关联产品id"""
   product_products: Float
+
+  """排序，越小的在前"""
+  sort_order: Float
 
   """库存"""
   stock: Float
@@ -10498,6 +10744,9 @@ input product_skus_variance_order_by {
 
   """关联产品id"""
   product_products: order_by
+
+  """排序，越小的在前"""
+  sort_order: order_by
 
   """库存"""
   stock: order_by
@@ -10612,6 +10861,9 @@ type products {
   """实景拍摄信息媒体内容，jsonb的item项（file_type=video|image、file_url）"""
   scene_medias: [json!]!
 
+  """排序 越小在前面"""
+  sort_order: bigint!
+
   """标签，多个用｜隔开"""
   tags: String
   updated_at: timestamptz!
@@ -10704,6 +10956,9 @@ type products_avg_fields {
   """归属公司id"""
   company_companies: Float
   id: Float
+
+  """排序 越小在前面"""
+  sort_order: Float
 }
 
 """
@@ -10716,6 +10971,9 @@ input products_avg_order_by {
   """归属公司id"""
   company_companies: order_by
   id: order_by
+
+  """排序 越小在前面"""
+  sort_order: order_by
 }
 
 """
@@ -10742,6 +11000,7 @@ input products_bool_exp {
   product_skus: product_skus_bool_exp
   product_skus_aggregate: product_skus_aggregate_bool_exp
   scene_medias: json_array_comparison_exp
+  sort_order: bigint_comparison_exp
   tags: String_comparison_exp
   updated_at: timestamptz_comparison_exp
 }
@@ -10766,6 +11025,9 @@ input products_inc_input {
   """归属公司id"""
   company_companies: bigint
   id: bigint
+
+  """排序 越小在前面"""
+  sort_order: bigint
 }
 
 """
@@ -10806,6 +11068,9 @@ input products_insert_input {
   """实景拍摄信息媒体内容，jsonb的item项（file_type=video|image、file_url）"""
   scene_medias: [json!]
 
+  """排序 越小在前面"""
+  sort_order: bigint
+
   """标签，多个用｜隔开"""
   tags: String
   updated_at: timestamptz
@@ -10835,6 +11100,9 @@ type products_max_fields {
 
   """实景拍摄信息媒体内容，jsonb的item项（file_type=video|image、file_url）"""
   scene_medias: [json!]
+
+  """排序 越小在前面"""
+  sort_order: bigint
 
   """标签，多个用｜隔开"""
   tags: String
@@ -10868,6 +11136,9 @@ input products_max_order_by {
   """实景拍摄信息媒体内容，jsonb的item项（file_type=video|image、file_url）"""
   scene_medias: order_by
 
+  """排序 越小在前面"""
+  sort_order: order_by
+
   """标签，多个用｜隔开"""
   tags: order_by
   updated_at: order_by
@@ -10897,6 +11168,9 @@ type products_min_fields {
 
   """实景拍摄信息媒体内容，jsonb的item项（file_type=video|image、file_url）"""
   scene_medias: [json!]
+
+  """排序 越小在前面"""
+  sort_order: bigint
 
   """标签，多个用｜隔开"""
   tags: String
@@ -10929,6 +11203,9 @@ input products_min_order_by {
 
   """实景拍摄信息媒体内容，jsonb的item项（file_type=video|image、file_url）"""
   scene_medias: order_by
+
+  """排序 越小在前面"""
+  sort_order: order_by
 
   """标签，多个用｜隔开"""
   tags: order_by
@@ -10982,6 +11259,7 @@ input products_order_by {
   name: order_by
   product_skus_aggregate: product_skus_aggregate_order_by
   scene_medias: order_by
+  sort_order: order_by
   tags: order_by
   updated_at: order_by
 }
@@ -11027,6 +11305,9 @@ enum products_select_column {
 
   """column name"""
   scene_medias
+
+  """column name"""
+  sort_order
 
   """column name"""
   tags
@@ -11090,6 +11371,9 @@ input products_set_input {
   """实景拍摄信息媒体内容，jsonb的item项（file_type=video|image、file_url）"""
   scene_medias: [json!]
 
+  """排序 越小在前面"""
+  sort_order: bigint
+
   """标签，多个用｜隔开"""
   tags: String
   updated_at: timestamptz
@@ -11103,6 +11387,9 @@ type products_stddev_fields {
   """归属公司id"""
   company_companies: Float
   id: Float
+
+  """排序 越小在前面"""
+  sort_order: Float
 }
 
 """
@@ -11115,6 +11402,9 @@ input products_stddev_order_by {
   """归属公司id"""
   company_companies: order_by
   id: order_by
+
+  """排序 越小在前面"""
+  sort_order: order_by
 }
 
 """aggregate stddev_pop on columns"""
@@ -11125,6 +11415,9 @@ type products_stddev_pop_fields {
   """归属公司id"""
   company_companies: Float
   id: Float
+
+  """排序 越小在前面"""
+  sort_order: Float
 }
 
 """
@@ -11137,6 +11430,9 @@ input products_stddev_pop_order_by {
   """归属公司id"""
   company_companies: order_by
   id: order_by
+
+  """排序 越小在前面"""
+  sort_order: order_by
 }
 
 """aggregate stddev_samp on columns"""
@@ -11147,6 +11443,9 @@ type products_stddev_samp_fields {
   """归属公司id"""
   company_companies: Float
   id: Float
+
+  """排序 越小在前面"""
+  sort_order: Float
 }
 
 """
@@ -11159,6 +11458,9 @@ input products_stddev_samp_order_by {
   """归属公司id"""
   company_companies: order_by
   id: order_by
+
+  """排序 越小在前面"""
+  sort_order: order_by
 }
 
 """
@@ -11203,6 +11505,9 @@ input products_stream_cursor_value_input {
   """实景拍摄信息媒体内容，jsonb的item项（file_type=video|image、file_url）"""
   scene_medias: [json!]
 
+  """排序 越小在前面"""
+  sort_order: bigint
+
   """标签，多个用｜隔开"""
   tags: String
   updated_at: timestamptz
@@ -11216,6 +11521,9 @@ type products_sum_fields {
   """归属公司id"""
   company_companies: bigint
   id: bigint
+
+  """排序 越小在前面"""
+  sort_order: bigint
 }
 
 """
@@ -11228,6 +11536,9 @@ input products_sum_order_by {
   """归属公司id"""
   company_companies: order_by
   id: order_by
+
+  """排序 越小在前面"""
+  sort_order: order_by
 }
 
 """
@@ -11268,6 +11579,9 @@ enum products_update_column {
   scene_medias
 
   """column name"""
+  sort_order
+
+  """column name"""
   tags
 
   """column name"""
@@ -11293,6 +11607,9 @@ type products_var_pop_fields {
   """归属公司id"""
   company_companies: Float
   id: Float
+
+  """排序 越小在前面"""
+  sort_order: Float
 }
 
 """
@@ -11305,6 +11622,9 @@ input products_var_pop_order_by {
   """归属公司id"""
   company_companies: order_by
   id: order_by
+
+  """排序 越小在前面"""
+  sort_order: order_by
 }
 
 """aggregate var_samp on columns"""
@@ -11315,6 +11635,9 @@ type products_var_samp_fields {
   """归属公司id"""
   company_companies: Float
   id: Float
+
+  """排序 越小在前面"""
+  sort_order: Float
 }
 
 """
@@ -11327,6 +11650,9 @@ input products_var_samp_order_by {
   """归属公司id"""
   company_companies: order_by
   id: order_by
+
+  """排序 越小在前面"""
+  sort_order: order_by
 }
 
 """aggregate variance on columns"""
@@ -11337,6 +11663,9 @@ type products_variance_fields {
   """归属公司id"""
   company_companies: Float
   id: Float
+
+  """排序 越小在前面"""
+  sort_order: Float
 }
 
 """
@@ -11349,6 +11678,9 @@ input products_variance_order_by {
   """归属公司id"""
   company_companies: order_by
   id: order_by
+
+  """排序 越小在前面"""
+  sort_order: order_by
 }
 
 type query_root {

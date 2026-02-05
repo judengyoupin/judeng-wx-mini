@@ -10,6 +10,8 @@ export interface ProductInput {
   company_companies: number;
   is_shelved?: boolean;
   tags?: string;
+  /** 排序权重，数值越小越靠前 */
+  sort_order?: number;
 }
 
 export interface ProductSkuInput {
@@ -20,6 +22,8 @@ export interface ProductSkuInput {
   product_products: number;
   company_companies: number;
   is_shelved?: boolean;
+  /** 排序权重，数值越小越靠前 */
+  sort_order?: number;
 }
 
 /** 一次请求返回公司 hidden_product_ids + 商品列表（用于商品列表页合并请求） */
@@ -44,13 +48,14 @@ const PRODUCT_LIST_FIELDS = `
       category { id name }
     }
   }
-  product_skus(where: { is_deleted: { _eq: false } }) {
+  product_skus(where: { is_deleted: { _eq: false } }, order_by: [{ sort_order: asc }, { id: asc }]) {
     id
     name
     image_url
     price
     stock
     is_shelved
+    sort_order
   }
 `;
 
@@ -76,7 +81,7 @@ export async function getProductListWithCompanyHidden(params: {
         }
         limit: $limit
         offset: $offset
-        order_by: { created_at: desc }
+        order_by: [{ sort_order: asc }, { created_at: desc }]
       ) {
         ${PRODUCT_LIST_FIELDS}
       }
@@ -145,7 +150,7 @@ export async function getProductList(params: {
           }
           limit: $limit
           offset: $offset
-          order_by: { created_at: desc }
+          order_by: [{ sort_order: asc }, { created_at: desc }]
         ) {
           id
           name
@@ -172,6 +177,7 @@ export async function getProductList(params: {
           }
           product_skus(
             where: { is_deleted: { _eq: false } }
+            order_by: [{ sort_order: asc }, { id: asc }]
           ) {
             id
             name
@@ -179,6 +185,7 @@ export async function getProductList(params: {
             price
             stock
             is_shelved
+            sort_order
           }
         }
         products_aggregate(
@@ -208,7 +215,7 @@ export async function getProductList(params: {
           }
           limit: $limit
           offset: $offset
-          order_by: { created_at: desc }
+          order_by: [{ sort_order: asc }, { created_at: desc }]
         ) {
           id
           name
@@ -235,6 +242,7 @@ export async function getProductList(params: {
           }
           product_skus(
             where: { is_deleted: { _eq: false } }
+            order_by: [{ sort_order: asc }, { id: asc }]
           ) {
             id
             name
@@ -242,6 +250,7 @@ export async function getProductList(params: {
             price
             stock
             is_shelved
+            sort_order
           }
         }
         products_aggregate(
@@ -325,17 +334,18 @@ export async function searchProductsWithSkus(params: {
         where: { _and: [ ${whereConditions.join(', ')} ] }
         limit: $limit
         offset: $offset
-        order_by: { created_at: desc }
+        order_by: [{ sort_order: asc }, { created_at: desc }]
       ) {
         id
         name
-        product_skus(where: { is_deleted: { _eq: false } }) {
+        product_skus(where: { is_deleted: { _eq: false } }, order_by: [{ sort_order: asc }, { id: asc }]) {
           id
           name
           image_url
           price
           stock
           is_shelved
+          sort_order
         }
       }
       products_aggregate(
@@ -417,6 +427,7 @@ export async function getProductDetail(productId: number) {
         category_categories
         company_companies
         is_shelved
+        sort_order
         created_at
         updated_at
         category {
@@ -430,7 +441,7 @@ export async function getProductDetail(productId: number) {
         }
         product_skus(
           where: { is_deleted: { _eq: false } }
-          order_by: { created_at: asc }
+          order_by: [{ sort_order: asc }, { id: asc }]
         ) {
           id
           name
@@ -438,6 +449,7 @@ export async function getProductDetail(productId: number) {
           price
           stock
           is_shelved
+          sort_order
         }
       }
     }
@@ -491,6 +503,9 @@ export async function createProduct(product: ProductInput) {
   if (product.category_categories !== undefined && product.category_categories !== null) {
     productData.category_categories = product.category_categories;
   }
+  if (product.sort_order !== undefined && product.sort_order !== null) {
+    productData.sort_order = product.sort_order;
+  }
 
   const result = await client.execute({
     query: mutation,
@@ -531,6 +546,9 @@ export async function updateProduct(productId: number, product: Partial<ProductI
   }
   if (product.category_categories !== undefined && product.category_categories !== null) {
     productData.category_categories = product.category_categories;
+  }
+  if (product.sort_order !== undefined && product.sort_order !== null) {
+    productData.sort_order = product.sort_order;
   }
   
   // JSONB 数组字段，确保是数组格式
@@ -595,13 +613,17 @@ export async function createProductSku(sku: ProductSkuInput) {
     }
   `;
 
+  const skuPayload: any = {
+    ...sku,
+    is_shelved: sku.is_shelved ?? false,
+  };
+  if (sku.sort_order !== undefined && sku.sort_order !== null) {
+    skuPayload.sort_order = sku.sort_order;
+  }
   const result = await client.execute({
     query: mutation,
     variables: {
-      sku: {
-        ...sku,
-        is_shelved: sku.is_shelved ?? false,
-      },
+      sku: skuPayload,
     },
   });
 
@@ -624,11 +646,15 @@ export async function updateProductSku(skuId: number, sku: Partial<ProductSkuInp
     }
   `;
 
+  const skuPayload: any = { ...sku };
+  if (sku.sort_order !== undefined && sku.sort_order !== null) {
+    skuPayload.sort_order = sku.sort_order;
+  }
   const result = await client.execute({
     query: mutation,
     variables: {
       skuId,
-      sku,
+      sku: skuPayload,
     },
   });
 

@@ -59,6 +59,15 @@
             placeholder="多个标签用｜分隔，如：新品｜热卖"
           />
         </view>
+        <view class="form-item">
+          <view class="form-label">排序值</view>
+          <input 
+            class="form-input" 
+            type="number" 
+            v-model="form.sort_order" 
+            placeholder="数值越小越靠前，默认0"
+          />
+        </view>
       </view>
 
       <!-- 产品详情媒体（可选）：批次样式，支持多选、进度条、图片/视频/微信聊天 -->
@@ -268,6 +277,15 @@
               placeholder="请输入库存"
             />
           </view>
+          <view class="form-item">
+            <view class="form-label">排序值</view>
+            <input 
+              class="form-input" 
+              type="number" 
+              v-model="skuForm.sort_order" 
+              placeholder="数值越小越靠前"
+            />
+          </view>
         </view>
         <view class="modal-footer">
           <button class="modal-btn" @click="saveSku">保存</button>
@@ -370,6 +388,7 @@ const form = ref({
   detail_medias: [] as Array<{ file_type: string; file_url: string }>,
   scene_medias: [] as Array<{ file_type: string; file_url: string }>,
   is_shelved: false,
+  sort_order: undefined as number | undefined,
 });
 const skus = ref<any[]>([]);
 const categories = ref<any[]>([]);
@@ -386,6 +405,7 @@ const skuForm = ref({
   image_url: '',
   price: '',
   stock: '',
+  sort_order: '' as string | number,
 });
 
 // 媒体编辑相关
@@ -480,6 +500,7 @@ const loadProductDetail = async () => {
         detail_medias: product.detail_medias || [],
         scene_medias: product.scene_medias || [],
         is_shelved: product.is_shelved,
+        sort_order: product.sort_order != null ? Number(product.sort_order) : undefined,
       };
       // 用接口返回的 category 父子链回显，并拼出完整路径
       if (product.category && product.category_categories != null) {
@@ -932,6 +953,7 @@ const editSku = (index: number) => {
     image_url: sku.image_url || '',
     price: String(sku.price),
     stock: String(sku.stock),
+    sort_order: sku.sort_order !== undefined && sku.sort_order !== null ? sku.sort_order : '',
   };
   showSkuModal.value = true;
 };
@@ -970,12 +992,15 @@ const saveSku = () => {
     return;
   }
 
-  const sku = {
+  const sku: any = {
     name: skuForm.value.name,
     image_url: skuForm.value.image_url || undefined,
     price: Number(skuForm.value.price),
     stock: Number(skuForm.value.stock),
   };
+  if (skuForm.value.sort_order !== '' && skuForm.value.sort_order !== undefined && skuForm.value.sort_order !== null) {
+    sku.sort_order = Number(skuForm.value.sort_order);
+  }
 
   if (editingSkuIndex.value >= 0) {
     // 编辑
@@ -994,6 +1019,7 @@ const saveSku = () => {
     image_url: '',
     price: '',
     stock: '',
+    sort_order: '',
   };
   editingSkuIndex.value = -1;
 };
@@ -1028,7 +1054,7 @@ const handleSave = async () => {
 
   try {
     // 确保 detail_medias 和 scene_medias 是数组格式
-    const productData = {
+    const productData: any = {
       ...form.value,
       company_companies: companyInfo.value.id,
       detail_medias: form.value.detail_medias || [],
@@ -1038,8 +1064,13 @@ const handleSave = async () => {
     if (productData.category_categories === undefined) {
       delete productData.category_categories;
     }
+    if (form.value.sort_order !== undefined && form.value.sort_order !== null) {
+      productData.sort_order = Number(form.value.sort_order);
+    } else {
+      delete productData.sort_order;
+    }
     if ('video_url' in productData) {
-      delete (productData as Record<string, unknown>).video_url;
+      delete productData.video_url;
     }
 
     let savedProductId: number;
@@ -1056,18 +1087,21 @@ const handleSave = async () => {
 
     // 保存SKU
     for (const sku of skus.value) {
+      const skuPayload: any = {
+        name: sku.name,
+        image_url: sku.image_url,
+        price: sku.price,
+        stock: sku.stock,
+      };
+      if (sku.sort_order !== undefined && sku.sort_order !== null && sku.sort_order !== '') {
+        skuPayload.sort_order = Number(sku.sort_order);
+      }
       if (sku.id) {
-        // 更新SKU
-        await updateProductSku(sku.id, {
-          name: sku.name,
-          image_url: sku.image_url,
-          price: sku.price,
-          stock: sku.stock,
-        });
+        await updateProductSku(sku.id, skuPayload);
       } else {
-        // 创建SKU
         await createProductSku({
           ...sku,
+          ...skuPayload,
           product_products: savedProductId,
           company_companies: companyInfo.value.id,
         });

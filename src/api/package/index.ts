@@ -77,7 +77,7 @@ export async function getPackageList(params: {
         where: { ${whereClause} }
         limit: $limit
         offset: $offset
-        order_by: { created_at: desc }
+        order_by: [{ sort_order: asc }, { created_at: desc }]
       ) {
         id
         name
@@ -85,7 +85,7 @@ export async function getPackageList(params: {
         description
         tags
         created_at
-        package_product_skus(where: { product_sku: { is_deleted: { _eq: false }, is_shelved: { _eq: false } } }) {
+        package_product_skus(where: { product_sku: { is_deleted: { _eq: false }, is_shelved: { _eq: false } } }, order_by: [{ sort_order: asc }, { id: asc }]) {
           id
           quantity
           product_sku {
@@ -111,7 +111,7 @@ export async function getPackageList(params: {
         where: { ${whereClause} }
         limit: $limit
         offset: $offset
-        order_by: { created_at: desc }
+        order_by: [{ sort_order: asc }, { created_at: desc }]
       ) {
         id
         name
@@ -119,7 +119,7 @@ export async function getPackageList(params: {
         description
         tags
         created_at
-        package_product_skus(where: { product_sku: { is_deleted: { _eq: false }, is_shelved: { _eq: false } } }) {
+        package_product_skus(where: { product_sku: { is_deleted: { _eq: false }, is_shelved: { _eq: false } } }, order_by: [{ sort_order: asc }, { id: asc }]) {
           id
           quantity
           product_sku {
@@ -191,6 +191,7 @@ export async function getPackageDetail(packageId: number) {
               is_deleted: { _eq: false }
             }
           }
+          order_by: [{ sort_order: asc }, { id: asc }]
         ) {
           id
           quantity

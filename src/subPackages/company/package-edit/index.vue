@@ -60,6 +60,15 @@
             <text class="category-arrow">›</text>
           </view>
         </view>
+        <view class="form-item">
+          <view class="form-label">排序值</view>
+          <input 
+            class="form-input" 
+            type="number" 
+            v-model="form.sort_order" 
+            placeholder="数值越小越靠前，默认0"
+          />
+        </view>
       </view>
 
       <!-- 套餐商品 -->
@@ -179,6 +188,15 @@
               placeholder="请输入数量"
             />
           </view>
+          <view class="form-item">
+            <view class="label">排序值</view>
+            <input 
+              class="input quantity-input" 
+              type="number" 
+              v-model="skuSortOrder" 
+              placeholder="数值越小越靠前"
+            />
+          </view>
         </view>
         <view class="modal-footer">
           <button class="modal-btn" @click="saveQuantity">保存</button>
@@ -212,6 +230,7 @@ const form = ref({
   description: '',
   tags: '',
   category_categories: undefined as number | undefined,
+  sort_order: undefined as number | undefined,
 });
 const packageSkus = ref<any[]>([]);
 const loading = ref(false);
@@ -235,6 +254,7 @@ const showQuantityModal = ref(false);
 const editingSkuIndex = ref(-1);
 const editingSkuItem = ref<any>(null);
 const skuQuantity = ref('');
+const skuSortOrder = ref('');
 
 // 获取当前公司隐藏商品 id 与默认公司 id（用于搜索后过滤，只拉一次）
 const ensureHiddenAndDefaultCompany = async () => {
@@ -374,6 +394,8 @@ const selectSku = (sku: any) => {
     quantity: 1,
   };
   skuQuantity.value = '1';
+  // 新增时排序值默认为当前列表长度（接在最后）
+  skuSortOrder.value = String(packageSkus.value.length);
   editingSkuIndex.value = -1;
   showSkuModal.value = false;
   showQuantityModal.value = true;
@@ -383,11 +405,13 @@ const selectSku = (sku: any) => {
 const editSku = (index: number) => {
   editingSkuIndex.value = index;
   editingSkuItem.value = packageSkus.value[index];
-  skuQuantity.value = String(packageSkus.value[index].quantity);
+  const item = packageSkus.value[index];
+  skuQuantity.value = String(item.quantity);
+  skuSortOrder.value = item.sort_order !== undefined && item.sort_order !== null ? String(item.sort_order) : '';
   showQuantityModal.value = true;
 };
 
-// 保存数量
+// 保存数量与排序
 const saveQuantity = () => {
   if (!skuQuantity.value || Number(skuQuantity.value) <= 0) {
     uni.showToast({
@@ -398,21 +422,27 @@ const saveQuantity = () => {
   }
 
   const quantity = Number(skuQuantity.value);
+  const sortOrder = skuSortOrder.value !== '' && skuSortOrder.value !== undefined && skuSortOrder.value !== null
+    ? Number(skuSortOrder.value)
+    : undefined;
 
   if (editingSkuIndex.value >= 0) {
     // 编辑
     packageSkus.value[editingSkuIndex.value].quantity = quantity;
+    if (sortOrder !== undefined) packageSkus.value[editingSkuIndex.value].sort_order = sortOrder;
   } else {
     // 新增
     packageSkus.value.push({
       ...editingSkuItem.value,
       quantity,
+      ...(sortOrder !== undefined && { sort_order: sortOrder }),
     });
   }
 
   showQuantityModal.value = false;
   editingSkuIndex.value = -1;
   editingSkuItem.value = null;
+  skuSortOrder.value = '';
 };
 
 // 删除SKU
@@ -464,6 +494,7 @@ const loadPackageDetail = async () => {
         description: pkg.description || '',
         tags: pkg.tags || '',
         category_categories: pkg.category_categories || undefined,
+        sort_order: pkg.sort_order != null ? Number(pkg.sort_order) : undefined,
       };
       // 用接口返回的 category 父子链回显，并拼出完整路径
       if (pkg.category && pkg.category_categories != null) {
@@ -511,9 +542,14 @@ const handleSave = async () => {
   try {
     let savedPackageId: number;
 
+    const packagePayload: any = { ...form.value };
+    if (form.value.sort_order !== undefined && form.value.sort_order !== null) {
+      packagePayload.sort_order = Number(form.value.sort_order);
+    }
+
     if (packageId.value) {
       // 更新套餐
-      await updatePackage(packageId.value, form.value);
+      await updatePackage(packageId.value, packagePayload);
       savedPackageId = packageId.value;
     } else {
       // 创建套餐：必须传入当前公司 ID（packages 表外键 company_companies -> companies.id）
@@ -525,24 +561,29 @@ const handleSave = async () => {
       }
       const companyId = Number(rawCompanyId);
       const result = await createPackage({
-        ...form.value,
+        ...packagePayload,
         company_companies: companyId,
       });
       savedPackageId = result.id;
     }
 
-    // 保存套餐SKU
+    // 保存套餐SKU（按列表顺序写入 sort_order）
     const existingIds = packageSkus.value.filter(item => item.id).map(item => item.id);
+    packageSkus.value.forEach((item: any, index: number) => {
+      item.sort_order = item.sort_order !== undefined && item.sort_order !== null ? item.sort_order : index;
+    });
     for (const item of packageSkus.value) {
       if (item.id) {
-        // 更新
-        await updatePackageSku(item.id, item.quantity);
+        await updatePackageSku(item.id, {
+          quantity: item.quantity,
+          sort_order: item.sort_order,
+        });
       } else {
-        // 新增
         await addPackageSku({
           package_packages: savedPackageId,
           product_sku_product_skus: item.product_sku.id,
           quantity: item.quantity,
+          sort_order: item.sort_order,
         });
       }
     }

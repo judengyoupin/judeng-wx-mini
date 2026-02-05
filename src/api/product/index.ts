@@ -26,7 +26,7 @@ export async function getProductDetail(productId: number) {
             is_deleted: { _eq: false }
             is_shelved: { _eq: false }
           }
-          order_by: { created_at: asc }
+          order_by: [{ sort_order: asc }, { id: asc }]
         ) {
           id
           name
@@ -161,7 +161,7 @@ export async function getProductList(params: {
           }
           limit: $limit
           offset: $offset
-          order_by: { created_at: desc }
+          order_by: [{ sort_order: asc }, { created_at: desc }]
         ) {
           id
           name
@@ -212,7 +212,7 @@ export async function getProductList(params: {
           }
           limit: $limit
           offset: $offset
-          order_by: { created_at: desc }
+          order_by: [{ sort_order: asc }, { created_at: desc }]
         ) {
           id
           name
@@ -262,7 +262,7 @@ export async function getProductList(params: {
           }
           limit: $limit
           offset: $offset
-          order_by: { created_at: desc }
+          order_by: [{ sort_order: asc }, { created_at: desc }]
         ) {
           id
           name
@@ -312,7 +312,7 @@ export async function getProductList(params: {
           }
           limit: $limit
           offset: $offset
-          order_by: { created_at: desc }
+          order_by: [{ sort_order: asc }, { created_at: desc }]
         ) {
           id
           name

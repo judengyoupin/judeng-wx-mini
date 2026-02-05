@@ -6671,6 +6671,8 @@ export type Package_Product_Skus = {
   product_sku_product_skus: Scalars['bigint']['output'];
   /** SKU数量 */
   quantity: Scalars['bigint']['output'];
+  /** 排序，越小越前 */
+  sort_order: Scalars['bigint']['output'];
   updated_at: Scalars['timestamptz']['output'];
 };
 
@@ -6747,6 +6749,8 @@ export type Package_Product_Skus_Avg_Fields = {
   product_sku_product_skus?: Maybe<Scalars['Float']['output']>;
   /** SKU数量 */
   quantity?: Maybe<Scalars['Float']['output']>;
+  /** 排序，越小越前 */
+  sort_order?: Maybe<Scalars['Float']['output']>;
 };
 
 /** order by avg() on columns of table "package_product_skus" */
@@ -6758,6 +6762,8 @@ export type Package_Product_Skus_Avg_Order_By = {
   product_sku_product_skus?: InputMaybe<Order_By>;
   /** SKU数量 */
   quantity?: InputMaybe<Order_By>;
+  /** 排序，越小越前 */
+  sort_order?: InputMaybe<Order_By>;
 };
 
 /** Boolean expression to filter rows from the table "package_product_skus". All fields are combined with a logical 'AND'. */
@@ -6772,6 +6778,7 @@ export type Package_Product_Skus_Bool_Exp = {
   product_sku?: InputMaybe<Product_Skus_Bool_Exp>;
   product_sku_product_skus?: InputMaybe<Bigint_Comparison_Exp>;
   quantity?: InputMaybe<Bigint_Comparison_Exp>;
+  sort_order?: InputMaybe<Bigint_Comparison_Exp>;
   updated_at?: InputMaybe<Timestamptz_Comparison_Exp>;
 };
 
@@ -6792,6 +6799,8 @@ export type Package_Product_Skus_Inc_Input = {
   product_sku_product_skus?: InputMaybe<Scalars['bigint']['input']>;
   /** SKU数量 */
   quantity?: InputMaybe<Scalars['bigint']['input']>;
+  /** 排序，越小越前 */
+  sort_order?: InputMaybe<Scalars['bigint']['input']>;
 };
 
 /** input type for inserting data into table "package_product_skus" */
@@ -6806,6 +6815,8 @@ export type Package_Product_Skus_Insert_Input = {
   product_sku_product_skus?: InputMaybe<Scalars['bigint']['input']>;
   /** SKU数量 */
   quantity?: InputMaybe<Scalars['bigint']['input']>;
+  /** 排序，越小越前 */
+  sort_order?: InputMaybe<Scalars['bigint']['input']>;
   updated_at?: InputMaybe<Scalars['timestamptz']['input']>;
 };
 
@@ -6820,6 +6831,8 @@ export type Package_Product_Skus_Max_Fields = {
   product_sku_product_skus?: Maybe<Scalars['bigint']['output']>;
   /** SKU数量 */
   quantity?: Maybe<Scalars['bigint']['output']>;
+  /** 排序，越小越前 */
+  sort_order?: Maybe<Scalars['bigint']['output']>;
   updated_at?: Maybe<Scalars['timestamptz']['output']>;
 };
 
@@ -6833,6 +6846,8 @@ export type Package_Product_Skus_Max_Order_By = {
   product_sku_product_skus?: InputMaybe<Order_By>;
   /** SKU数量 */
   quantity?: InputMaybe<Order_By>;
+  /** 排序，越小越前 */
+  sort_order?: InputMaybe<Order_By>;
   updated_at?: InputMaybe<Order_By>;
 };
 
@@ -6847,6 +6862,8 @@ export type Package_Product_Skus_Min_Fields = {
   product_sku_product_skus?: Maybe<Scalars['bigint']['output']>;
   /** SKU数量 */
   quantity?: Maybe<Scalars['bigint']['output']>;
+  /** 排序，越小越前 */
+  sort_order?: Maybe<Scalars['bigint']['output']>;
   updated_at?: Maybe<Scalars['timestamptz']['output']>;
 };
 
@@ -6860,6 +6877,8 @@ export type Package_Product_Skus_Min_Order_By = {
   product_sku_product_skus?: InputMaybe<Order_By>;
   /** SKU数量 */
   quantity?: InputMaybe<Order_By>;
+  /** 排序，越小越前 */
+  sort_order?: InputMaybe<Order_By>;
   updated_at?: InputMaybe<Order_By>;
 };
 
@@ -6888,6 +6907,7 @@ export type Package_Product_Skus_Order_By = {
   product_sku?: InputMaybe<Product_Skus_Order_By>;
   product_sku_product_skus?: InputMaybe<Order_By>;
   quantity?: InputMaybe<Order_By>;
+  sort_order?: InputMaybe<Order_By>;
   updated_at?: InputMaybe<Order_By>;
 };
 
@@ -6909,6 +6929,8 @@ export enum Package_Product_Skus_Select_Column {
   /** column name */
   Quantity = 'quantity',
   /** column name */
+  SortOrder = 'sort_order',
+  /** column name */
   UpdatedAt = 'updated_at'
 }
 
@@ -6922,6 +6944,8 @@ export type Package_Product_Skus_Set_Input = {
   product_sku_product_skus?: InputMaybe<Scalars['bigint']['input']>;
   /** SKU数量 */
   quantity?: InputMaybe<Scalars['bigint']['input']>;
+  /** 排序，越小越前 */
+  sort_order?: InputMaybe<Scalars['bigint']['input']>;
   updated_at?: InputMaybe<Scalars['timestamptz']['input']>;
 };
 
@@ -6935,6 +6959,8 @@ export type Package_Product_Skus_Stddev_Fields = {
   product_sku_product_skus?: Maybe<Scalars['Float']['output']>;
   /** SKU数量 */
   quantity?: Maybe<Scalars['Float']['output']>;
+  /** 排序，越小越前 */
+  sort_order?: Maybe<Scalars['Float']['output']>;
 };
 
 /** order by stddev() on columns of table "package_product_skus" */
@@ -6946,6 +6972,8 @@ export type Package_Product_Skus_Stddev_Order_By = {
   product_sku_product_skus?: InputMaybe<Order_By>;
   /** SKU数量 */
   quantity?: InputMaybe<Order_By>;
+  /** 排序，越小越前 */
+  sort_order?: InputMaybe<Order_By>;
 };
 
 /** aggregate stddev_pop on columns */
@@ -6958,6 +6986,8 @@ export type Package_Product_Skus_Stddev_Pop_Fields = {
   product_sku_product_skus?: Maybe<Scalars['Float']['output']>;
   /** SKU数量 */
   quantity?: Maybe<Scalars['Float']['output']>;
+  /** 排序，越小越前 */
+  sort_order?: Maybe<Scalars['Float']['output']>;
 };
 
 /** order by stddev_pop() on columns of table "package_product_skus" */
@@ -6969,6 +6999,8 @@ export type Package_Product_Skus_Stddev_Pop_Order_By = {
   product_sku_product_skus?: InputMaybe<Order_By>;
   /** SKU数量 */
   quantity?: InputMaybe<Order_By>;
+  /** 排序，越小越前 */
+  sort_order?: InputMaybe<Order_By>;
 };
 
 /** aggregate stddev_samp on columns */
@@ -6981,6 +7013,8 @@ export type Package_Product_Skus_Stddev_Samp_Fields = {
   product_sku_product_skus?: Maybe<Scalars['Float']['output']>;
   /** SKU数量 */
   quantity?: Maybe<Scalars['Float']['output']>;
+  /** 排序，越小越前 */
+  sort_order?: Maybe<Scalars['Float']['output']>;
 };
 
 /** order by stddev_samp() on columns of table "package_product_skus" */
@@ -6992,6 +7026,8 @@ export type Package_Product_Skus_Stddev_Samp_Order_By = {
   product_sku_product_skus?: InputMaybe<Order_By>;
   /** SKU数量 */
   quantity?: InputMaybe<Order_By>;
+  /** 排序，越小越前 */
+  sort_order?: InputMaybe<Order_By>;
 };
 
 /** Streaming cursor of the table "package_product_skus" */
@@ -7012,6 +7048,8 @@ export type Package_Product_Skus_Stream_Cursor_Value_Input = {
   product_sku_product_skus?: InputMaybe<Scalars['bigint']['input']>;
   /** SKU数量 */
   quantity?: InputMaybe<Scalars['bigint']['input']>;
+  /** 排序，越小越前 */
+  sort_order?: InputMaybe<Scalars['bigint']['input']>;
   updated_at?: InputMaybe<Scalars['timestamptz']['input']>;
 };
 
@@ -7025,6 +7063,8 @@ export type Package_Product_Skus_Sum_Fields = {
   product_sku_product_skus?: Maybe<Scalars['bigint']['output']>;
   /** SKU数量 */
   quantity?: Maybe<Scalars['bigint']['output']>;
+  /** 排序，越小越前 */
+  sort_order?: Maybe<Scalars['bigint']['output']>;
 };
 
 /** order by sum() on columns of table "package_product_skus" */
@@ -7036,6 +7076,8 @@ export type Package_Product_Skus_Sum_Order_By = {
   product_sku_product_skus?: InputMaybe<Order_By>;
   /** SKU数量 */
   quantity?: InputMaybe<Order_By>;
+  /** 排序，越小越前 */
+  sort_order?: InputMaybe<Order_By>;
 };
 
 /** update columns of table "package_product_skus" */
@@ -7050,6 +7092,8 @@ export enum Package_Product_Skus_Update_Column {
   ProductSkuProductSkus = 'product_sku_product_skus',
   /** column name */
   Quantity = 'quantity',
+  /** column name */
+  SortOrder = 'sort_order',
   /** column name */
   UpdatedAt = 'updated_at'
 }
@@ -7073,6 +7117,8 @@ export type Package_Product_Skus_Var_Pop_Fields = {
   product_sku_product_skus?: Maybe<Scalars['Float']['output']>;
   /** SKU数量 */
   quantity?: Maybe<Scalars['Float']['output']>;
+  /** 排序，越小越前 */
+  sort_order?: Maybe<Scalars['Float']['output']>;
 };
 
 /** order by var_pop() on columns of table "package_product_skus" */
@@ -7084,6 +7130,8 @@ export type Package_Product_Skus_Var_Pop_Order_By = {
   product_sku_product_skus?: InputMaybe<Order_By>;
   /** SKU数量 */
   quantity?: InputMaybe<Order_By>;
+  /** 排序，越小越前 */
+  sort_order?: InputMaybe<Order_By>;
 };
 
 /** aggregate var_samp on columns */
@@ -7096,6 +7144,8 @@ export type Package_Product_Skus_Var_Samp_Fields = {
   product_sku_product_skus?: Maybe<Scalars['Float']['output']>;
   /** SKU数量 */
   quantity?: Maybe<Scalars['Float']['output']>;
+  /** 排序，越小越前 */
+  sort_order?: Maybe<Scalars['Float']['output']>;
 };
 
 /** order by var_samp() on columns of table "package_product_skus" */
@@ -7107,6 +7157,8 @@ export type Package_Product_Skus_Var_Samp_Order_By = {
   product_sku_product_skus?: InputMaybe<Order_By>;
   /** SKU数量 */
   quantity?: InputMaybe<Order_By>;
+  /** 排序，越小越前 */
+  sort_order?: InputMaybe<Order_By>;
 };
 
 /** aggregate variance on columns */
@@ -7119,6 +7171,8 @@ export type Package_Product_Skus_Variance_Fields = {
   product_sku_product_skus?: Maybe<Scalars['Float']['output']>;
   /** SKU数量 */
   quantity?: Maybe<Scalars['Float']['output']>;
+  /** 排序，越小越前 */
+  sort_order?: Maybe<Scalars['Float']['output']>;
 };
 
 /** order by variance() on columns of table "package_product_skus" */
@@ -7130,6 +7184,8 @@ export type Package_Product_Skus_Variance_Order_By = {
   product_sku_product_skus?: InputMaybe<Order_By>;
   /** SKU数量 */
   quantity?: InputMaybe<Order_By>;
+  /** 排序，越小越前 */
+  sort_order?: InputMaybe<Order_By>;
 };
 
 /** 套餐表 */
@@ -7157,6 +7213,8 @@ export type Packages = {
   package_product_skus: Array<Package_Product_Skus>;
   /** An aggregate relationship */
   package_product_skus_aggregate: Package_Product_Skus_Aggregate;
+  /** 排序，越小的在前面 */
+  sort_order: Scalars['bigint']['output'];
   /** 标签，多个用｜隔开 */
   tags?: Maybe<Scalars['String']['output']>;
   updated_at: Scalars['timestamptz']['output'];
@@ -7269,6 +7327,8 @@ export type Packages_Avg_Fields = {
   /** 哪个公司的套餐 */
   company_companies?: Maybe<Scalars['Float']['output']>;
   id?: Maybe<Scalars['Float']['output']>;
+  /** 排序，越小的在前面 */
+  sort_order?: Maybe<Scalars['Float']['output']>;
 };
 
 /** order by avg() on columns of table "packages" */
@@ -7278,6 +7338,8 @@ export type Packages_Avg_Order_By = {
   /** 哪个公司的套餐 */
   company_companies?: InputMaybe<Order_By>;
   id?: InputMaybe<Order_By>;
+  /** 排序，越小的在前面 */
+  sort_order?: InputMaybe<Order_By>;
 };
 
 /** Boolean expression to filter rows from the table "packages". All fields are combined with a logical 'AND'. */
@@ -7297,6 +7359,7 @@ export type Packages_Bool_Exp = {
   name?: InputMaybe<String_Comparison_Exp>;
   package_product_skus?: InputMaybe<Package_Product_Skus_Bool_Exp>;
   package_product_skus_aggregate?: InputMaybe<Package_Product_Skus_Aggregate_Bool_Exp>;
+  sort_order?: InputMaybe<Bigint_Comparison_Exp>;
   tags?: InputMaybe<String_Comparison_Exp>;
   updated_at?: InputMaybe<Timestamptz_Comparison_Exp>;
 };
@@ -7314,6 +7377,8 @@ export type Packages_Inc_Input = {
   /** 哪个公司的套餐 */
   company_companies?: InputMaybe<Scalars['bigint']['input']>;
   id?: InputMaybe<Scalars['bigint']['input']>;
+  /** 排序，越小的在前面 */
+  sort_order?: InputMaybe<Scalars['bigint']['input']>;
 };
 
 /** input type for inserting data into table "packages" */
@@ -7335,6 +7400,8 @@ export type Packages_Insert_Input = {
   /** 套餐名称 */
   name?: InputMaybe<Scalars['String']['input']>;
   package_product_skus?: InputMaybe<Package_Product_Skus_Arr_Rel_Insert_Input>;
+  /** 排序，越小的在前面 */
+  sort_order?: InputMaybe<Scalars['bigint']['input']>;
   /** 标签，多个用｜隔开 */
   tags?: InputMaybe<Scalars['String']['input']>;
   updated_at?: InputMaybe<Scalars['timestamptz']['input']>;
@@ -7355,6 +7422,8 @@ export type Packages_Max_Fields = {
   id?: Maybe<Scalars['bigint']['output']>;
   /** 套餐名称 */
   name?: Maybe<Scalars['String']['output']>;
+  /** 排序，越小的在前面 */
+  sort_order?: Maybe<Scalars['bigint']['output']>;
   /** 标签，多个用｜隔开 */
   tags?: Maybe<Scalars['String']['output']>;
   updated_at?: Maybe<Scalars['timestamptz']['output']>;
@@ -7374,6 +7443,8 @@ export type Packages_Max_Order_By = {
   id?: InputMaybe<Order_By>;
   /** 套餐名称 */
   name?: InputMaybe<Order_By>;
+  /** 排序，越小的在前面 */
+  sort_order?: InputMaybe<Order_By>;
   /** 标签，多个用｜隔开 */
   tags?: InputMaybe<Order_By>;
   updated_at?: InputMaybe<Order_By>;
@@ -7394,6 +7465,8 @@ export type Packages_Min_Fields = {
   id?: Maybe<Scalars['bigint']['output']>;
   /** 套餐名称 */
   name?: Maybe<Scalars['String']['output']>;
+  /** 排序，越小的在前面 */
+  sort_order?: Maybe<Scalars['bigint']['output']>;
   /** 标签，多个用｜隔开 */
   tags?: Maybe<Scalars['String']['output']>;
   updated_at?: Maybe<Scalars['timestamptz']['output']>;
@@ -7413,6 +7486,8 @@ export type Packages_Min_Order_By = {
   id?: InputMaybe<Order_By>;
   /** 套餐名称 */
   name?: InputMaybe<Order_By>;
+  /** 排序，越小的在前面 */
+  sort_order?: InputMaybe<Order_By>;
   /** 标签，多个用｜隔开 */
   tags?: InputMaybe<Order_By>;
   updated_at?: InputMaybe<Order_By>;
@@ -7454,6 +7529,7 @@ export type Packages_Order_By = {
   is_shelved?: InputMaybe<Order_By>;
   name?: InputMaybe<Order_By>;
   package_product_skus_aggregate?: InputMaybe<Package_Product_Skus_Aggregate_Order_By>;
+  sort_order?: InputMaybe<Order_By>;
   tags?: InputMaybe<Order_By>;
   updated_at?: InputMaybe<Order_By>;
 };
@@ -7481,6 +7557,8 @@ export enum Packages_Select_Column {
   IsShelved = 'is_shelved',
   /** column name */
   Name = 'name',
+  /** column name */
+  SortOrder = 'sort_order',
   /** column name */
   Tags = 'tags',
   /** column name */
@@ -7515,6 +7593,8 @@ export type Packages_Set_Input = {
   is_shelved?: InputMaybe<Scalars['Boolean']['input']>;
   /** 套餐名称 */
   name?: InputMaybe<Scalars['String']['input']>;
+  /** 排序，越小的在前面 */
+  sort_order?: InputMaybe<Scalars['bigint']['input']>;
   /** 标签，多个用｜隔开 */
   tags?: InputMaybe<Scalars['String']['input']>;
   updated_at?: InputMaybe<Scalars['timestamptz']['input']>;
@@ -7528,6 +7608,8 @@ export type Packages_Stddev_Fields = {
   /** 哪个公司的套餐 */
   company_companies?: Maybe<Scalars['Float']['output']>;
   id?: Maybe<Scalars['Float']['output']>;
+  /** 排序，越小的在前面 */
+  sort_order?: Maybe<Scalars['Float']['output']>;
 };
 
 /** order by stddev() on columns of table "packages" */
@@ -7537,6 +7619,8 @@ export type Packages_Stddev_Order_By = {
   /** 哪个公司的套餐 */
   company_companies?: InputMaybe<Order_By>;
   id?: InputMaybe<Order_By>;
+  /** 排序，越小的在前面 */
+  sort_order?: InputMaybe<Order_By>;
 };
 
 /** aggregate stddev_pop on columns */
@@ -7547,6 +7631,8 @@ export type Packages_Stddev_Pop_Fields = {
   /** 哪个公司的套餐 */
   company_companies?: Maybe<Scalars['Float']['output']>;
   id?: Maybe<Scalars['Float']['output']>;
+  /** 排序，越小的在前面 */
+  sort_order?: Maybe<Scalars['Float']['output']>;
 };
 
 /** order by stddev_pop() on columns of table "packages" */
@@ -7556,6 +7642,8 @@ export type Packages_Stddev_Pop_Order_By = {
   /** 哪个公司的套餐 */
   company_companies?: InputMaybe<Order_By>;
   id?: InputMaybe<Order_By>;
+  /** 排序，越小的在前面 */
+  sort_order?: InputMaybe<Order_By>;
 };
 
 /** aggregate stddev_samp on columns */
@@ -7566,6 +7654,8 @@ export type Packages_Stddev_Samp_Fields = {
   /** 哪个公司的套餐 */
   company_companies?: Maybe<Scalars['Float']['output']>;
   id?: Maybe<Scalars['Float']['output']>;
+  /** 排序，越小的在前面 */
+  sort_order?: Maybe<Scalars['Float']['output']>;
 };
 
 /** order by stddev_samp() on columns of table "packages" */
@@ -7575,6 +7665,8 @@ export type Packages_Stddev_Samp_Order_By = {
   /** 哪个公司的套餐 */
   company_companies?: InputMaybe<Order_By>;
   id?: InputMaybe<Order_By>;
+  /** 排序，越小的在前面 */
+  sort_order?: InputMaybe<Order_By>;
 };
 
 /** Streaming cursor of the table "packages" */
@@ -7601,6 +7693,8 @@ export type Packages_Stream_Cursor_Value_Input = {
   is_shelved?: InputMaybe<Scalars['Boolean']['input']>;
   /** 套餐名称 */
   name?: InputMaybe<Scalars['String']['input']>;
+  /** 排序，越小的在前面 */
+  sort_order?: InputMaybe<Scalars['bigint']['input']>;
   /** 标签，多个用｜隔开 */
   tags?: InputMaybe<Scalars['String']['input']>;
   updated_at?: InputMaybe<Scalars['timestamptz']['input']>;
@@ -7614,6 +7708,8 @@ export type Packages_Sum_Fields = {
   /** 哪个公司的套餐 */
   company_companies?: Maybe<Scalars['bigint']['output']>;
   id?: Maybe<Scalars['bigint']['output']>;
+  /** 排序，越小的在前面 */
+  sort_order?: Maybe<Scalars['bigint']['output']>;
 };
 
 /** order by sum() on columns of table "packages" */
@@ -7623,6 +7719,8 @@ export type Packages_Sum_Order_By = {
   /** 哪个公司的套餐 */
   company_companies?: InputMaybe<Order_By>;
   id?: InputMaybe<Order_By>;
+  /** 排序，越小的在前面 */
+  sort_order?: InputMaybe<Order_By>;
 };
 
 /** update columns of table "packages" */
@@ -7643,6 +7741,8 @@ export enum Packages_Update_Column {
   IsShelved = 'is_shelved',
   /** column name */
   Name = 'name',
+  /** column name */
+  SortOrder = 'sort_order',
   /** column name */
   Tags = 'tags',
   /** column name */
@@ -7666,6 +7766,8 @@ export type Packages_Var_Pop_Fields = {
   /** 哪个公司的套餐 */
   company_companies?: Maybe<Scalars['Float']['output']>;
   id?: Maybe<Scalars['Float']['output']>;
+  /** 排序，越小的在前面 */
+  sort_order?: Maybe<Scalars['Float']['output']>;
 };
 
 /** order by var_pop() on columns of table "packages" */
@@ -7675,6 +7777,8 @@ export type Packages_Var_Pop_Order_By = {
   /** 哪个公司的套餐 */
   company_companies?: InputMaybe<Order_By>;
   id?: InputMaybe<Order_By>;
+  /** 排序，越小的在前面 */
+  sort_order?: InputMaybe<Order_By>;
 };
 
 /** aggregate var_samp on columns */
@@ -7685,6 +7789,8 @@ export type Packages_Var_Samp_Fields = {
   /** 哪个公司的套餐 */
   company_companies?: Maybe<Scalars['Float']['output']>;
   id?: Maybe<Scalars['Float']['output']>;
+  /** 排序，越小的在前面 */
+  sort_order?: Maybe<Scalars['Float']['output']>;
 };
 
 /** order by var_samp() on columns of table "packages" */
@@ -7694,6 +7800,8 @@ export type Packages_Var_Samp_Order_By = {
   /** 哪个公司的套餐 */
   company_companies?: InputMaybe<Order_By>;
   id?: InputMaybe<Order_By>;
+  /** 排序，越小的在前面 */
+  sort_order?: InputMaybe<Order_By>;
 };
 
 /** aggregate variance on columns */
@@ -7704,6 +7812,8 @@ export type Packages_Variance_Fields = {
   /** 哪个公司的套餐 */
   company_companies?: Maybe<Scalars['Float']['output']>;
   id?: Maybe<Scalars['Float']['output']>;
+  /** 排序，越小的在前面 */
+  sort_order?: Maybe<Scalars['Float']['output']>;
 };
 
 /** order by variance() on columns of table "packages" */
@@ -7713,6 +7823,8 @@ export type Packages_Variance_Order_By = {
   /** 哪个公司的套餐 */
   company_companies?: InputMaybe<Order_By>;
   id?: InputMaybe<Order_By>;
+  /** 排序，越小的在前面 */
+  sort_order?: InputMaybe<Order_By>;
 };
 
 /** 产品下的规格 */
@@ -7750,6 +7862,8 @@ export type Product_Skus = {
   product: Products;
   /** 关联产品id */
   product_products: Scalars['bigint']['output'];
+  /** 排序，越小的在前 */
+  sort_order: Scalars['bigint']['output'];
   /** 库存 */
   stock: Scalars['bigint']['output'];
   updated_at: Scalars['timestamptz']['output'];
@@ -7904,6 +8018,8 @@ export type Product_Skus_Avg_Fields = {
   price?: Maybe<Scalars['Float']['output']>;
   /** 关联产品id */
   product_products?: Maybe<Scalars['Float']['output']>;
+  /** 排序，越小的在前 */
+  sort_order?: Maybe<Scalars['Float']['output']>;
   /** 库存 */
   stock?: Maybe<Scalars['Float']['output']>;
 };
@@ -7917,6 +8033,8 @@ export type Product_Skus_Avg_Order_By = {
   price?: InputMaybe<Order_By>;
   /** 关联产品id */
   product_products?: InputMaybe<Order_By>;
+  /** 排序，越小的在前 */
+  sort_order?: InputMaybe<Order_By>;
   /** 库存 */
   stock?: InputMaybe<Order_By>;
 };
@@ -7943,6 +8061,7 @@ export type Product_Skus_Bool_Exp = {
   price?: InputMaybe<Numeric_Comparison_Exp>;
   product?: InputMaybe<Products_Bool_Exp>;
   product_products?: InputMaybe<Bigint_Comparison_Exp>;
+  sort_order?: InputMaybe<Bigint_Comparison_Exp>;
   stock?: InputMaybe<Bigint_Comparison_Exp>;
   updated_at?: InputMaybe<Timestamptz_Comparison_Exp>;
 };
@@ -7962,6 +8081,8 @@ export type Product_Skus_Inc_Input = {
   price?: InputMaybe<Scalars['numeric']['input']>;
   /** 关联产品id */
   product_products?: InputMaybe<Scalars['bigint']['input']>;
+  /** 排序，越小的在前 */
+  sort_order?: InputMaybe<Scalars['bigint']['input']>;
   /** 库存 */
   stock?: InputMaybe<Scalars['bigint']['input']>;
 };
@@ -7989,6 +8110,8 @@ export type Product_Skus_Insert_Input = {
   product?: InputMaybe<Products_Obj_Rel_Insert_Input>;
   /** 关联产品id */
   product_products?: InputMaybe<Scalars['bigint']['input']>;
+  /** 排序，越小的在前 */
+  sort_order?: InputMaybe<Scalars['bigint']['input']>;
   /** 库存 */
   stock?: InputMaybe<Scalars['bigint']['input']>;
   updated_at?: InputMaybe<Scalars['timestamptz']['input']>;
@@ -8009,6 +8132,8 @@ export type Product_Skus_Max_Fields = {
   price?: Maybe<Scalars['numeric']['output']>;
   /** 关联产品id */
   product_products?: Maybe<Scalars['bigint']['output']>;
+  /** 排序，越小的在前 */
+  sort_order?: Maybe<Scalars['bigint']['output']>;
   /** 库存 */
   stock?: Maybe<Scalars['bigint']['output']>;
   updated_at?: Maybe<Scalars['timestamptz']['output']>;
@@ -8028,6 +8153,8 @@ export type Product_Skus_Max_Order_By = {
   price?: InputMaybe<Order_By>;
   /** 关联产品id */
   product_products?: InputMaybe<Order_By>;
+  /** 排序，越小的在前 */
+  sort_order?: InputMaybe<Order_By>;
   /** 库存 */
   stock?: InputMaybe<Order_By>;
   updated_at?: InputMaybe<Order_By>;
@@ -8048,6 +8175,8 @@ export type Product_Skus_Min_Fields = {
   price?: Maybe<Scalars['numeric']['output']>;
   /** 关联产品id */
   product_products?: Maybe<Scalars['bigint']['output']>;
+  /** 排序，越小的在前 */
+  sort_order?: Maybe<Scalars['bigint']['output']>;
   /** 库存 */
   stock?: Maybe<Scalars['bigint']['output']>;
   updated_at?: Maybe<Scalars['timestamptz']['output']>;
@@ -8067,6 +8196,8 @@ export type Product_Skus_Min_Order_By = {
   price?: InputMaybe<Order_By>;
   /** 关联产品id */
   product_products?: InputMaybe<Order_By>;
+  /** 排序，越小的在前 */
+  sort_order?: InputMaybe<Order_By>;
   /** 库存 */
   stock?: InputMaybe<Order_By>;
   updated_at?: InputMaybe<Order_By>;
@@ -8111,6 +8242,7 @@ export type Product_Skus_Order_By = {
   price?: InputMaybe<Order_By>;
   product?: InputMaybe<Products_Order_By>;
   product_products?: InputMaybe<Order_By>;
+  sort_order?: InputMaybe<Order_By>;
   stock?: InputMaybe<Order_By>;
   updated_at?: InputMaybe<Order_By>;
 };
@@ -8140,6 +8272,8 @@ export enum Product_Skus_Select_Column {
   Price = 'price',
   /** column name */
   ProductProducts = 'product_products',
+  /** column name */
+  SortOrder = 'sort_order',
   /** column name */
   Stock = 'stock',
   /** column name */
@@ -8180,6 +8314,8 @@ export type Product_Skus_Set_Input = {
   price?: InputMaybe<Scalars['numeric']['input']>;
   /** 关联产品id */
   product_products?: InputMaybe<Scalars['bigint']['input']>;
+  /** 排序，越小的在前 */
+  sort_order?: InputMaybe<Scalars['bigint']['input']>;
   /** 库存 */
   stock?: InputMaybe<Scalars['bigint']['input']>;
   updated_at?: InputMaybe<Scalars['timestamptz']['input']>;
@@ -8195,6 +8331,8 @@ export type Product_Skus_Stddev_Fields = {
   price?: Maybe<Scalars['Float']['output']>;
   /** 关联产品id */
   product_products?: Maybe<Scalars['Float']['output']>;
+  /** 排序，越小的在前 */
+  sort_order?: Maybe<Scalars['Float']['output']>;
   /** 库存 */
   stock?: Maybe<Scalars['Float']['output']>;
 };
@@ -8208,6 +8346,8 @@ export type Product_Skus_Stddev_Order_By = {
   price?: InputMaybe<Order_By>;
   /** 关联产品id */
   product_products?: InputMaybe<Order_By>;
+  /** 排序，越小的在前 */
+  sort_order?: InputMaybe<Order_By>;
   /** 库存 */
   stock?: InputMaybe<Order_By>;
 };
@@ -8222,6 +8362,8 @@ export type Product_Skus_Stddev_Pop_Fields = {
   price?: Maybe<Scalars['Float']['output']>;
   /** 关联产品id */
   product_products?: Maybe<Scalars['Float']['output']>;
+  /** 排序，越小的在前 */
+  sort_order?: Maybe<Scalars['Float']['output']>;
   /** 库存 */
   stock?: Maybe<Scalars['Float']['output']>;
 };
@@ -8235,6 +8377,8 @@ export type Product_Skus_Stddev_Pop_Order_By = {
   price?: InputMaybe<Order_By>;
   /** 关联产品id */
   product_products?: InputMaybe<Order_By>;
+  /** 排序，越小的在前 */
+  sort_order?: InputMaybe<Order_By>;
   /** 库存 */
   stock?: InputMaybe<Order_By>;
 };
@@ -8249,6 +8393,8 @@ export type Product_Skus_Stddev_Samp_Fields = {
   price?: Maybe<Scalars['Float']['output']>;
   /** 关联产品id */
   product_products?: Maybe<Scalars['Float']['output']>;
+  /** 排序，越小的在前 */
+  sort_order?: Maybe<Scalars['Float']['output']>;
   /** 库存 */
   stock?: Maybe<Scalars['Float']['output']>;
 };
@@ -8262,6 +8408,8 @@ export type Product_Skus_Stddev_Samp_Order_By = {
   price?: InputMaybe<Order_By>;
   /** 关联产品id */
   product_products?: InputMaybe<Order_By>;
+  /** 排序，越小的在前 */
+  sort_order?: InputMaybe<Order_By>;
   /** 库存 */
   stock?: InputMaybe<Order_By>;
 };
@@ -8292,6 +8440,8 @@ export type Product_Skus_Stream_Cursor_Value_Input = {
   price?: InputMaybe<Scalars['numeric']['input']>;
   /** 关联产品id */
   product_products?: InputMaybe<Scalars['bigint']['input']>;
+  /** 排序，越小的在前 */
+  sort_order?: InputMaybe<Scalars['bigint']['input']>;
   /** 库存 */
   stock?: InputMaybe<Scalars['bigint']['input']>;
   updated_at?: InputMaybe<Scalars['timestamptz']['input']>;
@@ -8307,6 +8457,8 @@ export type Product_Skus_Sum_Fields = {
   price?: Maybe<Scalars['numeric']['output']>;
   /** 关联产品id */
   product_products?: Maybe<Scalars['bigint']['output']>;
+  /** 排序，越小的在前 */
+  sort_order?: Maybe<Scalars['bigint']['output']>;
   /** 库存 */
   stock?: Maybe<Scalars['bigint']['output']>;
 };
@@ -8320,6 +8472,8 @@ export type Product_Skus_Sum_Order_By = {
   price?: InputMaybe<Order_By>;
   /** 关联产品id */
   product_products?: InputMaybe<Order_By>;
+  /** 排序，越小的在前 */
+  sort_order?: InputMaybe<Order_By>;
   /** 库存 */
   stock?: InputMaybe<Order_By>;
 };
@@ -8345,6 +8499,8 @@ export enum Product_Skus_Update_Column {
   /** column name */
   ProductProducts = 'product_products',
   /** column name */
+  SortOrder = 'sort_order',
+  /** column name */
   Stock = 'stock',
   /** column name */
   UpdatedAt = 'updated_at'
@@ -8369,6 +8525,8 @@ export type Product_Skus_Var_Pop_Fields = {
   price?: Maybe<Scalars['Float']['output']>;
   /** 关联产品id */
   product_products?: Maybe<Scalars['Float']['output']>;
+  /** 排序，越小的在前 */
+  sort_order?: Maybe<Scalars['Float']['output']>;
   /** 库存 */
   stock?: Maybe<Scalars['Float']['output']>;
 };
@@ -8382,6 +8540,8 @@ export type Product_Skus_Var_Pop_Order_By = {
   price?: InputMaybe<Order_By>;
   /** 关联产品id */
   product_products?: InputMaybe<Order_By>;
+  /** 排序，越小的在前 */
+  sort_order?: InputMaybe<Order_By>;
   /** 库存 */
   stock?: InputMaybe<Order_By>;
 };
@@ -8396,6 +8556,8 @@ export type Product_Skus_Var_Samp_Fields = {
   price?: Maybe<Scalars['Float']['output']>;
   /** 关联产品id */
   product_products?: Maybe<Scalars['Float']['output']>;
+  /** 排序，越小的在前 */
+  sort_order?: Maybe<Scalars['Float']['output']>;
   /** 库存 */
   stock?: Maybe<Scalars['Float']['output']>;
 };
@@ -8409,6 +8571,8 @@ export type Product_Skus_Var_Samp_Order_By = {
   price?: InputMaybe<Order_By>;
   /** 关联产品id */
   product_products?: InputMaybe<Order_By>;
+  /** 排序，越小的在前 */
+  sort_order?: InputMaybe<Order_By>;
   /** 库存 */
   stock?: InputMaybe<Order_By>;
 };
@@ -8423,6 +8587,8 @@ export type Product_Skus_Variance_Fields = {
   price?: Maybe<Scalars['Float']['output']>;
   /** 关联产品id */
   product_products?: Maybe<Scalars['Float']['output']>;
+  /** 排序，越小的在前 */
+  sort_order?: Maybe<Scalars['Float']['output']>;
   /** 库存 */
   stock?: Maybe<Scalars['Float']['output']>;
 };
@@ -8436,6 +8602,8 @@ export type Product_Skus_Variance_Order_By = {
   price?: InputMaybe<Order_By>;
   /** 关联产品id */
   product_products?: InputMaybe<Order_By>;
+  /** 排序，越小的在前 */
+  sort_order?: InputMaybe<Order_By>;
   /** 库存 */
   stock?: InputMaybe<Order_By>;
 };
@@ -8475,6 +8643,8 @@ export type Products = {
   product_skus_aggregate: Product_Skus_Aggregate;
   /** 实景拍摄信息媒体内容，jsonb的item项（file_type=video|image、file_url） */
   scene_medias: Array<Scalars['json']['output']>;
+  /** 排序 越小在前面 */
+  sort_order: Scalars['bigint']['output'];
   /** 标签，多个用｜隔开 */
   tags?: Maybe<Scalars['String']['output']>;
   updated_at: Scalars['timestamptz']['output'];
@@ -8607,6 +8777,8 @@ export type Products_Avg_Fields = {
   /** 归属公司id */
   company_companies?: Maybe<Scalars['Float']['output']>;
   id?: Maybe<Scalars['Float']['output']>;
+  /** 排序 越小在前面 */
+  sort_order?: Maybe<Scalars['Float']['output']>;
 };
 
 /** order by avg() on columns of table "products" */
@@ -8616,6 +8788,8 @@ export type Products_Avg_Order_By = {
   /** 归属公司id */
   company_companies?: InputMaybe<Order_By>;
   id?: InputMaybe<Order_By>;
+  /** 排序 越小在前面 */
+  sort_order?: InputMaybe<Order_By>;
 };
 
 /** Boolean expression to filter rows from the table "products". All fields are combined with a logical 'AND'. */
@@ -8640,6 +8814,7 @@ export type Products_Bool_Exp = {
   product_skus?: InputMaybe<Product_Skus_Bool_Exp>;
   product_skus_aggregate?: InputMaybe<Product_Skus_Aggregate_Bool_Exp>;
   scene_medias?: InputMaybe<Json_Array_Comparison_Exp>;
+  sort_order?: InputMaybe<Bigint_Comparison_Exp>;
   tags?: InputMaybe<String_Comparison_Exp>;
   updated_at?: InputMaybe<Timestamptz_Comparison_Exp>;
 };
@@ -8657,6 +8832,8 @@ export type Products_Inc_Input = {
   /** 归属公司id */
   company_companies?: InputMaybe<Scalars['bigint']['input']>;
   id?: InputMaybe<Scalars['bigint']['input']>;
+  /** 排序 越小在前面 */
+  sort_order?: InputMaybe<Scalars['bigint']['input']>;
 };
 
 /** input type for inserting data into table "products" */
@@ -8685,6 +8862,8 @@ export type Products_Insert_Input = {
   product_skus?: InputMaybe<Product_Skus_Arr_Rel_Insert_Input>;
   /** 实景拍摄信息媒体内容，jsonb的item项（file_type=video|image、file_url） */
   scene_medias?: InputMaybe<Array<Scalars['json']['input']>>;
+  /** 排序 越小在前面 */
+  sort_order?: InputMaybe<Scalars['bigint']['input']>;
   /** 标签，多个用｜隔开 */
   tags?: InputMaybe<Scalars['String']['input']>;
   updated_at?: InputMaybe<Scalars['timestamptz']['input']>;
@@ -8709,6 +8888,8 @@ export type Products_Max_Fields = {
   name?: Maybe<Scalars['String']['output']>;
   /** 实景拍摄信息媒体内容，jsonb的item项（file_type=video|image、file_url） */
   scene_medias?: Maybe<Array<Scalars['json']['output']>>;
+  /** 排序 越小在前面 */
+  sort_order?: Maybe<Scalars['bigint']['output']>;
   /** 标签，多个用｜隔开 */
   tags?: Maybe<Scalars['String']['output']>;
   updated_at?: Maybe<Scalars['timestamptz']['output']>;
@@ -8732,6 +8913,8 @@ export type Products_Max_Order_By = {
   name?: InputMaybe<Order_By>;
   /** 实景拍摄信息媒体内容，jsonb的item项（file_type=video|image、file_url） */
   scene_medias?: InputMaybe<Order_By>;
+  /** 排序 越小在前面 */
+  sort_order?: InputMaybe<Order_By>;
   /** 标签，多个用｜隔开 */
   tags?: InputMaybe<Order_By>;
   updated_at?: InputMaybe<Order_By>;
@@ -8756,6 +8939,8 @@ export type Products_Min_Fields = {
   name?: Maybe<Scalars['String']['output']>;
   /** 实景拍摄信息媒体内容，jsonb的item项（file_type=video|image、file_url） */
   scene_medias?: Maybe<Array<Scalars['json']['output']>>;
+  /** 排序 越小在前面 */
+  sort_order?: Maybe<Scalars['bigint']['output']>;
   /** 标签，多个用｜隔开 */
   tags?: Maybe<Scalars['String']['output']>;
   updated_at?: Maybe<Scalars['timestamptz']['output']>;
@@ -8779,6 +8964,8 @@ export type Products_Min_Order_By = {
   name?: InputMaybe<Order_By>;
   /** 实景拍摄信息媒体内容，jsonb的item项（file_type=video|image、file_url） */
   scene_medias?: InputMaybe<Order_By>;
+  /** 排序 越小在前面 */
+  sort_order?: InputMaybe<Order_By>;
   /** 标签，多个用｜隔开 */
   tags?: InputMaybe<Order_By>;
   updated_at?: InputMaybe<Order_By>;
@@ -8824,6 +9011,7 @@ export type Products_Order_By = {
   name?: InputMaybe<Order_By>;
   product_skus_aggregate?: InputMaybe<Product_Skus_Aggregate_Order_By>;
   scene_medias?: InputMaybe<Order_By>;
+  sort_order?: InputMaybe<Order_By>;
   tags?: InputMaybe<Order_By>;
   updated_at?: InputMaybe<Order_By>;
 };
@@ -8857,6 +9045,8 @@ export enum Products_Select_Column {
   Name = 'name',
   /** column name */
   SceneMedias = 'scene_medias',
+  /** column name */
+  SortOrder = 'sort_order',
   /** column name */
   Tags = 'tags',
   /** column name */
@@ -8901,6 +9091,8 @@ export type Products_Set_Input = {
   name?: InputMaybe<Scalars['String']['input']>;
   /** 实景拍摄信息媒体内容，jsonb的item项（file_type=video|image、file_url） */
   scene_medias?: InputMaybe<Array<Scalars['json']['input']>>;
+  /** 排序 越小在前面 */
+  sort_order?: InputMaybe<Scalars['bigint']['input']>;
   /** 标签，多个用｜隔开 */
   tags?: InputMaybe<Scalars['String']['input']>;
   updated_at?: InputMaybe<Scalars['timestamptz']['input']>;
@@ -8914,6 +9106,8 @@ export type Products_Stddev_Fields = {
   /** 归属公司id */
   company_companies?: Maybe<Scalars['Float']['output']>;
   id?: Maybe<Scalars['Float']['output']>;
+  /** 排序 越小在前面 */
+  sort_order?: Maybe<Scalars['Float']['output']>;
 };
 
 /** order by stddev() on columns of table "products" */
@@ -8923,6 +9117,8 @@ export type Products_Stddev_Order_By = {
   /** 归属公司id */
   company_companies?: InputMaybe<Order_By>;
   id?: InputMaybe<Order_By>;
+  /** 排序 越小在前面 */
+  sort_order?: InputMaybe<Order_By>;
 };
 
 /** aggregate stddev_pop on columns */
@@ -8933,6 +9129,8 @@ export type Products_Stddev_Pop_Fields = {
   /** 归属公司id */
   company_companies?: Maybe<Scalars['Float']['output']>;
   id?: Maybe<Scalars['Float']['output']>;
+  /** 排序 越小在前面 */
+  sort_order?: Maybe<Scalars['Float']['output']>;
 };
 
 /** order by stddev_pop() on columns of table "products" */
@@ -8942,6 +9140,8 @@ export type Products_Stddev_Pop_Order_By = {
   /** 归属公司id */
   company_companies?: InputMaybe<Order_By>;
   id?: InputMaybe<Order_By>;
+  /** 排序 越小在前面 */
+  sort_order?: InputMaybe<Order_By>;
 };
 
 /** aggregate stddev_samp on columns */
@@ -8952,6 +9152,8 @@ export type Products_Stddev_Samp_Fields = {
   /** 归属公司id */
   company_companies?: Maybe<Scalars['Float']['output']>;
   id?: Maybe<Scalars['Float']['output']>;
+  /** 排序 越小在前面 */
+  sort_order?: Maybe<Scalars['Float']['output']>;
 };
 
 /** order by stddev_samp() on columns of table "products" */
@@ -8961,6 +9163,8 @@ export type Products_Stddev_Samp_Order_By = {
   /** 归属公司id */
   company_companies?: InputMaybe<Order_By>;
   id?: InputMaybe<Order_By>;
+  /** 排序 越小在前面 */
+  sort_order?: InputMaybe<Order_By>;
 };
 
 /** Streaming cursor of the table "products" */
@@ -8993,6 +9197,8 @@ export type Products_Stream_Cursor_Value_Input = {
   name?: InputMaybe<Scalars['String']['input']>;
   /** 实景拍摄信息媒体内容，jsonb的item项（file_type=video|image、file_url） */
   scene_medias?: InputMaybe<Array<Scalars['json']['input']>>;
+  /** 排序 越小在前面 */
+  sort_order?: InputMaybe<Scalars['bigint']['input']>;
   /** 标签，多个用｜隔开 */
   tags?: InputMaybe<Scalars['String']['input']>;
   updated_at?: InputMaybe<Scalars['timestamptz']['input']>;
@@ -9006,6 +9212,8 @@ export type Products_Sum_Fields = {
   /** 归属公司id */
   company_companies?: Maybe<Scalars['bigint']['output']>;
   id?: Maybe<Scalars['bigint']['output']>;
+  /** 排序 越小在前面 */
+  sort_order?: Maybe<Scalars['bigint']['output']>;
 };
 
 /** order by sum() on columns of table "products" */
@@ -9015,6 +9223,8 @@ export type Products_Sum_Order_By = {
   /** 归属公司id */
   company_companies?: InputMaybe<Order_By>;
   id?: InputMaybe<Order_By>;
+  /** 排序 越小在前面 */
+  sort_order?: InputMaybe<Order_By>;
 };
 
 /** update columns of table "products" */
@@ -9042,6 +9252,8 @@ export enum Products_Update_Column {
   /** column name */
   SceneMedias = 'scene_medias',
   /** column name */
+  SortOrder = 'sort_order',
+  /** column name */
   Tags = 'tags',
   /** column name */
   UpdatedAt = 'updated_at'
@@ -9064,6 +9276,8 @@ export type Products_Var_Pop_Fields = {
   /** 归属公司id */
   company_companies?: Maybe<Scalars['Float']['output']>;
   id?: Maybe<Scalars['Float']['output']>;
+  /** 排序 越小在前面 */
+  sort_order?: Maybe<Scalars['Float']['output']>;
 };
 
 /** order by var_pop() on columns of table "products" */
@@ -9073,6 +9287,8 @@ export type Products_Var_Pop_Order_By = {
   /** 归属公司id */
   company_companies?: InputMaybe<Order_By>;
   id?: InputMaybe<Order_By>;
+  /** 排序 越小在前面 */
+  sort_order?: InputMaybe<Order_By>;
 };
 
 /** aggregate var_samp on columns */
@@ -9083,6 +9299,8 @@ export type Products_Var_Samp_Fields = {
   /** 归属公司id */
   company_companies?: Maybe<Scalars['Float']['output']>;
   id?: Maybe<Scalars['Float']['output']>;
+  /** 排序 越小在前面 */
+  sort_order?: Maybe<Scalars['Float']['output']>;
 };
 
 /** order by var_samp() on columns of table "products" */
@@ -9092,6 +9310,8 @@ export type Products_Var_Samp_Order_By = {
   /** 归属公司id */
   company_companies?: InputMaybe<Order_By>;
   id?: InputMaybe<Order_By>;
+  /** 排序 越小在前面 */
+  sort_order?: InputMaybe<Order_By>;
 };
 
 /** aggregate variance on columns */
@@ -9102,6 +9322,8 @@ export type Products_Variance_Fields = {
   /** 归属公司id */
   company_companies?: Maybe<Scalars['Float']['output']>;
   id?: Maybe<Scalars['Float']['output']>;
+  /** 排序 越小在前面 */
+  sort_order?: Maybe<Scalars['Float']['output']>;
 };
 
 /** order by variance() on columns of table "products" */
@@ -9111,6 +9333,8 @@ export type Products_Variance_Order_By = {
   /** 归属公司id */
   company_companies?: InputMaybe<Order_By>;
   id?: InputMaybe<Order_By>;
+  /** 排序 越小在前面 */
+  sort_order?: InputMaybe<Order_By>;
 };
 
 export type Query_Root = {
