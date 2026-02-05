@@ -126,7 +126,8 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue';
-import { onLoad, onReady } from '@dcloudio/uni-app';
+import { whenAppReady } from '@/utils/appReady';
+import { onLoad, onReady, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app';
 import { getProductList } from '@/api/product/index';
 import { getPackageList } from '@/api/package/index';
 import { userInfo, user_token, companyInfo } from '@/store/userStore';
@@ -280,6 +281,7 @@ const goBack = () => {
 };
 
 onLoad(async (options?) => {
+  await whenAppReady();
   if (options?.type === 'package' || options?.type === 'product') {
     searchType.value = options.type;
   }
@@ -299,6 +301,44 @@ onLoad(async (options?) => {
 
 onReady(() => {
   inputFocused.value = true;
+});
+
+function getSharePath() {
+  const cid = companyInfo.value?.id ?? uni.getStorageSync('companyId') ?? '';
+  const parts = ['/pages/search/index'];
+  const params = new URLSearchParams();
+  if (cid) params.set('companyId', String(cid));
+  if (searchType.value) params.set('type', searchType.value);
+  if (keyword.value) params.set('keyword', keyword.value);
+  if (categoryId.value != null) params.set('categoryId', String(categoryId.value));
+  if (categoryName.value) params.set('categoryName', categoryName.value);
+  const q = params.toString();
+  return q ? `${parts[0]}?${q}` : parts[0];
+}
+
+function getShareQuery() {
+  const cid = companyInfo.value?.id ?? uni.getStorageSync('companyId') ?? '';
+  const params = new URLSearchParams();
+  if (cid) params.set('companyId', String(cid));
+  if (searchType.value) params.set('type', searchType.value);
+  if (keyword.value) params.set('keyword', keyword.value);
+  if (categoryId.value != null) params.set('categoryId', String(categoryId.value));
+  if (categoryName.value) params.set('categoryName', categoryName.value);
+  return params.toString();
+}
+
+onShareAppMessage(() => {
+  return {
+    title: pageTitle.value || (companyInfo.value?.name ? `${companyInfo.value.name} - 搜索` : '搜索'),
+    path: getSharePath(),
+  };
+});
+
+onShareTimeline(() => {
+  return {
+    title: pageTitle.value || (companyInfo.value?.name ? `${companyInfo.value.name} - 搜索` : '搜索'),
+    query: getShareQuery(),
+  };
 });
 </script>
 

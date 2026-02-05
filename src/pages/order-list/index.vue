@@ -173,6 +173,7 @@
 
 <script setup lang="ts">
 import { ref, watch } from 'vue';
+import { whenAppReady } from '@/utils/appReady';
 import { onLoad, onShow, onPullDownRefresh, onReachBottom } from '@dcloudio/uni-app';
 import { user_token, userInfo } from '@/store/userStore';
 import { getMyOrderList } from '@/api/order/index';
@@ -303,7 +304,8 @@ watch(paymentStatusFilter, () => {
   loadOrders(true);
 });
 
-onShow(() => {
+onShow(async () => {
+  await whenAppReady();
   if (user_token.value && userInfo.value?.id) {
     getCompanyUserRoleCached().then((r) => {
       canViewPrice.value = r?.canViewPrice ?? false;

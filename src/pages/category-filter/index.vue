@@ -114,7 +114,8 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue';
-import { onLoad } from '@dcloudio/uni-app';
+import { whenAppReady } from '@/utils/appReady';
+import { onLoad, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app';
 import { getCategoryChildren } from '@/api/category/index';
 import { getProductList } from '@/api/product/index';
 import { userInfo, user_token, companyInfo } from '@/store/userStore';
@@ -314,6 +315,7 @@ const goBack = () => {
 };
 
 onLoad(async (options?) => {
+  await whenAppReady();
   if (options?.categoryId) {
     parentId.value = Number(options.categoryId);
   }
@@ -323,6 +325,39 @@ onLoad(async (options?) => {
 
   await checkPermissions();
   loadSubCategories();
+});
+
+function getSharePath() {
+  const cid = companyInfo.value?.id ?? uni.getStorageSync('companyId') ?? '';
+  const params = new URLSearchParams();
+  if (cid) params.set('companyId', String(cid));
+  if (parentId.value != null) params.set('categoryId', String(parentId.value));
+  if (pageTitle.value && pageTitle.value !== '分类筛选') params.set('categoryName', pageTitle.value);
+  const q = params.toString();
+  return q ? `/pages/category-filter/index?${q}` : '/pages/category-filter/index';
+}
+
+function getShareQuery() {
+  const cid = companyInfo.value?.id ?? uni.getStorageSync('companyId') ?? '';
+  const params = new URLSearchParams();
+  if (cid) params.set('companyId', String(cid));
+  if (parentId.value != null) params.set('categoryId', String(parentId.value));
+  if (pageTitle.value && pageTitle.value !== '分类筛选') params.set('categoryName', pageTitle.value);
+  return params.toString();
+}
+
+onShareAppMessage(() => {
+  return {
+    title: navTitle.value || (companyInfo.value?.name ? `${companyInfo.value.name} - 分类` : '分类'),
+    path: getSharePath(),
+  };
+});
+
+onShareTimeline(() => {
+  return {
+    title: navTitle.value || (companyInfo.value?.name ? `${companyInfo.value.name} - 分类` : '分类'),
+    query: getShareQuery(),
+  };
 });
 </script>
 

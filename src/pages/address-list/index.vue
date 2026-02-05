@@ -36,6 +36,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
+import { whenAppReady } from '@/utils/appReady';
 import { onLoad, onShow, onPullDownRefresh } from '@dcloudio/uni-app';
 import { userInfo, user_token } from '@/store/userStore';
 import { getAddressList, setDefaultAddress, deleteAddress, type AddressItem } from '@/api/address/index';
@@ -49,7 +50,8 @@ onLoad((options?: { select?: string }) => {
   selectMode.value = options?.select === '1';
 });
 
-onShow(() => {
+onShow(async () => {
+  await whenAppReady();
   loadList();
 });
 

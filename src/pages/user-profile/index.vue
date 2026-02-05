@@ -69,6 +69,7 @@
 
 <script setup lang="ts">
 import { ref, reactive } from 'vue';
+import { whenAppReady } from '@/utils/appReady';
 import { onShow } from '@dcloudio/uni-app';
 import { userInfo, user_token, updateUserInfo } from '@/store/userStore';
 import { getUser, updateUserProfile } from '@/api/user';
@@ -194,8 +195,9 @@ async function handleSave() {
   }
 }
 
-// 仅 onShow 拉数，避免首次与 onMounted 重复请求
-onShow(() => {
+// 仅 onShow 拉数，避免首次与 onMounted 重复请求；等全局就绪后再读 userInfo
+onShow(async () => {
+  await whenAppReady();
   if (user_token.value && userInfo.value?.id) {
     initForm();
     // 可选：从服务端拉取最新资料

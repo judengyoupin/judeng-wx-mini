@@ -134,6 +134,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
+import { whenAppReady } from '@/utils/appReady';
 import { onShow, onPullDownRefresh } from '@dcloudio/uni-app';
 import { user_token, userInfo, companyInfo } from '@/store/userStore';
 import { getCompanyUserRoleCached } from '@/utils/auth';
@@ -451,7 +452,8 @@ onMounted(() => {
   calcScrollListHeight();
 });
 
-onShow(() => {
+onShow(async () => {
+  await whenAppReady();
   loadCart(false);
   calcScrollListHeight();
 });

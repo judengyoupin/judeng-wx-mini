@@ -205,6 +205,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue';
+import { whenAppReady } from '@/utils/appReady';
 import { onShow } from '@dcloudio/uni-app';
 import { userInfo, user_token, companyInfo, clearUserContext, getCompanyDetailFromCache, ensureUserInfoCached } from '@/store/userStore';
 import { getCompanyUserRoleCached } from '@/utils/auth';
@@ -493,8 +494,9 @@ const handleLogout = () => {
   });
 };
 
-// onShow：先拉取/补齐全局 userInfo 与权限（昵称、头像、管理员板块），再填公司公开信息（优先缓存）
+// onShow：等全局就绪后再拉取/补齐 userInfo 与权限，再填公司公开信息（优先缓存）
 onShow(async () => {
+  await whenAppReady();
   await checkUserPermissions();
 
   const companyId = companyInfo.value?.id;

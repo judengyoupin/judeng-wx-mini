@@ -152,7 +152,8 @@ import { getHomePageData } from "@/api/home/index";
 import { getPinia } from "@/store/piniaInstance";
 import { useUserStore } from "@/store/user";
 import { getHomePageCacheValid, setHomePageCache, userInfo, companyInfo } from "@/store/userStore";
-import { onLoad, onShow, onShareAppMessage } from "@dcloudio/uni-app";
+import { whenAppReady } from "@/utils/appReady";
+import { onLoad, onShow, onShareAppMessage, onShareTimeline } from "@dcloudio/uni-app";
 import type { BannerArray } from "@/types/companies";
 
 import PageNavBar from '@/components/PageNavBar.vue';
@@ -454,7 +455,8 @@ export default defineComponent({
       }
     });
 
-    onShow(() => {
+    onShow(async () => {
+      await whenAppReady();
       fetchHomeData(false);
     });
 
@@ -486,17 +488,21 @@ export default defineComponent({
       userInfo,
     };
   },
-  onShareAppMessage(res: { from?: string; target?: unknown }) {
-    console.log(res);
-    // 分享只带当前所在公司 id，有则带参数，无则不带
-    const currentCompanyId = companyInfo?.value?.id ?? uni.getStorageSync("companyId") ?? null;
-    const path = currentCompanyId != null && currentCompanyId !== ''
-      ? `/pages/index/index?companyId=${currentCompanyId}`
-      : '/pages/index/index';
+  onShareAppMessage() {
+    const cid = companyInfo?.value?.id ?? uni.getStorageSync("companyId") ?? '';
+    const path = cid ? `/pages/index/index?companyId=${cid}` : '/pages/index/index';
     return {
       title: companyInfo?.value?.name ? `${companyInfo.value.name}` : '首页',
       path,
       imageUrl: "",
+    };
+  },
+  onShareTimeline() {
+    const cid = companyInfo?.value?.id ?? uni.getStorageSync("companyId") ?? '';
+    const query = cid ? `companyId=${cid}` : '';
+    return {
+      title: companyInfo?.value?.name ? `${companyInfo.value.name}` : '首页',
+      query,
     };
   },
 });

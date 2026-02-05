@@ -86,7 +86,8 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue';
-import { onShow, onPullDownRefresh, onReachBottom } from '@dcloudio/uni-app';
+import { whenAppReady } from '@/utils/appReady';
+import { onShow, onPullDownRefresh, onReachBottom, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app';
 import { getPackageList } from '@/api/package/index';
 import { getCategoryTree } from '@/api/category/index';
 import { companyInfo } from '@/store/userStore';
@@ -241,7 +242,8 @@ const goToPackageDetail = (packageId: number) => {
   });
 };
 
-onShow(() => {
+onShow(async () => {
+  await whenAppReady();
   if (!companyInfo.value?.id) return;
   // 优先用 5 分钟缓存，减少重复请求
   loadCategories(true).then(() => {
@@ -256,6 +258,24 @@ onPullDownRefresh(() => {
 
 onReachBottom(() => {
   loadMore();
+});
+
+onShareAppMessage(() => {
+  const cid = companyInfo.value?.id ?? uni.getStorageSync('companyId') ?? '';
+  const path = cid ? `/pages/package/index?companyId=${cid}` : '/pages/package/index';
+  return {
+    title: companyInfo.value?.name ? `${companyInfo.value.name} - 套餐` : '套餐',
+    path,
+  };
+});
+
+onShareTimeline(() => {
+  const cid = companyInfo.value?.id ?? uni.getStorageSync('companyId') ?? '';
+  const query = cid ? `companyId=${cid}` : '';
+  return {
+    title: companyInfo.value?.name ? `${companyInfo.value.name} - 套餐` : '套餐',
+    query,
+  };
 });
 </script>
 

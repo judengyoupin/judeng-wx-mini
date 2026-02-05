@@ -2568,6 +2568,42 @@ type companies {
   ): orders_aggregate!
 
   """An array relationship"""
+  packages(
+    """distinct select on columns"""
+    distinct_on: [packages_select_column!]
+
+    """limit the number of rows returned"""
+    limit: Int
+
+    """skip the first n rows. Use only with order_by"""
+    offset: Int
+
+    """sort the rows by one or more columns"""
+    order_by: [packages_order_by!]
+
+    """filter the rows returned"""
+    where: packages_bool_exp
+  ): [packages!]!
+
+  """An aggregate relationship"""
+  packages_aggregate(
+    """distinct select on columns"""
+    distinct_on: [packages_select_column!]
+
+    """limit the number of rows returned"""
+    limit: Int
+
+    """skip the first n rows. Use only with order_by"""
+    offset: Int
+
+    """sort the rows by one or more columns"""
+    order_by: [packages_order_by!]
+
+    """filter the rows returned"""
+    where: packages_bool_exp
+  ): packages_aggregate!
+
+  """An array relationship"""
   product_skus(
     """distinct select on columns"""
     distinct_on: [product_skus_select_column!]
@@ -2701,6 +2737,8 @@ input companies_bool_exp {
   name: String_comparison_exp
   orders: orders_bool_exp
   orders_aggregate: orders_aggregate_bool_exp
+  packages: packages_bool_exp
+  packages_aggregate: packages_aggregate_bool_exp
   product_skus: product_skus_bool_exp
   product_skus_aggregate: product_skus_aggregate_bool_exp
   products: products_bool_exp
@@ -2771,6 +2809,7 @@ input companies_insert_input {
   """公司名称"""
   name: String
   orders: orders_arr_rel_insert_input
+  packages: packages_arr_rel_insert_input
   product_skus: product_skus_arr_rel_insert_input
   products: products_arr_rel_insert_input
 
@@ -2914,6 +2953,7 @@ input companies_order_by {
   logo_url: order_by
   name: order_by
   orders_aggregate: orders_aggregate_order_by
+  packages_aggregate: packages_aggregate_order_by
   product_skus_aggregate: product_skus_aggregate_order_by
   products_aggregate: products_aggregate_order_by
   resource_file_url: order_by
@@ -7716,7 +7756,10 @@ type packages {
   """分类id，上架时只能选择系统默认公司和自己公司的分类数据"""
   category_categories: bigint
 
-  """套餐属于哪个公司"""
+  """An object relationship"""
+  company: companies!
+
+  """哪个公司的套餐"""
   company_companies: bigint!
 
   """套餐封面图"""
@@ -7732,9 +7775,6 @@ type packages {
 
   """套餐名称"""
   name: String!
-
-  """An object relationship"""
-  package: packages!
 
   """An array relationship"""
   package_product_skus(
@@ -7771,42 +7811,6 @@ type packages {
     """filter the rows returned"""
     where: package_product_skus_bool_exp
   ): package_product_skus_aggregate!
-
-  """An array relationship"""
-  packages(
-    """distinct select on columns"""
-    distinct_on: [packages_select_column!]
-
-    """limit the number of rows returned"""
-    limit: Int
-
-    """skip the first n rows. Use only with order_by"""
-    offset: Int
-
-    """sort the rows by one or more columns"""
-    order_by: [packages_order_by!]
-
-    """filter the rows returned"""
-    where: packages_bool_exp
-  ): [packages!]!
-
-  """An aggregate relationship"""
-  packages_aggregate(
-    """distinct select on columns"""
-    distinct_on: [packages_select_column!]
-
-    """limit the number of rows returned"""
-    limit: Int
-
-    """skip the first n rows. Use only with order_by"""
-    offset: Int
-
-    """sort the rows by one or more columns"""
-    order_by: [packages_order_by!]
-
-    """filter the rows returned"""
-    where: packages_bool_exp
-  ): packages_aggregate!
 
   """标签，多个用｜隔开"""
   tags: String
@@ -7897,7 +7901,7 @@ type packages_avg_fields {
   """分类id，上架时只能选择系统默认公司和自己公司的分类数据"""
   category_categories: Float
 
-  """套餐属于哪个公司"""
+  """哪个公司的套餐"""
   company_companies: Float
   id: Float
 }
@@ -7909,7 +7913,7 @@ input packages_avg_order_by {
   """分类id，上架时只能选择系统默认公司和自己公司的分类数据"""
   category_categories: order_by
 
-  """套餐属于哪个公司"""
+  """哪个公司的套餐"""
   company_companies: order_by
   id: order_by
 }
@@ -7923,6 +7927,7 @@ input packages_bool_exp {
   _or: [packages_bool_exp!]
   category: categories_bool_exp
   category_categories: bigint_comparison_exp
+  company: companies_bool_exp
   company_companies: bigint_comparison_exp
   cover_image_url: String_comparison_exp
   created_at: timestamptz_comparison_exp
@@ -7930,11 +7935,8 @@ input packages_bool_exp {
   id: bigint_comparison_exp
   is_shelved: Boolean_comparison_exp
   name: String_comparison_exp
-  package: packages_bool_exp
   package_product_skus: package_product_skus_bool_exp
   package_product_skus_aggregate: package_product_skus_aggregate_bool_exp
-  packages: packages_bool_exp
-  packages_aggregate: packages_aggregate_bool_exp
   tags: String_comparison_exp
   updated_at: timestamptz_comparison_exp
 }
@@ -7956,7 +7958,7 @@ input packages_inc_input {
   """分类id，上架时只能选择系统默认公司和自己公司的分类数据"""
   category_categories: bigint
 
-  """套餐属于哪个公司"""
+  """哪个公司的套餐"""
   company_companies: bigint
   id: bigint
 }
@@ -7969,8 +7971,9 @@ input packages_insert_input {
 
   """分类id，上架时只能选择系统默认公司和自己公司的分类数据"""
   category_categories: bigint
+  company: companies_obj_rel_insert_input
 
-  """套餐属于哪个公司"""
+  """哪个公司的套餐"""
   company_companies: bigint
 
   """套餐封面图"""
@@ -7986,9 +7989,7 @@ input packages_insert_input {
 
   """套餐名称"""
   name: String
-  package: packages_obj_rel_insert_input
   package_product_skus: package_product_skus_arr_rel_insert_input
-  packages: packages_arr_rel_insert_input
 
   """标签，多个用｜隔开"""
   tags: String
@@ -8000,7 +8001,7 @@ type packages_max_fields {
   """分类id，上架时只能选择系统默认公司和自己公司的分类数据"""
   category_categories: bigint
 
-  """套餐属于哪个公司"""
+  """哪个公司的套餐"""
   company_companies: bigint
 
   """套餐封面图"""
@@ -8026,7 +8027,7 @@ input packages_max_order_by {
   """分类id，上架时只能选择系统默认公司和自己公司的分类数据"""
   category_categories: order_by
 
-  """套餐属于哪个公司"""
+  """哪个公司的套餐"""
   company_companies: order_by
 
   """套餐封面图"""
@@ -8050,7 +8051,7 @@ type packages_min_fields {
   """分类id，上架时只能选择系统默认公司和自己公司的分类数据"""
   category_categories: bigint
 
-  """套餐属于哪个公司"""
+  """哪个公司的套餐"""
   company_companies: bigint
 
   """套餐封面图"""
@@ -8076,7 +8077,7 @@ input packages_min_order_by {
   """分类id，上架时只能选择系统默认公司和自己公司的分类数据"""
   category_categories: order_by
 
-  """套餐属于哪个公司"""
+  """哪个公司的套餐"""
   company_companies: order_by
 
   """套餐封面图"""
@@ -8129,6 +8130,7 @@ input packages_on_conflict {
 input packages_order_by {
   category: categories_order_by
   category_categories: order_by
+  company: companies_order_by
   company_companies: order_by
   cover_image_url: order_by
   created_at: order_by
@@ -8136,9 +8138,7 @@ input packages_order_by {
   id: order_by
   is_shelved: order_by
   name: order_by
-  package: packages_order_by
   package_product_skus_aggregate: package_product_skus_aggregate_order_by
-  packages_aggregate: packages_aggregate_order_by
   tags: order_by
   updated_at: order_by
 }
@@ -8206,7 +8206,7 @@ input packages_set_input {
   """分类id，上架时只能选择系统默认公司和自己公司的分类数据"""
   category_categories: bigint
 
-  """套餐属于哪个公司"""
+  """哪个公司的套餐"""
   company_companies: bigint
 
   """套餐封面图"""
@@ -8233,7 +8233,7 @@ type packages_stddev_fields {
   """分类id，上架时只能选择系统默认公司和自己公司的分类数据"""
   category_categories: Float
 
-  """套餐属于哪个公司"""
+  """哪个公司的套餐"""
   company_companies: Float
   id: Float
 }
@@ -8245,7 +8245,7 @@ input packages_stddev_order_by {
   """分类id，上架时只能选择系统默认公司和自己公司的分类数据"""
   category_categories: order_by
 
-  """套餐属于哪个公司"""
+  """哪个公司的套餐"""
   company_companies: order_by
   id: order_by
 }
@@ -8255,7 +8255,7 @@ type packages_stddev_pop_fields {
   """分类id，上架时只能选择系统默认公司和自己公司的分类数据"""
   category_categories: Float
 
-  """套餐属于哪个公司"""
+  """哪个公司的套餐"""
   company_companies: Float
   id: Float
 }
@@ -8267,7 +8267,7 @@ input packages_stddev_pop_order_by {
   """分类id，上架时只能选择系统默认公司和自己公司的分类数据"""
   category_categories: order_by
 
-  """套餐属于哪个公司"""
+  """哪个公司的套餐"""
   company_companies: order_by
   id: order_by
 }
@@ -8277,7 +8277,7 @@ type packages_stddev_samp_fields {
   """分类id，上架时只能选择系统默认公司和自己公司的分类数据"""
   category_categories: Float
 
-  """套餐属于哪个公司"""
+  """哪个公司的套餐"""
   company_companies: Float
   id: Float
 }
@@ -8289,7 +8289,7 @@ input packages_stddev_samp_order_by {
   """分类id，上架时只能选择系统默认公司和自己公司的分类数据"""
   category_categories: order_by
 
-  """套餐属于哪个公司"""
+  """哪个公司的套餐"""
   company_companies: order_by
   id: order_by
 }
@@ -8310,7 +8310,7 @@ input packages_stream_cursor_value_input {
   """分类id，上架时只能选择系统默认公司和自己公司的分类数据"""
   category_categories: bigint
 
-  """套餐属于哪个公司"""
+  """哪个公司的套餐"""
   company_companies: bigint
 
   """套餐封面图"""
@@ -8337,7 +8337,7 @@ type packages_sum_fields {
   """分类id，上架时只能选择系统默认公司和自己公司的分类数据"""
   category_categories: bigint
 
-  """套餐属于哪个公司"""
+  """哪个公司的套餐"""
   company_companies: bigint
   id: bigint
 }
@@ -8349,7 +8349,7 @@ input packages_sum_order_by {
   """分类id，上架时只能选择系统默认公司和自己公司的分类数据"""
   category_categories: order_by
 
-  """套餐属于哪个公司"""
+  """哪个公司的套餐"""
   company_companies: order_by
   id: order_by
 }
@@ -8405,7 +8405,7 @@ type packages_var_pop_fields {
   """分类id，上架时只能选择系统默认公司和自己公司的分类数据"""
   category_categories: Float
 
-  """套餐属于哪个公司"""
+  """哪个公司的套餐"""
   company_companies: Float
   id: Float
 }
@@ -8417,7 +8417,7 @@ input packages_var_pop_order_by {
   """分类id，上架时只能选择系统默认公司和自己公司的分类数据"""
   category_categories: order_by
 
-  """套餐属于哪个公司"""
+  """哪个公司的套餐"""
   company_companies: order_by
   id: order_by
 }
@@ -8427,7 +8427,7 @@ type packages_var_samp_fields {
   """分类id，上架时只能选择系统默认公司和自己公司的分类数据"""
   category_categories: Float
 
-  """套餐属于哪个公司"""
+  """哪个公司的套餐"""
   company_companies: Float
   id: Float
 }
@@ -8439,7 +8439,7 @@ input packages_var_samp_order_by {
   """分类id，上架时只能选择系统默认公司和自己公司的分类数据"""
   category_categories: order_by
 
-  """套餐属于哪个公司"""
+  """哪个公司的套餐"""
   company_companies: order_by
   id: order_by
 }
@@ -8449,7 +8449,7 @@ type packages_variance_fields {
   """分类id，上架时只能选择系统默认公司和自己公司的分类数据"""
   category_categories: Float
 
-  """套餐属于哪个公司"""
+  """哪个公司的套餐"""
   company_companies: Float
   id: Float
 }
@@ -8461,7 +8461,7 @@ input packages_variance_order_by {
   """分类id，上架时只能选择系统默认公司和自己公司的分类数据"""
   category_categories: order_by
 
-  """套餐属于哪个公司"""
+  """哪个公司的套餐"""
   company_companies: order_by
   id: order_by
 }

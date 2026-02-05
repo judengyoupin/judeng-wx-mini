@@ -42,5 +42,5 @@ export const setCompanyContext = (info: any) => getStore().setCompanyContext(inf
 export const restoreUserFromStorage = () => getStore().restoreUserFromStorage()
 export const updateUserInfo = (partial: Partial<Record<string, unknown>>) => getStore().updateUserInfo(partial)
 export const isUserInfoCacheValid = () => getStore().isUserInfoCacheValid()
-export const ensureUserInfoCached = () => getStore().ensureUserInfoCached()
+export const ensureUserInfoCached = (forceRefresh?: boolean) => getStore().ensureUserInfoCached(forceRefresh)
 export const clearUserContext = () => getStore().clearUserContext()

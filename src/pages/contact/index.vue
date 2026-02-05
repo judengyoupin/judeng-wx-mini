@@ -37,6 +37,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
+import { whenAppReady } from '@/utils/appReady';
 import { onLoad } from '@dcloudio/uni-app';
 import { companyInfo } from '@/store/userStore';
 import { getCompanyPublicInfo } from '@/api/company/index';
@@ -53,6 +54,7 @@ onLoad((options?: { companyId?: string }) => {
 });
 
 onMounted(async () => {
+  await whenAppReady();
   const companyId = companyIdParam.value ?? companyInfo.value?.id ?? null;
   if (!companyId) {
     loading.value = false;

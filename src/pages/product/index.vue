@@ -84,6 +84,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue';
+import { whenAppReady } from '@/utils/appReady';
 import { onLoad } from '@dcloudio/uni-app';
 import { getProductList } from '@/api/product/index';
 import { userInfo, user_token, companyInfo } from '@/store/userStore';
@@ -220,6 +221,7 @@ const goBack = () => {
 };
 
 onLoad(async (options?) => {
+  await whenAppReady();
   if (options?.keyword) {
     keyword.value = decodeURIComponent(options.keyword);
   }

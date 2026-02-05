@@ -1974,6 +1974,10 @@ export type Companies = {
   /** An aggregate relationship */
   orders_aggregate: Orders_Aggregate;
   /** An array relationship */
+  packages: Array<Packages>;
+  /** An aggregate relationship */
+  packages_aggregate: Packages_Aggregate;
+  /** An array relationship */
   product_skus: Array<Product_Skus>;
   /** An aggregate relationship */
   product_skus_aggregate: Product_Skus_Aggregate;
@@ -2046,6 +2050,26 @@ export type CompaniesOrders_AggregateArgs = {
   offset?: InputMaybe<Scalars['Int']['input']>;
   order_by?: InputMaybe<Array<Orders_Order_By>>;
   where?: InputMaybe<Orders_Bool_Exp>;
+};
+
+
+/** 公司信息表 */
+export type CompaniesPackagesArgs = {
+  distinct_on?: InputMaybe<Array<Packages_Select_Column>>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  order_by?: InputMaybe<Array<Packages_Order_By>>;
+  where?: InputMaybe<Packages_Bool_Exp>;
+};
+
+
+/** 公司信息表 */
+export type CompaniesPackages_AggregateArgs = {
+  distinct_on?: InputMaybe<Array<Packages_Select_Column>>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  order_by?: InputMaybe<Array<Packages_Order_By>>;
+  where?: InputMaybe<Packages_Bool_Exp>;
 };
 
 
@@ -2146,6 +2170,8 @@ export type Companies_Bool_Exp = {
   name?: InputMaybe<String_Comparison_Exp>;
   orders?: InputMaybe<Orders_Bool_Exp>;
   orders_aggregate?: InputMaybe<Orders_Aggregate_Bool_Exp>;
+  packages?: InputMaybe<Packages_Bool_Exp>;
+  packages_aggregate?: InputMaybe<Packages_Aggregate_Bool_Exp>;
   product_skus?: InputMaybe<Product_Skus_Bool_Exp>;
   product_skus_aggregate?: InputMaybe<Product_Skus_Aggregate_Bool_Exp>;
   products?: InputMaybe<Products_Bool_Exp>;
@@ -2193,6 +2219,7 @@ export type Companies_Insert_Input = {
   /** 公司名称 */
   name?: InputMaybe<Scalars['String']['input']>;
   orders?: InputMaybe<Orders_Arr_Rel_Insert_Input>;
+  packages?: InputMaybe<Packages_Arr_Rel_Insert_Input>;
   product_skus?: InputMaybe<Product_Skus_Arr_Rel_Insert_Input>;
   products?: InputMaybe<Products_Arr_Rel_Insert_Input>;
   /** 资源库文件url，一般是pdf文档 */
@@ -2301,6 +2328,7 @@ export type Companies_Order_By = {
   logo_url?: InputMaybe<Order_By>;
   name?: InputMaybe<Order_By>;
   orders_aggregate?: InputMaybe<Orders_Aggregate_Order_By>;
+  packages_aggregate?: InputMaybe<Packages_Aggregate_Order_By>;
   product_skus_aggregate?: InputMaybe<Product_Skus_Aggregate_Order_By>;
   products_aggregate?: InputMaybe<Products_Aggregate_Order_By>;
   resource_file_url?: InputMaybe<Order_By>;
@@ -6166,7 +6194,9 @@ export type Packages = {
   category?: Maybe<Categories>;
   /** 分类id，上架时只能选择系统默认公司和自己公司的分类数据 */
   category_categories?: Maybe<Scalars['bigint']['output']>;
-  /** 套餐属于哪个公司 */
+  /** An object relationship */
+  company: Companies;
+  /** 哪个公司的套餐 */
   company_companies: Scalars['bigint']['output'];
   /** 套餐封面图 */
   cover_image_url: Scalars['String']['output'];
@@ -6178,16 +6208,10 @@ export type Packages = {
   is_shelved: Scalars['Boolean']['output'];
   /** 套餐名称 */
   name: Scalars['String']['output'];
-  /** An object relationship */
-  package: Packages;
   /** An array relationship */
   package_product_skus: Array<Package_Product_Skus>;
   /** An aggregate relationship */
   package_product_skus_aggregate: Package_Product_Skus_Aggregate;
-  /** An array relationship */
-  packages: Array<Packages>;
-  /** An aggregate relationship */
-  packages_aggregate: Packages_Aggregate;
   /** 标签，多个用｜隔开 */
   tags?: Maybe<Scalars['String']['output']>;
   updated_at: Scalars['timestamptz']['output'];
@@ -6211,26 +6235,6 @@ export type PackagesPackage_Product_Skus_AggregateArgs = {
   offset?: InputMaybe<Scalars['Int']['input']>;
   order_by?: InputMaybe<Array<Package_Product_Skus_Order_By>>;
   where?: InputMaybe<Package_Product_Skus_Bool_Exp>;
-};
-
-
-/** 套餐表 */
-export type PackagesPackagesArgs = {
-  distinct_on?: InputMaybe<Array<Packages_Select_Column>>;
-  limit?: InputMaybe<Scalars['Int']['input']>;
-  offset?: InputMaybe<Scalars['Int']['input']>;
-  order_by?: InputMaybe<Array<Packages_Order_By>>;
-  where?: InputMaybe<Packages_Bool_Exp>;
-};
-
-
-/** 套餐表 */
-export type PackagesPackages_AggregateArgs = {
-  distinct_on?: InputMaybe<Array<Packages_Select_Column>>;
-  limit?: InputMaybe<Scalars['Int']['input']>;
-  offset?: InputMaybe<Scalars['Int']['input']>;
-  order_by?: InputMaybe<Array<Packages_Order_By>>;
-  where?: InputMaybe<Packages_Bool_Exp>;
 };
 
 /** aggregated selection of "packages" */
@@ -6317,7 +6321,7 @@ export type Packages_Avg_Fields = {
   __typename?: 'packages_avg_fields';
   /** 分类id，上架时只能选择系统默认公司和自己公司的分类数据 */
   category_categories?: Maybe<Scalars['Float']['output']>;
-  /** 套餐属于哪个公司 */
+  /** 哪个公司的套餐 */
   company_companies?: Maybe<Scalars['Float']['output']>;
   id?: Maybe<Scalars['Float']['output']>;
 };
@@ -6326,7 +6330,7 @@ export type Packages_Avg_Fields = {
 export type Packages_Avg_Order_By = {
   /** 分类id，上架时只能选择系统默认公司和自己公司的分类数据 */
   category_categories?: InputMaybe<Order_By>;
-  /** 套餐属于哪个公司 */
+  /** 哪个公司的套餐 */
   company_companies?: InputMaybe<Order_By>;
   id?: InputMaybe<Order_By>;
 };
@@ -6338,6 +6342,7 @@ export type Packages_Bool_Exp = {
   _or?: InputMaybe<Array<Packages_Bool_Exp>>;
   category?: InputMaybe<Categories_Bool_Exp>;
   category_categories?: InputMaybe<Bigint_Comparison_Exp>;
+  company?: InputMaybe<Companies_Bool_Exp>;
   company_companies?: InputMaybe<Bigint_Comparison_Exp>;
   cover_image_url?: InputMaybe<String_Comparison_Exp>;
   created_at?: InputMaybe<Timestamptz_Comparison_Exp>;
@@ -6345,11 +6350,8 @@ export type Packages_Bool_Exp = {
   id?: InputMaybe<Bigint_Comparison_Exp>;
   is_shelved?: InputMaybe<Boolean_Comparison_Exp>;
   name?: InputMaybe<String_Comparison_Exp>;
-  package?: InputMaybe<Packages_Bool_Exp>;
   package_product_skus?: InputMaybe<Package_Product_Skus_Bool_Exp>;
   package_product_skus_aggregate?: InputMaybe<Package_Product_Skus_Aggregate_Bool_Exp>;
-  packages?: InputMaybe<Packages_Bool_Exp>;
-  packages_aggregate?: InputMaybe<Packages_Aggregate_Bool_Exp>;
   tags?: InputMaybe<String_Comparison_Exp>;
   updated_at?: InputMaybe<Timestamptz_Comparison_Exp>;
 };
@@ -6364,7 +6366,7 @@ export enum Packages_Constraint {
 export type Packages_Inc_Input = {
   /** 分类id，上架时只能选择系统默认公司和自己公司的分类数据 */
   category_categories?: InputMaybe<Scalars['bigint']['input']>;
-  /** 套餐属于哪个公司 */
+  /** 哪个公司的套餐 */
   company_companies?: InputMaybe<Scalars['bigint']['input']>;
   id?: InputMaybe<Scalars['bigint']['input']>;
 };
@@ -6374,7 +6376,8 @@ export type Packages_Insert_Input = {
   category?: InputMaybe<Categories_Obj_Rel_Insert_Input>;
   /** 分类id，上架时只能选择系统默认公司和自己公司的分类数据 */
   category_categories?: InputMaybe<Scalars['bigint']['input']>;
-  /** 套餐属于哪个公司 */
+  company?: InputMaybe<Companies_Obj_Rel_Insert_Input>;
+  /** 哪个公司的套餐 */
   company_companies?: InputMaybe<Scalars['bigint']['input']>;
   /** 套餐封面图 */
   cover_image_url?: InputMaybe<Scalars['String']['input']>;
@@ -6386,9 +6389,7 @@ export type Packages_Insert_Input = {
   is_shelved?: InputMaybe<Scalars['Boolean']['input']>;
   /** 套餐名称 */
   name?: InputMaybe<Scalars['String']['input']>;
-  package?: InputMaybe<Packages_Obj_Rel_Insert_Input>;
   package_product_skus?: InputMaybe<Package_Product_Skus_Arr_Rel_Insert_Input>;
-  packages?: InputMaybe<Packages_Arr_Rel_Insert_Input>;
   /** 标签，多个用｜隔开 */
   tags?: InputMaybe<Scalars['String']['input']>;
   updated_at?: InputMaybe<Scalars['timestamptz']['input']>;
@@ -6399,7 +6400,7 @@ export type Packages_Max_Fields = {
   __typename?: 'packages_max_fields';
   /** 分类id，上架时只能选择系统默认公司和自己公司的分类数据 */
   category_categories?: Maybe<Scalars['bigint']['output']>;
-  /** 套餐属于哪个公司 */
+  /** 哪个公司的套餐 */
   company_companies?: Maybe<Scalars['bigint']['output']>;
   /** 套餐封面图 */
   cover_image_url?: Maybe<Scalars['String']['output']>;
@@ -6418,7 +6419,7 @@ export type Packages_Max_Fields = {
 export type Packages_Max_Order_By = {
   /** 分类id，上架时只能选择系统默认公司和自己公司的分类数据 */
   category_categories?: InputMaybe<Order_By>;
-  /** 套餐属于哪个公司 */
+  /** 哪个公司的套餐 */
   company_companies?: InputMaybe<Order_By>;
   /** 套餐封面图 */
   cover_image_url?: InputMaybe<Order_By>;
@@ -6438,7 +6439,7 @@ export type Packages_Min_Fields = {
   __typename?: 'packages_min_fields';
   /** 分类id，上架时只能选择系统默认公司和自己公司的分类数据 */
   category_categories?: Maybe<Scalars['bigint']['output']>;
-  /** 套餐属于哪个公司 */
+  /** 哪个公司的套餐 */
   company_companies?: Maybe<Scalars['bigint']['output']>;
   /** 套餐封面图 */
   cover_image_url?: Maybe<Scalars['String']['output']>;
@@ -6457,7 +6458,7 @@ export type Packages_Min_Fields = {
 export type Packages_Min_Order_By = {
   /** 分类id，上架时只能选择系统默认公司和自己公司的分类数据 */
   category_categories?: InputMaybe<Order_By>;
-  /** 套餐属于哪个公司 */
+  /** 哪个公司的套餐 */
   company_companies?: InputMaybe<Order_By>;
   /** 套餐封面图 */
   cover_image_url?: InputMaybe<Order_By>;
@@ -6499,6 +6500,7 @@ export type Packages_On_Conflict = {
 export type Packages_Order_By = {
   category?: InputMaybe<Categories_Order_By>;
   category_categories?: InputMaybe<Order_By>;
+  company?: InputMaybe<Companies_Order_By>;
   company_companies?: InputMaybe<Order_By>;
   cover_image_url?: InputMaybe<Order_By>;
   created_at?: InputMaybe<Order_By>;
@@ -6506,9 +6508,7 @@ export type Packages_Order_By = {
   id?: InputMaybe<Order_By>;
   is_shelved?: InputMaybe<Order_By>;
   name?: InputMaybe<Order_By>;
-  package?: InputMaybe<Packages_Order_By>;
   package_product_skus_aggregate?: InputMaybe<Package_Product_Skus_Aggregate_Order_By>;
-  packages_aggregate?: InputMaybe<Packages_Aggregate_Order_By>;
   tags?: InputMaybe<Order_By>;
   updated_at?: InputMaybe<Order_By>;
 };
@@ -6558,7 +6558,7 @@ export enum Packages_Select_Column_Packages_Aggregate_Bool_Exp_Bool_Or_Arguments
 export type Packages_Set_Input = {
   /** 分类id，上架时只能选择系统默认公司和自己公司的分类数据 */
   category_categories?: InputMaybe<Scalars['bigint']['input']>;
-  /** 套餐属于哪个公司 */
+  /** 哪个公司的套餐 */
   company_companies?: InputMaybe<Scalars['bigint']['input']>;
   /** 套餐封面图 */
   cover_image_url?: InputMaybe<Scalars['String']['input']>;
@@ -6580,7 +6580,7 @@ export type Packages_Stddev_Fields = {
   __typename?: 'packages_stddev_fields';
   /** 分类id，上架时只能选择系统默认公司和自己公司的分类数据 */
   category_categories?: Maybe<Scalars['Float']['output']>;
-  /** 套餐属于哪个公司 */
+  /** 哪个公司的套餐 */
   company_companies?: Maybe<Scalars['Float']['output']>;
   id?: Maybe<Scalars['Float']['output']>;
 };
@@ -6589,7 +6589,7 @@ export type Packages_Stddev_Fields = {
 export type Packages_Stddev_Order_By = {
   /** 分类id，上架时只能选择系统默认公司和自己公司的分类数据 */
   category_categories?: InputMaybe<Order_By>;
-  /** 套餐属于哪个公司 */
+  /** 哪个公司的套餐 */
   company_companies?: InputMaybe<Order_By>;
   id?: InputMaybe<Order_By>;
 };
@@ -6599,7 +6599,7 @@ export type Packages_Stddev_Pop_Fields = {
   __typename?: 'packages_stddev_pop_fields';
   /** 分类id，上架时只能选择系统默认公司和自己公司的分类数据 */
   category_categories?: Maybe<Scalars['Float']['output']>;
-  /** 套餐属于哪个公司 */
+  /** 哪个公司的套餐 */
   company_companies?: Maybe<Scalars['Float']['output']>;
   id?: Maybe<Scalars['Float']['output']>;
 };
@@ -6608,7 +6608,7 @@ export type Packages_Stddev_Pop_Fields = {
 export type Packages_Stddev_Pop_Order_By = {
   /** 分类id，上架时只能选择系统默认公司和自己公司的分类数据 */
   category_categories?: InputMaybe<Order_By>;
-  /** 套餐属于哪个公司 */
+  /** 哪个公司的套餐 */
   company_companies?: InputMaybe<Order_By>;
   id?: InputMaybe<Order_By>;
 };
@@ -6618,7 +6618,7 @@ export type Packages_Stddev_Samp_Fields = {
   __typename?: 'packages_stddev_samp_fields';
   /** 分类id，上架时只能选择系统默认公司和自己公司的分类数据 */
   category_categories?: Maybe<Scalars['Float']['output']>;
-  /** 套餐属于哪个公司 */
+  /** 哪个公司的套餐 */
   company_companies?: Maybe<Scalars['Float']['output']>;
   id?: Maybe<Scalars['Float']['output']>;
 };
@@ -6627,7 +6627,7 @@ export type Packages_Stddev_Samp_Fields = {
 export type Packages_Stddev_Samp_Order_By = {
   /** 分类id，上架时只能选择系统默认公司和自己公司的分类数据 */
   category_categories?: InputMaybe<Order_By>;
-  /** 套餐属于哪个公司 */
+  /** 哪个公司的套餐 */
   company_companies?: InputMaybe<Order_By>;
   id?: InputMaybe<Order_By>;
 };
@@ -6644,7 +6644,7 @@ export type Packages_Stream_Cursor_Input = {
 export type Packages_Stream_Cursor_Value_Input = {
   /** 分类id，上架时只能选择系统默认公司和自己公司的分类数据 */
   category_categories?: InputMaybe<Scalars['bigint']['input']>;
-  /** 套餐属于哪个公司 */
+  /** 哪个公司的套餐 */
   company_companies?: InputMaybe<Scalars['bigint']['input']>;
   /** 套餐封面图 */
   cover_image_url?: InputMaybe<Scalars['String']['input']>;
@@ -6666,7 +6666,7 @@ export type Packages_Sum_Fields = {
   __typename?: 'packages_sum_fields';
   /** 分类id，上架时只能选择系统默认公司和自己公司的分类数据 */
   category_categories?: Maybe<Scalars['bigint']['output']>;
-  /** 套餐属于哪个公司 */
+  /** 哪个公司的套餐 */
   company_companies?: Maybe<Scalars['bigint']['output']>;
   id?: Maybe<Scalars['bigint']['output']>;
 };
@@ -6675,7 +6675,7 @@ export type Packages_Sum_Fields = {
 export type Packages_Sum_Order_By = {
   /** 分类id，上架时只能选择系统默认公司和自己公司的分类数据 */
   category_categories?: InputMaybe<Order_By>;
-  /** 套餐属于哪个公司 */
+  /** 哪个公司的套餐 */
   company_companies?: InputMaybe<Order_By>;
   id?: InputMaybe<Order_By>;
 };
@@ -6718,7 +6718,7 @@ export type Packages_Var_Pop_Fields = {
   __typename?: 'packages_var_pop_fields';
   /** 分类id，上架时只能选择系统默认公司和自己公司的分类数据 */
   category_categories?: Maybe<Scalars['Float']['output']>;
-  /** 套餐属于哪个公司 */
+  /** 哪个公司的套餐 */
   company_companies?: Maybe<Scalars['Float']['output']>;
   id?: Maybe<Scalars['Float']['output']>;
 };
@@ -6727,7 +6727,7 @@ export type Packages_Var_Pop_Fields = {
 export type Packages_Var_Pop_Order_By = {
   /** 分类id，上架时只能选择系统默认公司和自己公司的分类数据 */
   category_categories?: InputMaybe<Order_By>;
-  /** 套餐属于哪个公司 */
+  /** 哪个公司的套餐 */
   company_companies?: InputMaybe<Order_By>;
   id?: InputMaybe<Order_By>;
 };
@@ -6737,7 +6737,7 @@ export type Packages_Var_Samp_Fields = {
   __typename?: 'packages_var_samp_fields';
   /** 分类id，上架时只能选择系统默认公司和自己公司的分类数据 */
   category_categories?: Maybe<Scalars['Float']['output']>;
-  /** 套餐属于哪个公司 */
+  /** 哪个公司的套餐 */
   company_companies?: Maybe<Scalars['Float']['output']>;
   id?: Maybe<Scalars['Float']['output']>;
 };
@@ -6746,7 +6746,7 @@ export type Packages_Var_Samp_Fields = {
 export type Packages_Var_Samp_Order_By = {
   /** 分类id，上架时只能选择系统默认公司和自己公司的分类数据 */
   category_categories?: InputMaybe<Order_By>;
-  /** 套餐属于哪个公司 */
+  /** 哪个公司的套餐 */
   company_companies?: InputMaybe<Order_By>;
   id?: InputMaybe<Order_By>;
 };
@@ -6756,7 +6756,7 @@ export type Packages_Variance_Fields = {
   __typename?: 'packages_variance_fields';
   /** 分类id，上架时只能选择系统默认公司和自己公司的分类数据 */
   category_categories?: Maybe<Scalars['Float']['output']>;
-  /** 套餐属于哪个公司 */
+  /** 哪个公司的套餐 */
   company_companies?: Maybe<Scalars['Float']['output']>;
   id?: Maybe<Scalars['Float']['output']>;
 };
@@ -6765,7 +6765,7 @@ export type Packages_Variance_Fields = {
 export type Packages_Variance_Order_By = {
   /** 分类id，上架时只能选择系统默认公司和自己公司的分类数据 */
   category_categories?: InputMaybe<Order_By>;
-  /** 套餐属于哪个公司 */
+  /** 哪个公司的套餐 */
   company_companies?: InputMaybe<Order_By>;
   id?: InputMaybe<Order_By>;
 };

@@ -133,12 +133,15 @@ export const useUserStore = defineStore('user', () => {
     return userInfoCacheTs > 0 && Date.now() - userInfoCacheTs < CONFIG_CACHE_TTL_MS
   }
 
-  async function ensureUserInfoCached(): Promise<void> {
+  /** @param forceRefresh 为 true 时跳过缓存，每次请求接口更新（如 onLaunch 时使用） */
+  async function ensureUserInfoCached(forceRefresh?: boolean): Promise<void> {
     const userId = userInfo.value?.id
     if (!userId) return
-    const u = userInfo.value
-    const hasDisplayFields = u?.role != null && (u?.nickname != null || u?.mobile != null)
-    if (isUserInfoCacheValid() && hasDisplayFields) return
+    if (!forceRefresh) {
+      const u = userInfo.value
+      const hasDisplayFields = u?.role != null && (u?.nickname != null || u?.mobile != null)
+      if (isUserInfoCacheValid() && hasDisplayFields) return
+    }
     try {
       const full = await getUser({ userId: Number(userId) })
       userInfo.value = { ...userInfo.value, ...full }

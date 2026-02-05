@@ -1,5 +1,9 @@
 import client from "@/config-lib/hasura-graphql-client/hasura-graphql-client";
-import { setCompanyContext, setCompanyDetailCache, getCompanyDetailFromCache } from "@/store/userStore";
+import {
+  setCompanyContext,
+  setCompanyDetailCache,
+  getCompanyDetailFromCache,
+} from "@/store/userStore";
 
 /** C 端公司公开信息（资料库、联系我们、关于我们等） */
 export interface CompanyPublicInfo {
@@ -41,18 +45,23 @@ export async function getCompanyPublicInfo(companyId: number): Promise<CompanyPu
 /**
  * 同步公司信息（C 端时序 2）
  * 一次请求拉取公司完整配置，写入内存缓存（5 分钟），后续商品/套餐/分类等可直接用缓存。
- * 若缓存未过期则直接使用，不发请求。
+ * @param forceRefresh 为 true 时跳过缓存，每次请求接口更新（如 onLaunch 时使用）
  */
-export async function syncCompanyInfo(companyId: string | number) {
+export async function syncCompanyInfo(
+  companyId: string | number,
+  forceRefresh?: boolean
+) {
   const id = Number(companyId);
-  const cached = getCompanyDetailFromCache(id);
-  if (cached && typeof cached === "object") {
-    setCompanyContext({
-      id: cached.id,
-      name: cached.name,
-      logo_url: cached.logo_url ?? undefined,
-    });
-    return cached;
+  if (!forceRefresh) {
+    const cached = getCompanyDetailFromCache(id);
+    if (cached && typeof cached === "object") {
+      setCompanyContext({
+        id: cached.id,
+        name: cached.name,
+        logo_url: cached.logo_url ?? undefined,
+      });
+      return cached;
+    }
   }
   try {
     const query = `

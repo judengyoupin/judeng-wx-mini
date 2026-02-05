@@ -20,6 +20,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
+import { whenAppReady } from '@/utils/appReady';
 import { onShow } from '@dcloudio/uni-app';
 import { companyInfo } from '@/store/userStore';
 import { getCompanyPublicInfo } from '@/api/company/index';
@@ -30,8 +31,9 @@ const loading = ref(true);
 const info = ref<CompanyPublicInfo | null>(null);
 const companyId = ref<number | null>(null);
 
-// 仅 onShow 拉数，避免首次进入时与 onMounted 重复请求
-onShow(() => {
+// 仅 onShow 拉数，避免首次进入时与 onMounted 重复请求；等全局就绪后再读 companyId
+onShow(async () => {
+  await whenAppReady();
   companyId.value = companyInfo.value?.id ?? null;
   load();
 });

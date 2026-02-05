@@ -93,6 +93,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
+import { whenAppReady } from '@/utils/appReady';
 import { onLoad, onShow } from '@dcloudio/uni-app';
 import PageNavBar from '@/components/PageNavBar.vue';
 import SkeletonScreen from '@/components/SkeletonScreen.vue';
@@ -286,11 +287,13 @@ onLoad((options: any) => {
 });
 
 onMounted(async () => {
+  await whenAppReady();
   await loadAddressList();
   await loadCartAndFilter();
 });
 
-onShow(() => {
+onShow(async () => {
+  await whenAppReady();
   loadAddressList();
 });
 
