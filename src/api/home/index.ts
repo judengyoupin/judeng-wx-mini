@@ -77,7 +77,7 @@ export async function getHomePageData(
       }
     }
     const hiddenCategoryIds: number[] = Array.isArray(row?.hidden_category_ids)
-      ? row.hidden_category_ids.map((id) => Number(id))
+      ? row.hidden_category_ids.map((id: string | number) => Number(id))
       : [];
 
     const defaultCompanyId = await getDefaultCompanyIdCached();

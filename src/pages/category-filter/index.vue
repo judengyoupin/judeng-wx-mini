@@ -95,7 +95,9 @@
         </view>
 
         <view v-else-if="!loading" class="empty-state">
-          <image src="/static/default.png" mode="aspectFit" class="empty-icon" />
+          <view class="empty-icon-wrap">
+            <text class="empty-icon-emoji">{{ searchKeyword ? '🔍' : '📦' }}</text>
+          </view>
           <text class="empty-text">{{ searchKeyword ? '未找到匹配的商品' : '该分类暂无商品' }}</text>
         </view>
 
@@ -531,6 +533,7 @@ onShareTimeline(() => {
   margin-bottom: 12rpx;
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -572,11 +575,20 @@ onShareTimeline(() => {
   align-items: center;
 }
 
-.empty-icon {
-  width: 200rpx;
-  height: 200rpx;
-  margin-bottom: 20rpx;
-  opacity: 0.5;
+.empty-icon-wrap {
+  width: 160rpx;
+  height: 160rpx;
+  margin-bottom: 24rpx;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.empty-icon-emoji {
+  font-size: 72rpx;
+  line-height: 1;
 }
 
 .empty-text {
