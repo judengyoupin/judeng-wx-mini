@@ -40,6 +40,10 @@
             <text class="phone-icon">📱</text>
             <text class="phone-number">{{ userInfo.mobile }}</text>
           </view>
+          <view v-if="user_token" class="password-link" @click.stop="goToSetPassword">
+            <text class="password-link-icon">🔒</text>
+            <text class="password-link-text">设置密码</text>
+          </view>
           <view v-if="!user_token" class="login-prompt">
             <text class="prompt-text">登录后享受更多服务</text>
             <button class="login-btn" @click="goToLogin">立即登录</button>
@@ -292,7 +296,18 @@ const goToFiles = () => {
   });
 };
 
-// 跳转到设置
+// 跳转到设置密码
+const goToSetPassword = () => {
+  if (!user_token.value) {
+    goToLogin();
+    return;
+  }
+  uni.navigateTo({
+    url: '/pages/set-password/index',
+  });
+};
+
+// 跳转到地址管理
 const goToAddressList = () => {
   if (!user_token.value) {
     goToLogin();
@@ -671,6 +686,25 @@ onShow(async () => {
 .phone-number {
   font-size: 26rpx;
   color: #666666;
+}
+
+.password-link {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  margin-top: 16rpx;
+  padding: 12rpx 0;
+  width: fit-content;
+}
+
+.password-link-icon {
+  font-size: 24rpx;
+}
+
+.password-link-text {
+  font-size: 26rpx;
+  color: #667eea;
+  font-weight: 500;
 }
 
 .login-prompt {

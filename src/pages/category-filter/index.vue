@@ -83,13 +83,6 @@
             </view>
             <view class="product-card-info">
               <view class="product-card-name">{{ product.name }}</view>
-              <view class="product-card-bottom">
-                <view v-if="canViewPrice" class="product-price">
-                  <text class="currency">¥</text>
-                  <text class="amount">{{ getMinPrice(product) }}</text>
-                </view>
-                <view v-else class="price-placeholder">查看详情</view>
-              </view>
             </view>
           </view>
         </view>
@@ -120,9 +113,8 @@ import { whenAppReady } from '@/utils/appReady';
 import { onLoad, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app';
 import { getCategoryChildren } from '@/api/category/index';
 import { getProductList } from '@/api/product/index';
-import { userInfo, user_token, companyInfo } from '@/store/userStore';
+import { userInfo, companyInfo } from '@/store/userStore';
 import PageNavBar from '@/components/PageNavBar.vue';
-import { getCompanyUserRoleCached } from '@/utils/auth';
 import { safeNavigateBack } from '@/utils/navigation';
 
 const parentId = ref<number | null>(null);
@@ -134,9 +126,7 @@ const loading = ref(false);
 const isRefreshing = ref(false);
 const hasMore = ref(true);
 const page = ref(1);
-const pageSize = 10;
-const canViewPrice = ref(false);
-const priceFactor = ref(1); // 价格系数，默认为1
+const pageSize = 12;
 
 const currentCategory = computed(() => {
   return subCategories.value.find(c => c.id === currentCategoryId.value);
@@ -178,37 +168,9 @@ const navTitle = computed(() => {
   return `${name}-${suffix}`;
 });
 
-const getMinPrice = (product: any) => {
-  if (!product.product_skus || product.product_skus.length === 0) return '0.00';
-  const prices = product.product_skus.map((sku: any) => (sku.price || 0) * priceFactor.value);
-  return Math.min(...prices).toFixed(2);
-};
-
 const getFirstTag = (tagsStr: string | null | undefined) => {
   if (!tagsStr || !String(tagsStr).trim()) return '';
   return String(tagsStr).split(/[,，|｜]/)[0].trim() || '';
-};
-
-// 检查权限
-const checkPermissions = async () => {
-  if (!user_token.value) {
-    canViewPrice.value = false;
-    priceFactor.value = 1;
-    return;
-  }
-  try {
-    const roleInfo = await getCompanyUserRoleCached();
-    if (roleInfo) {
-      canViewPrice.value = roleInfo.canViewPrice;
-      priceFactor.value = roleInfo.priceFactor || 1;
-    } else {
-      canViewPrice.value = false;
-      priceFactor.value = 1;
-    }
-  } catch (e) {
-    canViewPrice.value = false;
-    priceFactor.value = 1;
-  }
 };
 
 // 加载子分类（按父级 ID 拉取；无子分类时用当前分类 ID 展示该分类下的商品）
@@ -325,7 +287,6 @@ onLoad(async (options?) => {
     pageTitle.value = decodeURIComponent(options.categoryName);
   }
 
-  await checkPermissions();
   loadSubCategories();
 });
 
@@ -412,19 +373,19 @@ onShareTimeline(() => {
 .main-content {
   height: 100%;
   background: #f5f5f5;
-  padding: 24rpx;
+  padding: 16rpx;
   box-sizing: border-box;
 }
 
 .category-grid-wrap {
-  padding: 20rpx 24rpx;
+  padding: 16rpx;
 }
 
 /* 双列分类网格（图片绿框 + 名称） */
 .category-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 24rpx;
+  gap: 12rpx;
 }
 
 .category-card {
@@ -486,7 +447,7 @@ onShareTimeline(() => {
 .product-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 24rpx;
+  gap: 12rpx;
 }
 
 .product-card {
@@ -530,41 +491,11 @@ onShareTimeline(() => {
   font-size: 26rpx;
   font-weight: 600;
   color: #333;
-  margin-bottom: 12rpx;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-}
-
-.product-card-bottom {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
-}
-
-.product-price {
-  color: #ff6b6b;
-  font-weight: bold;
-  display: flex;
-  align-items: baseline;
-}
-
-.currency {
-  font-size: 22rpx;
-}
-
-.amount {
-  font-size: 32rpx;
-}
-
-.price-placeholder {
-  font-size: 22rpx;
-  color: #667eea;
-  background: #eff6ff;
-  padding: 4rpx 10rpx;
-  border-radius: 6rpx;
 }
 
 .empty-state {

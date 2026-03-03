@@ -56,14 +56,6 @@
           </view>
           <view class="product-card-info">
             <view class="product-card-name">{{ product.name }}</view>
-            <view class="product-card-bottom">
-              <view v-if="canViewPrice" class="product-price">
-                <text class="currency">¥</text>
-                <text class="amount">{{ getMinPrice(product) }}</text>
-                <text class="unit">起</text>
-              </view>
-              <view v-else class="price-placeholder">查看详情</view>
-            </view>
           </view>
         </view>
       </view>
@@ -130,8 +122,7 @@ import { whenAppReady } from '@/utils/appReady';
 import { onLoad, onReady, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app';
 import { getProductList } from '@/api/product/index';
 import { getPackageList } from '@/api/package/index';
-import { userInfo, user_token, companyInfo } from '@/store/userStore';
-import { getCompanyUserRoleCached } from '@/utils/auth';
+import { userInfo, companyInfo } from '@/store/userStore';
 import { safeNavigateBack } from '@/utils/navigation';
 import PageNavBar from '@/components/PageNavBar.vue';
 import SkeletonScreen from '@/components/SkeletonScreen.vue';
@@ -147,9 +138,7 @@ const loading = ref(false);
 const isRefreshing = ref(false);
 const hasMore = ref(true);
 const page = ref(1);
-const pageSize = 16;
-const canViewPrice = ref(false);
-const priceFactor = ref(1);
+const pageSize = 12;
 
 const pageTitle = computed(() => {
   if (searchType.value === 'package') return '搜索套餐';
@@ -160,36 +149,9 @@ const searchPlaceholder = computed(() =>
   searchType.value === 'product' ? '请输入商品名称' : '请输入套餐名称'
 );
 
-const getMinPrice = (product: any) => {
-  if (!product.product_skus || product.product_skus.length === 0) return '0.00';
-  const prices = product.product_skus.map((sku: any) => (sku.price || 0) * priceFactor.value);
-  return Math.min(...prices).toFixed(2);
-};
-
 const getFirstTag = (tagsStr: string | null | undefined) => {
   if (!tagsStr || !String(tagsStr).trim()) return '';
   return String(tagsStr).split(/[,，|｜]/)[0].trim() || '';
-};
-
-const checkPermissions = async () => {
-  if (!user_token.value) {
-    canViewPrice.value = false;
-    priceFactor.value = 1;
-    return;
-  }
-  try {
-    const roleInfo = await getCompanyUserRoleCached();
-    if (roleInfo) {
-      canViewPrice.value = roleInfo.canViewPrice;
-      priceFactor.value = roleInfo.priceFactor || 1;
-    } else {
-      canViewPrice.value = false;
-      priceFactor.value = 1;
-    }
-  } catch (e) {
-    canViewPrice.value = false;
-    priceFactor.value = 1;
-  }
 };
 
 const loadData = async (refresh = false) => {
@@ -294,7 +256,6 @@ onLoad(async (options?) => {
   if (options?.categoryName) {
     categoryName.value = decodeURIComponent(options.categoryName);
   }
-  await checkPermissions();
   // 无关键词时也加载列表（商品/套餐列表，已排除当前公司隐藏项；商品可能带分类筛选）
   loadData(true);
 });
@@ -422,8 +383,8 @@ onShareTimeline(() => {
 .product-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 24rpx;
-  padding: 24rpx;
+  gap: 12rpx;
+  padding: 16rpx;
 }
 
 .product-card {
@@ -467,44 +428,18 @@ onShareTimeline(() => {
   font-size: 26rpx;
   font-weight: 600;
   color: #333;
-  margin-bottom: 12rpx;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
 
-.product-card-bottom {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
-}
-
-.product-price {
-  color: #ff6b6b;
-  font-weight: bold;
-  display: flex;
-  align-items: baseline;
-}
-
-.currency { font-size: 24rpx; }
-.amount { font-size: 36rpx; }
-.unit { font-size: 24rpx; color: #999; margin-left: 4rpx; font-weight: normal; }
-
-.price-placeholder {
-  font-size: 24rpx;
-  color: #667eea;
-  background: #eff6ff;
-  padding: 4rpx 12rpx;
-  border-radius: 8rpx;
-}
-
 /* 套餐列表：与套餐页一致，每行 3 个 */
 .package-list {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 24rpx;
-  padding: 24rpx;
+  gap: 12rpx;
+  padding: 16rpx;
 }
 
 .package-item {

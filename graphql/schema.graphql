@@ -2473,6 +2473,42 @@ type companies {
   ): categories_aggregate!
 
   """An array relationship"""
+  company_packages(
+    """distinct select on columns"""
+    distinct_on: [company_packages_select_column!]
+
+    """limit the number of rows returned"""
+    limit: Int
+
+    """skip the first n rows. Use only with order_by"""
+    offset: Int
+
+    """sort the rows by one or more columns"""
+    order_by: [company_packages_order_by!]
+
+    """filter the rows returned"""
+    where: company_packages_bool_exp
+  ): [company_packages!]!
+
+  """An aggregate relationship"""
+  company_packages_aggregate(
+    """distinct select on columns"""
+    distinct_on: [company_packages_select_column!]
+
+    """limit the number of rows returned"""
+    limit: Int
+
+    """skip the first n rows. Use only with order_by"""
+    offset: Int
+
+    """sort the rows by one or more columns"""
+    order_by: [company_packages_order_by!]
+
+    """filter the rows returned"""
+    where: company_packages_bool_exp
+  ): company_packages_aggregate!
+
+  """An array relationship"""
   company_products(
     """distinct select on columns"""
     distinct_on: [company_products_select_column!]
@@ -2768,6 +2804,8 @@ input companies_bool_exp {
   banner_top: json_array_comparison_exp
   categories: categories_bool_exp
   categories_aggregate: categories_aggregate_bool_exp
+  company_packages: company_packages_bool_exp
+  company_packages_aggregate: company_packages_aggregate_bool_exp
   company_products: company_products_bool_exp
   company_products_aggregate: company_products_aggregate_bool_exp
   company_users: company_users_bool_exp
@@ -2834,6 +2872,7 @@ input companies_insert_input {
   """
   banner_top: [json!]
   categories: categories_arr_rel_insert_input
+  company_packages: company_packages_arr_rel_insert_input
   company_products: company_products_arr_rel_insert_input
   company_users: company_users_arr_rel_insert_input
 
@@ -3005,6 +3044,7 @@ input companies_order_by {
   banner_bottom: order_by
   banner_top: order_by
   categories_aggregate: categories_aggregate_order_by
+  company_packages_aggregate: company_packages_aggregate_order_by
   company_products_aggregate: company_products_aggregate_order_by
   company_users_aggregate: company_users_aggregate_order_by
   contact_code: order_by
@@ -3311,10 +3351,16 @@ type companies_variance_fields {
 
 """公司的套餐关联表"""
 type company_packages {
+  """An object relationship"""
+  company: companies!
+
   """关联公司"""
   company_companies: bigint!
   created_at: timestamptz!
   id: bigint!
+
+  """An object relationship"""
+  package: packages!
 
   """关联套餐"""
   package_packages: bigint!
@@ -3330,6 +3376,17 @@ aggregated selection of "company_packages"
 type company_packages_aggregate {
   aggregate: company_packages_aggregate_fields
   nodes: [company_packages!]!
+}
+
+input company_packages_aggregate_bool_exp {
+  count: company_packages_aggregate_bool_exp_count
+}
+
+input company_packages_aggregate_bool_exp_count {
+  arguments: [company_packages_select_column!]
+  distinct: Boolean
+  filter: company_packages_bool_exp
+  predicate: Int_comparison_exp!
 }
 
 """
@@ -3349,6 +3406,33 @@ type company_packages_aggregate_fields {
   variance: company_packages_variance_fields
 }
 
+"""
+order by aggregate values of table "company_packages"
+"""
+input company_packages_aggregate_order_by {
+  avg: company_packages_avg_order_by
+  count: order_by
+  max: company_packages_max_order_by
+  min: company_packages_min_order_by
+  stddev: company_packages_stddev_order_by
+  stddev_pop: company_packages_stddev_pop_order_by
+  stddev_samp: company_packages_stddev_samp_order_by
+  sum: company_packages_sum_order_by
+  var_pop: company_packages_var_pop_order_by
+  var_samp: company_packages_var_samp_order_by
+  variance: company_packages_variance_order_by
+}
+
+"""
+input type for inserting array relation for remote table "company_packages"
+"""
+input company_packages_arr_rel_insert_input {
+  data: [company_packages_insert_input!]!
+
+  """upsert condition"""
+  on_conflict: company_packages_on_conflict
+}
+
 """aggregate avg on columns"""
 type company_packages_avg_fields {
   """关联公司"""
@@ -3360,15 +3444,29 @@ type company_packages_avg_fields {
 }
 
 """
+order by avg() on columns of table "company_packages"
+"""
+input company_packages_avg_order_by {
+  """关联公司"""
+  company_companies: order_by
+  id: order_by
+
+  """关联套餐"""
+  package_packages: order_by
+}
+
+"""
 Boolean expression to filter rows from the table "company_packages". All fields are combined with a logical 'AND'.
 """
 input company_packages_bool_exp {
   _and: [company_packages_bool_exp!]
   _not: company_packages_bool_exp
   _or: [company_packages_bool_exp!]
+  company: companies_bool_exp
   company_companies: bigint_comparison_exp
   created_at: timestamptz_comparison_exp
   id: bigint_comparison_exp
+  package: packages_bool_exp
   package_packages: bigint_comparison_exp
   updated_at: timestamptz_comparison_exp
   wx_scan_code: String_comparison_exp
@@ -3405,10 +3503,13 @@ input company_packages_inc_input {
 input type for inserting data into table "company_packages"
 """
 input company_packages_insert_input {
+  company: companies_obj_rel_insert_input
+
   """关联公司"""
   company_companies: bigint
   created_at: timestamptz
   id: bigint
+  package: packages_obj_rel_insert_input
 
   """关联套餐"""
   package_packages: bigint
@@ -3433,6 +3534,23 @@ type company_packages_max_fields {
   wx_scan_code: String
 }
 
+"""
+order by max() on columns of table "company_packages"
+"""
+input company_packages_max_order_by {
+  """关联公司"""
+  company_companies: order_by
+  created_at: order_by
+  id: order_by
+
+  """关联套餐"""
+  package_packages: order_by
+  updated_at: order_by
+
+  """微信小程序二维码"""
+  wx_scan_code: order_by
+}
+
 """aggregate min on columns"""
 type company_packages_min_fields {
   """关联公司"""
@@ -3446,6 +3564,23 @@ type company_packages_min_fields {
 
   """微信小程序二维码"""
   wx_scan_code: String
+}
+
+"""
+order by min() on columns of table "company_packages"
+"""
+input company_packages_min_order_by {
+  """关联公司"""
+  company_companies: order_by
+  created_at: order_by
+  id: order_by
+
+  """关联套餐"""
+  package_packages: order_by
+  updated_at: order_by
+
+  """微信小程序二维码"""
+  wx_scan_code: order_by
 }
 
 """
@@ -3470,9 +3605,11 @@ input company_packages_on_conflict {
 
 """Ordering options when selecting data from "company_packages"."""
 input company_packages_order_by {
+  company: companies_order_by
   company_companies: order_by
   created_at: order_by
   id: order_by
+  package: packages_order_by
   package_packages: order_by
   updated_at: order_by
   wx_scan_code: order_by
@@ -3533,6 +3670,18 @@ type company_packages_stddev_fields {
   package_packages: Float
 }
 
+"""
+order by stddev() on columns of table "company_packages"
+"""
+input company_packages_stddev_order_by {
+  """关联公司"""
+  company_companies: order_by
+  id: order_by
+
+  """关联套餐"""
+  package_packages: order_by
+}
+
 """aggregate stddev_pop on columns"""
 type company_packages_stddev_pop_fields {
   """关联公司"""
@@ -3543,6 +3692,18 @@ type company_packages_stddev_pop_fields {
   package_packages: Float
 }
 
+"""
+order by stddev_pop() on columns of table "company_packages"
+"""
+input company_packages_stddev_pop_order_by {
+  """关联公司"""
+  company_companies: order_by
+  id: order_by
+
+  """关联套餐"""
+  package_packages: order_by
+}
+
 """aggregate stddev_samp on columns"""
 type company_packages_stddev_samp_fields {
   """关联公司"""
@@ -3551,6 +3712,18 @@ type company_packages_stddev_samp_fields {
 
   """关联套餐"""
   package_packages: Float
+}
+
+"""
+order by stddev_samp() on columns of table "company_packages"
+"""
+input company_packages_stddev_samp_order_by {
+  """关联公司"""
+  company_companies: order_by
+  id: order_by
+
+  """关联套餐"""
+  package_packages: order_by
 }
 
 """
@@ -3587,6 +3760,18 @@ type company_packages_sum_fields {
 
   """关联套餐"""
   package_packages: bigint
+}
+
+"""
+order by sum() on columns of table "company_packages"
+"""
+input company_packages_sum_order_by {
+  """关联公司"""
+  company_companies: order_by
+  id: order_by
+
+  """关联套餐"""
+  package_packages: order_by
 }
 
 """
@@ -3633,6 +3818,18 @@ type company_packages_var_pop_fields {
   package_packages: Float
 }
 
+"""
+order by var_pop() on columns of table "company_packages"
+"""
+input company_packages_var_pop_order_by {
+  """关联公司"""
+  company_companies: order_by
+  id: order_by
+
+  """关联套餐"""
+  package_packages: order_by
+}
+
 """aggregate var_samp on columns"""
 type company_packages_var_samp_fields {
   """关联公司"""
@@ -3643,6 +3840,18 @@ type company_packages_var_samp_fields {
   package_packages: Float
 }
 
+"""
+order by var_samp() on columns of table "company_packages"
+"""
+input company_packages_var_samp_order_by {
+  """关联公司"""
+  company_companies: order_by
+  id: order_by
+
+  """关联套餐"""
+  package_packages: order_by
+}
+
 """aggregate variance on columns"""
 type company_packages_variance_fields {
   """关联公司"""
@@ -3651,6 +3860,18 @@ type company_packages_variance_fields {
 
   """关联套餐"""
   package_packages: Float
+}
+
+"""
+order by variance() on columns of table "company_packages"
+"""
+input company_packages_variance_order_by {
+  """关联公司"""
+  company_companies: order_by
+  id: order_by
+
+  """关联套餐"""
+  package_packages: order_by
 }
 
 """公司下的产品关联表"""
@@ -8988,6 +9209,42 @@ type packages {
   """哪个公司的套餐"""
   company_companies: bigint!
 
+  """An array relationship"""
+  company_packages(
+    """distinct select on columns"""
+    distinct_on: [company_packages_select_column!]
+
+    """limit the number of rows returned"""
+    limit: Int
+
+    """skip the first n rows. Use only with order_by"""
+    offset: Int
+
+    """sort the rows by one or more columns"""
+    order_by: [company_packages_order_by!]
+
+    """filter the rows returned"""
+    where: company_packages_bool_exp
+  ): [company_packages!]!
+
+  """An aggregate relationship"""
+  company_packages_aggregate(
+    """distinct select on columns"""
+    distinct_on: [company_packages_select_column!]
+
+    """limit the number of rows returned"""
+    limit: Int
+
+    """skip the first n rows. Use only with order_by"""
+    offset: Int
+
+    """sort the rows by one or more columns"""
+    order_by: [company_packages_order_by!]
+
+    """filter the rows returned"""
+    where: company_packages_bool_exp
+  ): company_packages_aggregate!
+
   """套餐封面图"""
   cover_image_url: String!
   created_at: timestamptz!
@@ -9164,6 +9421,8 @@ input packages_bool_exp {
   category_categories: bigint_comparison_exp
   company: companies_bool_exp
   company_companies: bigint_comparison_exp
+  company_packages: company_packages_bool_exp
+  company_packages_aggregate: company_packages_aggregate_bool_exp
   cover_image_url: String_comparison_exp
   created_at: timestamptz_comparison_exp
   description: String_comparison_exp
@@ -9214,6 +9473,7 @@ input packages_insert_input {
 
   """哪个公司的套餐"""
   company_companies: bigint
+  company_packages: company_packages_arr_rel_insert_input
 
   """套餐封面图"""
   cover_image_url: String
@@ -9386,6 +9646,7 @@ input packages_order_by {
   category_categories: order_by
   company: companies_order_by
   company_companies: order_by
+  company_packages_aggregate: company_packages_aggregate_order_by
   cover_image_url: order_by
   created_at: order_by
   description: order_by
@@ -11876,9 +12137,7 @@ type query_root {
   """fetch data from the table: "companies" using primary key columns"""
   companies_by_pk(id: bigint!): companies
 
-  """
-  fetch data from the table: "company_packages"
-  """
+  """An array relationship"""
   company_packages(
     """distinct select on columns"""
     distinct_on: [company_packages_select_column!]
@@ -11896,9 +12155,7 @@ type query_root {
     where: company_packages_bool_exp
   ): [company_packages!]!
 
-  """
-  fetch aggregated fields from the table: "company_packages"
-  """
+  """An aggregate relationship"""
   company_packages_aggregate(
     """distinct select on columns"""
     distinct_on: [company_packages_select_column!]
@@ -12541,9 +12798,7 @@ type subscription_root {
     where: companies_bool_exp
   ): [companies!]!
 
-  """
-  fetch data from the table: "company_packages"
-  """
+  """An array relationship"""
   company_packages(
     """distinct select on columns"""
     distinct_on: [company_packages_select_column!]
@@ -12561,9 +12816,7 @@ type subscription_root {
     where: company_packages_bool_exp
   ): [company_packages!]!
 
-  """
-  fetch aggregated fields from the table: "company_packages"
-  """
+  """An aggregate relationship"""
   company_packages_aggregate(
     """distinct select on columns"""
     distinct_on: [company_packages_select_column!]

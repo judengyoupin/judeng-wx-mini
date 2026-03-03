@@ -97,7 +97,7 @@ import SkeletonScreen from '@/components/SkeletonScreen.vue';
 const packages = ref<any[]>([]);
 const loading = ref(false);
 const page = ref(1);
-const pageSize = 20;
+const pageSize = 12;
 const hasMore = ref(true);
 const categories = ref<any[]>([]);
 const selectedCategoryId = ref<number | null>(null);

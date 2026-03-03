@@ -1950,6 +1950,10 @@ export type Companies = {
   /** An aggregate relationship */
   categories_aggregate: Categories_Aggregate;
   /** An array relationship */
+  company_packages: Array<Company_Packages>;
+  /** An aggregate relationship */
+  company_packages_aggregate: Company_Packages_Aggregate;
+  /** An array relationship */
   company_products: Array<Company_Products>;
   /** An aggregate relationship */
   company_products_aggregate: Company_Products_Aggregate;
@@ -2018,6 +2022,26 @@ export type CompaniesCategories_AggregateArgs = {
   offset?: InputMaybe<Scalars['Int']['input']>;
   order_by?: InputMaybe<Array<Categories_Order_By>>;
   where?: InputMaybe<Categories_Bool_Exp>;
+};
+
+
+/** 公司信息表 */
+export type CompaniesCompany_PackagesArgs = {
+  distinct_on?: InputMaybe<Array<Company_Packages_Select_Column>>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  order_by?: InputMaybe<Array<Company_Packages_Order_By>>;
+  where?: InputMaybe<Company_Packages_Bool_Exp>;
+};
+
+
+/** 公司信息表 */
+export type CompaniesCompany_Packages_AggregateArgs = {
+  distinct_on?: InputMaybe<Array<Company_Packages_Select_Column>>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  order_by?: InputMaybe<Array<Company_Packages_Order_By>>;
+  where?: InputMaybe<Company_Packages_Bool_Exp>;
 };
 
 
@@ -2187,6 +2211,8 @@ export type Companies_Bool_Exp = {
   banner_top?: InputMaybe<Json_Array_Comparison_Exp>;
   categories?: InputMaybe<Categories_Bool_Exp>;
   categories_aggregate?: InputMaybe<Categories_Aggregate_Bool_Exp>;
+  company_packages?: InputMaybe<Company_Packages_Bool_Exp>;
+  company_packages_aggregate?: InputMaybe<Company_Packages_Aggregate_Bool_Exp>;
   company_products?: InputMaybe<Company_Products_Bool_Exp>;
   company_products_aggregate?: InputMaybe<Company_Products_Aggregate_Bool_Exp>;
   company_users?: InputMaybe<Company_Users_Bool_Exp>;
@@ -2237,6 +2263,7 @@ export type Companies_Insert_Input = {
   /** 顶部轮播图（json数组）export interface BannerItem { /** 文件类型（如：image、video） *\/ file_type?: string; /** 文件 URL *\/ file_url: string; /** 跳转链接（小程序路径或外部链接） *\/ link?: string; /** 排序索引 *\/ sort?: number; /** 标题 *\/ title?: string; } */
   banner_top?: InputMaybe<Array<Scalars['json']['input']>>;
   categories?: InputMaybe<Categories_Arr_Rel_Insert_Input>;
+  company_packages?: InputMaybe<Company_Packages_Arr_Rel_Insert_Input>;
   company_products?: InputMaybe<Company_Products_Arr_Rel_Insert_Input>;
   company_users?: InputMaybe<Company_Users_Arr_Rel_Insert_Input>;
   /** 联系我们 二维码 */
@@ -2362,6 +2389,7 @@ export type Companies_Order_By = {
   banner_bottom?: InputMaybe<Order_By>;
   banner_top?: InputMaybe<Order_By>;
   categories_aggregate?: InputMaybe<Categories_Aggregate_Order_By>;
+  company_packages_aggregate?: InputMaybe<Company_Packages_Aggregate_Order_By>;
   company_products_aggregate?: InputMaybe<Company_Products_Aggregate_Order_By>;
   company_users_aggregate?: InputMaybe<Company_Users_Aggregate_Order_By>;
   contact_code?: InputMaybe<Order_By>;
@@ -2603,10 +2631,14 @@ export type Companies_Variance_Fields = {
 /** 公司的套餐关联表 */
 export type Company_Packages = {
   __typename?: 'company_packages';
+  /** An object relationship */
+  company: Companies;
   /** 关联公司 */
   company_companies: Scalars['bigint']['output'];
   created_at: Scalars['timestamptz']['output'];
   id: Scalars['bigint']['output'];
+  /** An object relationship */
+  package: Packages;
   /** 关联套餐 */
   package_packages: Scalars['bigint']['output'];
   updated_at: Scalars['timestamptz']['output'];
@@ -2619,6 +2651,17 @@ export type Company_Packages_Aggregate = {
   __typename?: 'company_packages_aggregate';
   aggregate?: Maybe<Company_Packages_Aggregate_Fields>;
   nodes: Array<Company_Packages>;
+};
+
+export type Company_Packages_Aggregate_Bool_Exp = {
+  count?: InputMaybe<Company_Packages_Aggregate_Bool_Exp_Count>;
+};
+
+export type Company_Packages_Aggregate_Bool_Exp_Count = {
+  arguments?: InputMaybe<Array<Company_Packages_Select_Column>>;
+  distinct?: InputMaybe<Scalars['Boolean']['input']>;
+  filter?: InputMaybe<Company_Packages_Bool_Exp>;
+  predicate: Int_Comparison_Exp;
 };
 
 /** aggregate fields of "company_packages" */
@@ -2644,6 +2687,28 @@ export type Company_Packages_Aggregate_FieldsCountArgs = {
   distinct?: InputMaybe<Scalars['Boolean']['input']>;
 };
 
+/** order by aggregate values of table "company_packages" */
+export type Company_Packages_Aggregate_Order_By = {
+  avg?: InputMaybe<Company_Packages_Avg_Order_By>;
+  count?: InputMaybe<Order_By>;
+  max?: InputMaybe<Company_Packages_Max_Order_By>;
+  min?: InputMaybe<Company_Packages_Min_Order_By>;
+  stddev?: InputMaybe<Company_Packages_Stddev_Order_By>;
+  stddev_pop?: InputMaybe<Company_Packages_Stddev_Pop_Order_By>;
+  stddev_samp?: InputMaybe<Company_Packages_Stddev_Samp_Order_By>;
+  sum?: InputMaybe<Company_Packages_Sum_Order_By>;
+  var_pop?: InputMaybe<Company_Packages_Var_Pop_Order_By>;
+  var_samp?: InputMaybe<Company_Packages_Var_Samp_Order_By>;
+  variance?: InputMaybe<Company_Packages_Variance_Order_By>;
+};
+
+/** input type for inserting array relation for remote table "company_packages" */
+export type Company_Packages_Arr_Rel_Insert_Input = {
+  data: Array<Company_Packages_Insert_Input>;
+  /** upsert condition */
+  on_conflict?: InputMaybe<Company_Packages_On_Conflict>;
+};
+
 /** aggregate avg on columns */
 export type Company_Packages_Avg_Fields = {
   __typename?: 'company_packages_avg_fields';
@@ -2654,14 +2719,25 @@ export type Company_Packages_Avg_Fields = {
   package_packages?: Maybe<Scalars['Float']['output']>;
 };
 
+/** order by avg() on columns of table "company_packages" */
+export type Company_Packages_Avg_Order_By = {
+  /** 关联公司 */
+  company_companies?: InputMaybe<Order_By>;
+  id?: InputMaybe<Order_By>;
+  /** 关联套餐 */
+  package_packages?: InputMaybe<Order_By>;
+};
+
 /** Boolean expression to filter rows from the table "company_packages". All fields are combined with a logical 'AND'. */
 export type Company_Packages_Bool_Exp = {
   _and?: InputMaybe<Array<Company_Packages_Bool_Exp>>;
   _not?: InputMaybe<Company_Packages_Bool_Exp>;
   _or?: InputMaybe<Array<Company_Packages_Bool_Exp>>;
+  company?: InputMaybe<Companies_Bool_Exp>;
   company_companies?: InputMaybe<Bigint_Comparison_Exp>;
   created_at?: InputMaybe<Timestamptz_Comparison_Exp>;
   id?: InputMaybe<Bigint_Comparison_Exp>;
+  package?: InputMaybe<Packages_Bool_Exp>;
   package_packages?: InputMaybe<Bigint_Comparison_Exp>;
   updated_at?: InputMaybe<Timestamptz_Comparison_Exp>;
   wx_scan_code?: InputMaybe<String_Comparison_Exp>;
@@ -2686,10 +2762,12 @@ export type Company_Packages_Inc_Input = {
 
 /** input type for inserting data into table "company_packages" */
 export type Company_Packages_Insert_Input = {
+  company?: InputMaybe<Companies_Obj_Rel_Insert_Input>;
   /** 关联公司 */
   company_companies?: InputMaybe<Scalars['bigint']['input']>;
   created_at?: InputMaybe<Scalars['timestamptz']['input']>;
   id?: InputMaybe<Scalars['bigint']['input']>;
+  package?: InputMaybe<Packages_Obj_Rel_Insert_Input>;
   /** 关联套餐 */
   package_packages?: InputMaybe<Scalars['bigint']['input']>;
   updated_at?: InputMaybe<Scalars['timestamptz']['input']>;
@@ -2711,6 +2789,19 @@ export type Company_Packages_Max_Fields = {
   wx_scan_code?: Maybe<Scalars['String']['output']>;
 };
 
+/** order by max() on columns of table "company_packages" */
+export type Company_Packages_Max_Order_By = {
+  /** 关联公司 */
+  company_companies?: InputMaybe<Order_By>;
+  created_at?: InputMaybe<Order_By>;
+  id?: InputMaybe<Order_By>;
+  /** 关联套餐 */
+  package_packages?: InputMaybe<Order_By>;
+  updated_at?: InputMaybe<Order_By>;
+  /** 微信小程序二维码 */
+  wx_scan_code?: InputMaybe<Order_By>;
+};
+
 /** aggregate min on columns */
 export type Company_Packages_Min_Fields = {
   __typename?: 'company_packages_min_fields';
@@ -2723,6 +2814,19 @@ export type Company_Packages_Min_Fields = {
   updated_at?: Maybe<Scalars['timestamptz']['output']>;
   /** 微信小程序二维码 */
   wx_scan_code?: Maybe<Scalars['String']['output']>;
+};
+
+/** order by min() on columns of table "company_packages" */
+export type Company_Packages_Min_Order_By = {
+  /** 关联公司 */
+  company_companies?: InputMaybe<Order_By>;
+  created_at?: InputMaybe<Order_By>;
+  id?: InputMaybe<Order_By>;
+  /** 关联套餐 */
+  package_packages?: InputMaybe<Order_By>;
+  updated_at?: InputMaybe<Order_By>;
+  /** 微信小程序二维码 */
+  wx_scan_code?: InputMaybe<Order_By>;
 };
 
 /** response of any mutation on the table "company_packages" */
@@ -2743,9 +2847,11 @@ export type Company_Packages_On_Conflict = {
 
 /** Ordering options when selecting data from "company_packages". */
 export type Company_Packages_Order_By = {
+  company?: InputMaybe<Companies_Order_By>;
   company_companies?: InputMaybe<Order_By>;
   created_at?: InputMaybe<Order_By>;
   id?: InputMaybe<Order_By>;
+  package?: InputMaybe<Packages_Order_By>;
   package_packages?: InputMaybe<Order_By>;
   updated_at?: InputMaybe<Order_By>;
   wx_scan_code?: InputMaybe<Order_By>;
@@ -2795,6 +2901,15 @@ export type Company_Packages_Stddev_Fields = {
   package_packages?: Maybe<Scalars['Float']['output']>;
 };
 
+/** order by stddev() on columns of table "company_packages" */
+export type Company_Packages_Stddev_Order_By = {
+  /** 关联公司 */
+  company_companies?: InputMaybe<Order_By>;
+  id?: InputMaybe<Order_By>;
+  /** 关联套餐 */
+  package_packages?: InputMaybe<Order_By>;
+};
+
 /** aggregate stddev_pop on columns */
 export type Company_Packages_Stddev_Pop_Fields = {
   __typename?: 'company_packages_stddev_pop_fields';
@@ -2805,6 +2920,15 @@ export type Company_Packages_Stddev_Pop_Fields = {
   package_packages?: Maybe<Scalars['Float']['output']>;
 };
 
+/** order by stddev_pop() on columns of table "company_packages" */
+export type Company_Packages_Stddev_Pop_Order_By = {
+  /** 关联公司 */
+  company_companies?: InputMaybe<Order_By>;
+  id?: InputMaybe<Order_By>;
+  /** 关联套餐 */
+  package_packages?: InputMaybe<Order_By>;
+};
+
 /** aggregate stddev_samp on columns */
 export type Company_Packages_Stddev_Samp_Fields = {
   __typename?: 'company_packages_stddev_samp_fields';
@@ -2813,6 +2937,15 @@ export type Company_Packages_Stddev_Samp_Fields = {
   id?: Maybe<Scalars['Float']['output']>;
   /** 关联套餐 */
   package_packages?: Maybe<Scalars['Float']['output']>;
+};
+
+/** order by stddev_samp() on columns of table "company_packages" */
+export type Company_Packages_Stddev_Samp_Order_By = {
+  /** 关联公司 */
+  company_companies?: InputMaybe<Order_By>;
+  id?: InputMaybe<Order_By>;
+  /** 关联套餐 */
+  package_packages?: InputMaybe<Order_By>;
 };
 
 /** Streaming cursor of the table "company_packages" */
@@ -2844,6 +2977,15 @@ export type Company_Packages_Sum_Fields = {
   id?: Maybe<Scalars['bigint']['output']>;
   /** 关联套餐 */
   package_packages?: Maybe<Scalars['bigint']['output']>;
+};
+
+/** order by sum() on columns of table "company_packages" */
+export type Company_Packages_Sum_Order_By = {
+  /** 关联公司 */
+  company_companies?: InputMaybe<Order_By>;
+  id?: InputMaybe<Order_By>;
+  /** 关联套餐 */
+  package_packages?: InputMaybe<Order_By>;
 };
 
 /** update columns of table "company_packages" */
@@ -2881,6 +3023,15 @@ export type Company_Packages_Var_Pop_Fields = {
   package_packages?: Maybe<Scalars['Float']['output']>;
 };
 
+/** order by var_pop() on columns of table "company_packages" */
+export type Company_Packages_Var_Pop_Order_By = {
+  /** 关联公司 */
+  company_companies?: InputMaybe<Order_By>;
+  id?: InputMaybe<Order_By>;
+  /** 关联套餐 */
+  package_packages?: InputMaybe<Order_By>;
+};
+
 /** aggregate var_samp on columns */
 export type Company_Packages_Var_Samp_Fields = {
   __typename?: 'company_packages_var_samp_fields';
@@ -2891,6 +3042,15 @@ export type Company_Packages_Var_Samp_Fields = {
   package_packages?: Maybe<Scalars['Float']['output']>;
 };
 
+/** order by var_samp() on columns of table "company_packages" */
+export type Company_Packages_Var_Samp_Order_By = {
+  /** 关联公司 */
+  company_companies?: InputMaybe<Order_By>;
+  id?: InputMaybe<Order_By>;
+  /** 关联套餐 */
+  package_packages?: InputMaybe<Order_By>;
+};
+
 /** aggregate variance on columns */
 export type Company_Packages_Variance_Fields = {
   __typename?: 'company_packages_variance_fields';
@@ -2899,6 +3059,15 @@ export type Company_Packages_Variance_Fields = {
   id?: Maybe<Scalars['Float']['output']>;
   /** 关联套餐 */
   package_packages?: Maybe<Scalars['Float']['output']>;
+};
+
+/** order by variance() on columns of table "company_packages" */
+export type Company_Packages_Variance_Order_By = {
+  /** 关联公司 */
+  company_companies?: InputMaybe<Order_By>;
+  id?: InputMaybe<Order_By>;
+  /** 关联套餐 */
+  package_packages?: InputMaybe<Order_By>;
 };
 
 /** 公司下的产品关联表 */
@@ -7221,6 +7390,10 @@ export type Packages = {
   company: Companies;
   /** 哪个公司的套餐 */
   company_companies: Scalars['bigint']['output'];
+  /** An array relationship */
+  company_packages: Array<Company_Packages>;
+  /** An aggregate relationship */
+  company_packages_aggregate: Company_Packages_Aggregate;
   /** 套餐封面图 */
   cover_image_url: Scalars['String']['output'];
   created_at: Scalars['timestamptz']['output'];
@@ -7240,6 +7413,26 @@ export type Packages = {
   /** 标签，多个用｜隔开 */
   tags?: Maybe<Scalars['String']['output']>;
   updated_at: Scalars['timestamptz']['output'];
+};
+
+
+/** 套餐表 */
+export type PackagesCompany_PackagesArgs = {
+  distinct_on?: InputMaybe<Array<Company_Packages_Select_Column>>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  order_by?: InputMaybe<Array<Company_Packages_Order_By>>;
+  where?: InputMaybe<Company_Packages_Bool_Exp>;
+};
+
+
+/** 套餐表 */
+export type PackagesCompany_Packages_AggregateArgs = {
+  distinct_on?: InputMaybe<Array<Company_Packages_Select_Column>>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  order_by?: InputMaybe<Array<Company_Packages_Order_By>>;
+  where?: InputMaybe<Company_Packages_Bool_Exp>;
 };
 
 
@@ -7373,6 +7566,8 @@ export type Packages_Bool_Exp = {
   category_categories?: InputMaybe<Bigint_Comparison_Exp>;
   company?: InputMaybe<Companies_Bool_Exp>;
   company_companies?: InputMaybe<Bigint_Comparison_Exp>;
+  company_packages?: InputMaybe<Company_Packages_Bool_Exp>;
+  company_packages_aggregate?: InputMaybe<Company_Packages_Aggregate_Bool_Exp>;
   cover_image_url?: InputMaybe<String_Comparison_Exp>;
   created_at?: InputMaybe<Timestamptz_Comparison_Exp>;
   description?: InputMaybe<String_Comparison_Exp>;
@@ -7411,6 +7606,7 @@ export type Packages_Insert_Input = {
   company?: InputMaybe<Companies_Obj_Rel_Insert_Input>;
   /** 哪个公司的套餐 */
   company_companies?: InputMaybe<Scalars['bigint']['input']>;
+  company_packages?: InputMaybe<Company_Packages_Arr_Rel_Insert_Input>;
   /** 套餐封面图 */
   cover_image_url?: InputMaybe<Scalars['String']['input']>;
   created_at?: InputMaybe<Scalars['timestamptz']['input']>;
@@ -7544,6 +7740,7 @@ export type Packages_Order_By = {
   category_categories?: InputMaybe<Order_By>;
   company?: InputMaybe<Companies_Order_By>;
   company_companies?: InputMaybe<Order_By>;
+  company_packages_aggregate?: InputMaybe<Company_Packages_Aggregate_Order_By>;
   cover_image_url?: InputMaybe<Order_By>;
   created_at?: InputMaybe<Order_By>;
   description?: InputMaybe<Order_By>;
@@ -9385,9 +9582,9 @@ export type Query_Root = {
   companies_aggregate: Companies_Aggregate;
   /** fetch data from the table: "companies" using primary key columns */
   companies_by_pk?: Maybe<Companies>;
-  /** fetch data from the table: "company_packages" */
+  /** An array relationship */
   company_packages: Array<Company_Packages>;
-  /** fetch aggregated fields from the table: "company_packages" */
+  /** An aggregate relationship */
   company_packages_aggregate: Company_Packages_Aggregate;
   /** fetch data from the table: "company_packages" using primary key columns */
   company_packages_by_pk?: Maybe<Company_Packages>;
@@ -9832,9 +10029,9 @@ export type Subscription_Root = {
   companies_by_pk?: Maybe<Companies>;
   /** fetch data from the table in a streaming manner: "companies" */
   companies_stream: Array<Companies>;
-  /** fetch data from the table: "company_packages" */
+  /** An array relationship */
   company_packages: Array<Company_Packages>;
-  /** fetch aggregated fields from the table: "company_packages" */
+  /** An aggregate relationship */
   company_packages_aggregate: Company_Packages_Aggregate;
   /** fetch data from the table: "company_packages" using primary key columns */
   company_packages_by_pk?: Maybe<Company_Packages>;

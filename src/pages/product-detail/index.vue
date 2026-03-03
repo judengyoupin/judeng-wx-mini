@@ -25,9 +25,15 @@
 
       <!-- 商品基本信息 -->
       <view class="product-info-section">
-        <view class="product-name">{{ productDetail.name }}</view>
+        <view class="product-name-row">
+          <text class="product-name-label">产品名称：</text>
+          <text class="product-name">{{ productDetail.name }}</text>
+        </view>
+        <view v-if="productTags.length > 0" class="product-tags">
+          <view v-for="(tag, i) in productTags" :key="i" class="product-tag">{{ tag }}</view>
+        </view>
         <view v-if="canViewPrice && minPrice" class="product-price">
-          <text class="price-label">价格：</text>
+          <text class="price-label">产品价格：</text>
           <text class="price-value">¥{{ formatPrice(minPrice) }}</text>
           <text v-if="hasMultiplePrices" class="price-range">起</text>
         </view>
@@ -249,6 +255,16 @@ const hasMultiplePrices = computed(() => {
   if (!skus.value.length) return false;
   const prices = skus.value.map((sku: any) => sku.price || 0).filter((p: number) => p > 0);
   return new Set(prices).size > 1;
+});
+
+// 商品标签：从 tags 字符串解析（逗号、顿号、竖线分隔）
+const productTags = computed(() => {
+  const raw = productDetail.value?.tags;
+  if (!raw || !String(raw).trim()) return [];
+  return String(raw)
+    .split(/[,，、|｜]/)
+    .map((s: string) => s.trim())
+    .filter((s: string) => s.length > 0);
 });
 
 // 商品介绍富文本：将换行符转为 <br/>，便于 rich-text 正确换行
@@ -633,12 +649,36 @@ onShareTimeline(() => {
   margin-bottom: 20rpx;
 }
 
+.product-name-row {
+  margin-bottom: 16rpx;
+  line-height: 1.5;
+}
+
+.product-name-label {
+  font-size: 28rpx;
+  color: #666666;
+  margin-right: 8rpx;
+}
+
 .product-name {
-  font-size: 36rpx;
+  font-size: 32rpx;
   font-weight: bold;
   color: #000000;
-  margin-bottom: 20rpx;
-  line-height: 1.5;
+}
+
+.product-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+  margin-bottom: 16rpx;
+}
+
+.product-tag {
+  font-size: 22rpx;
+  color: #22c55e;
+  background: #f0fdf4;
+  padding: 6rpx 14rpx;
+  border-radius: 24rpx;
 }
 
 .product-price {
@@ -648,12 +688,12 @@ onShareTimeline(() => {
 }
 
 .price-label {
-  font-size: 28rpx;
+  font-size: 26rpx;
   color: #666666;
 }
 
 .price-value {
-  font-size: 48rpx;
+  font-size: 32rpx;
   font-weight: bold;
   color: #ff6b6b;
 }

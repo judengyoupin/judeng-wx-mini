@@ -184,3 +184,41 @@ export const getUserList = async (args: {
 
   return result.users;
 };
+
+/**
+ * 设置/修改密码
+ * @param params 参数
+ * @param params.oldPassword 原密码（若已设置过密码则必填）
+ * @param params.newPassword 新密码（至少 6 位）
+ */
+export const setPassword = async (params: {
+  oldPassword?: string;
+  newPassword: string;
+}): Promise<void> => {
+  const token = uni.getStorageSync("token");
+  if (!token) {
+    throw new Error("请先登录");
+  }
+  const response = await uni.request({
+    url: `${projectConfig.apiBaseUrl}/api/auth/set-password`,
+    method: "POST",
+    data: {
+      oldPassword: params.oldPassword?.trim() || undefined,
+      newPassword: params.newPassword.trim(),
+    },
+    header: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  const data = response.data as Record<string, unknown> | null | undefined;
+  if (response.statusCode !== 200 || !data) {
+    throw new Error(
+      (data && typeof data.error === "string" ? data.error : null) || "设置失败"
+    );
+  }
+  if (data.error) {
+    throw new Error(String(data.error));
+  }
+};
