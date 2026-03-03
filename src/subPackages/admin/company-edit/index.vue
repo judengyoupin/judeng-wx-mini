@@ -165,7 +165,7 @@
 import { ref, computed } from 'vue';
 import { onLoad } from '@dcloudio/uni-app';
 import { getCompanyDetailCached, createCompany, updateCompany, authorizeCompanyAdmin, searchUserByMobileForPlatform, type CompanyInput } from '@/subPackages/admin/api/platform';
-import { useImageUploadWithProgress } from '@/utils/useImageUploadWithProgress';
+import { useImageUploadWithProgress } from '../utils/useImageUploadWithProgress';
 import UploadProgressOverlay from '@/components/UploadProgressOverlay.vue';
 
 const { uploading, progress, chooseAndUploadImage, uploadWithProgress } = useImageUploadWithProgress();

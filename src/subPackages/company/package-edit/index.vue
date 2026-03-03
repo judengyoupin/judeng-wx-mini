@@ -218,7 +218,7 @@ import { searchProductsWithSkus } from '@/subPackages/company/api/product';
 import { getCompanyDetailCached } from '@/subPackages/company/api/platform';
 import { getDefaultCompanyIdCached } from '@/api/config/index';
 import CategoryPicker from '@/components/CategoryPicker.vue';
-import { useImageUploadWithProgress } from '@/utils/useImageUploadWithProgress';
+import { useImageUploadWithProgress } from '../utils/useImageUploadWithProgress';
 import UploadProgressOverlay from '@/components/UploadProgressOverlay.vue';
 
 const { uploading, progress, chooseAndUploadImage } = useImageUploadWithProgress();

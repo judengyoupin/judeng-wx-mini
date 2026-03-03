@@ -1,5 +1,6 @@
 /**
  * 前端导出 Excel（商品/套餐等），小程序内写入临时文件后 openDocument 打开
+ * 置于 company 分包，避免主包引入 xlsx 等大依赖
  */
 import * as XLSX from 'xlsx';
 
@@ -244,7 +245,6 @@ export function openExcelFromBuffer(
   return new Promise((resolve, reject) => {
     const toError = (err: any) => new Error(err?.errMsg ?? err?.message ?? '文件写入或打开失败');
 
-    // 微信小程序需写入用户目录再 openDocument
     const u = typeof uni !== 'undefined' ? (uni as any) : null;
     const basePath = (u?.env?.USER_DATA_PATH ?? u?.getEnvInfoSync?.()?.USER_DATA_PATH ?? '').trim();
     if (!basePath) {
@@ -277,7 +277,6 @@ export function openExcelFromBuffer(
 
 /**
  * 导出商品列表为 Excel 并打开（含规格明细 + 商品概要 + 媒体信息）
- * 第一个 sheet 为规格明细，打开即可看到每条规格的完整信息
  */
 export async function exportProductsToExcel(products: any[]): Promise<void> {
   const skuRows = productsToSkuDetailRows(products);
@@ -292,7 +291,6 @@ export async function exportProductsToExcel(products: any[]): Promise<void> {
 
 /**
  * 导出套餐列表为 Excel 并打开（含套餐包含规格明细 + 套餐概要）
- * 第一个 sheet 为套餐包含明细，打开即可看到每个套餐下的规格、数量、小计
  */
 export async function exportPackagesToExcel(packages: any[]): Promise<void> {
   const detailRows = packagesToIncludeDetailRows(packages);

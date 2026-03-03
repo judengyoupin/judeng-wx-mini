@@ -182,7 +182,7 @@ import { companyInfo } from '@/store/userStore';
 import { getProductList, getProductListWithCompanyHidden, getProductListMultiCompany, deleteProduct, updateProduct } from '@/subPackages/company/api/product';
 import { getDefaultCompanyIdCached } from '@/api/config/index';
 import { getCompanyDetailCached, updateCompany } from '@/subPackages/company/api/platform';
-import { exportProductsToExcel } from '@/utils/exportExcel';
+import { exportProductsToExcel } from '../utils/exportExcel';
 
 const products = ref<any[]>([]);
 const loading = ref(false);

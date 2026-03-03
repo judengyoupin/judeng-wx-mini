@@ -224,7 +224,7 @@ import { ref, computed } from 'vue';
 import { onLoad } from '@dcloudio/uni-app';
 import { getCompanyDetailCached, updateCompany } from '@/subPackages/company/api/platform';
 import { getBanners } from '@/api/banner/index';
-import { useImageUploadWithProgress } from '@/utils/useImageUploadWithProgress';
+import { useImageUploadWithProgress } from '../utils/useImageUploadWithProgress';
 import UploadProgressOverlay from '@/components/UploadProgressOverlay.vue';
 import type { BannerItem } from '@/types/companies';
 

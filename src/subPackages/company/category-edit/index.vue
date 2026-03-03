@@ -103,7 +103,7 @@ import { onLoad } from '@dcloudio/uni-app';
 import { companyInfo } from '@/store/userStore';
 import { getCategoryTree, getCategoryDetail, createCategory, updateCategory } from '@/api/category-management';
 import CategoryPicker from '@/components/CategoryPicker.vue';
-import { useImageUploadWithProgress } from '@/utils/useImageUploadWithProgress';
+import { useImageUploadWithProgress } from '../utils/useImageUploadWithProgress';
 import UploadProgressOverlay from '@/components/UploadProgressOverlay.vue';
 
 const { uploading, progress, chooseAndUploadImage } = useImageUploadWithProgress();

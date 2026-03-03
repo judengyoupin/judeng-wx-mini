@@ -183,7 +183,7 @@ import { companyInfo } from '@/store/userStore';
 import { getPackageList, getPackageListWithCompanyHidden, getPackageListMultiCompany, deletePackage, updatePackage } from '@/subPackages/company/api/package';
 import { getDefaultCompanyIdCached } from '@/api/config/index';
 import { getCompanyDetailCached, updateCompany } from '@/subPackages/company/api/platform';
-import { exportPackagesToExcel } from '@/utils/exportExcel';
+import { exportPackagesToExcel } from '../utils/exportExcel';
 
 const packages = ref<any[]>([]);
 const loading = ref(false);
