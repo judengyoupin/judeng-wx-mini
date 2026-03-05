@@ -77,9 +77,7 @@
               <view class="sku-name">{{ sku.name }}</view>
               <view class="sku-meta">
                 <text v-if="canViewPrice" class="sku-price">¥{{ formatPrice((sku.price || 0) * priceFactor) }}</text>
-                <text class="sku-stock" :class="{ 'stock-zero': sku.stock <= 0 }">
-                  {{ sku.stock > 0 ? `库存: ${sku.stock}` : '缺货' }}
-                </text>
+                <text v-if="sku.stock <= 0" class="sku-stock stock-zero">缺货</text>
               </view>
             </view>
           </view>
@@ -150,10 +148,10 @@
     <DetailFooterBar :cart-count="cartCount" @home="goHome" @cart="goCart">
       <button
         class="product-detail-footer-btn"
-        :class="{ 'product-detail-footer-btn--disabled': selectedSkuIds.length === 0 || !canAddToCart }"
+        :class="{ 'product-detail-footer-btn--disabled': !user_token ? false : (selectedSkuIds.length === 0 || !canAddToCart) }"
         @click="handleAddToCart"
       >
-        {{ selectedSkuIds.length === 0 ? '请先选择规格' : '加入购物车' }}
+        {{ !user_token ? '登录后加购' : (selectedSkuIds.length === 0 ? '请先选择规格' : '加入购物车') }}
       </button>
     </DetailFooterBar>
   </view>
@@ -337,14 +335,6 @@ const toggleSku = (sku: any) => {
 
 // 加入购物车（重复加购时数量+1；加购后保持规格选中状态；新加项默认勾选）
 const handleAddToCart = async () => {
-  if (selectedSkuIds.value.length === 0) {
-    uni.showToast({
-      title: '请选择规格',
-      icon: 'none',
-    });
-    return;
-  }
-
   if (!user_token.value) {
     uni.showToast({
       title: '请先登录',
@@ -355,6 +345,14 @@ const handleAddToCart = async () => {
         url: '/pages/login/index',
       });
     }, 1500);
+    return;
+  }
+
+  if (selectedSkuIds.value.length === 0) {
+    uni.showToast({
+      title: '请选择规格',
+      icon: 'none',
+    });
     return;
   }
 
@@ -474,6 +472,10 @@ onLoad(async (options?: { id?: string; companyId?: string; scene?: string }) => 
 
 onShow(() => {
   loadCartCount();
+  // 登录返回后重新检查权限，确保 canAddToCart 等状态正确
+  if (productDetail.value && user_token.value) {
+    checkPermissions();
+  }
 });
 
 // 分享带 companyId，别人点开可进入对应公司
