@@ -2002,6 +2002,8 @@ export type Companies = {
   updated_at: Scalars['timestamptz']['output'];
   /** 微信加好友二维码 */
   wechat_code?: Maybe<Scalars['String']['output']>;
+  /** 微信小程序二维码 */
+  wx_scan_code?: Maybe<Scalars['String']['output']>;
 };
 
 
@@ -2239,6 +2241,7 @@ export type Companies_Bool_Exp = {
   resource_file_url?: InputMaybe<String_Comparison_Exp>;
   updated_at?: InputMaybe<Timestamptz_Comparison_Exp>;
   wechat_code?: InputMaybe<String_Comparison_Exp>;
+  wx_scan_code?: InputMaybe<String_Comparison_Exp>;
 };
 
 /** unique or primary key constraints on table "companies" */
@@ -2295,6 +2298,8 @@ export type Companies_Insert_Input = {
   updated_at?: InputMaybe<Scalars['timestamptz']['input']>;
   /** 微信加好友二维码 */
   wechat_code?: InputMaybe<Scalars['String']['input']>;
+  /** 微信小程序二维码 */
+  wx_scan_code?: InputMaybe<Scalars['String']['input']>;
 };
 
 /** aggregate max on columns */
@@ -2327,6 +2332,8 @@ export type Companies_Max_Fields = {
   updated_at?: Maybe<Scalars['timestamptz']['output']>;
   /** 微信加好友二维码 */
   wechat_code?: Maybe<Scalars['String']['output']>;
+  /** 微信小程序二维码 */
+  wx_scan_code?: Maybe<Scalars['String']['output']>;
 };
 
 /** aggregate min on columns */
@@ -2359,6 +2366,8 @@ export type Companies_Min_Fields = {
   updated_at?: Maybe<Scalars['timestamptz']['output']>;
   /** 微信加好友二维码 */
   wechat_code?: Maybe<Scalars['String']['output']>;
+  /** 微信小程序二维码 */
+  wx_scan_code?: Maybe<Scalars['String']['output']>;
 };
 
 /** response of any mutation on the table "companies" */
@@ -2410,6 +2419,7 @@ export type Companies_Order_By = {
   resource_file_url?: InputMaybe<Order_By>;
   updated_at?: InputMaybe<Order_By>;
   wechat_code?: InputMaybe<Order_By>;
+  wx_scan_code?: InputMaybe<Order_By>;
 };
 
 /** primary key columns input for table: companies */
@@ -2450,7 +2460,9 @@ export enum Companies_Select_Column {
   /** column name */
   UpdatedAt = 'updated_at',
   /** column name */
-  WechatCode = 'wechat_code'
+  WechatCode = 'wechat_code',
+  /** column name */
+  WxScanCode = 'wx_scan_code'
 }
 
 /** input type for updating data in table "companies" */
@@ -2484,6 +2496,8 @@ export type Companies_Set_Input = {
   updated_at?: InputMaybe<Scalars['timestamptz']['input']>;
   /** 微信加好友二维码 */
   wechat_code?: InputMaybe<Scalars['String']['input']>;
+  /** 微信小程序二维码 */
+  wx_scan_code?: InputMaybe<Scalars['String']['input']>;
 };
 
 /** aggregate stddev on columns */
@@ -2549,6 +2563,8 @@ export type Companies_Stream_Cursor_Value_Input = {
   updated_at?: InputMaybe<Scalars['timestamptz']['input']>;
   /** 微信加好友二维码 */
   wechat_code?: InputMaybe<Scalars['String']['input']>;
+  /** 微信小程序二维码 */
+  wx_scan_code?: InputMaybe<Scalars['String']['input']>;
 };
 
 /** aggregate sum on columns */
@@ -2592,7 +2608,9 @@ export enum Companies_Update_Column {
   /** column name */
   UpdatedAt = 'updated_at',
   /** column name */
-  WechatCode = 'wechat_code'
+  WechatCode = 'wechat_code',
+  /** column name */
+  WxScanCode = 'wx_scan_code'
 }
 
 export type Companies_Updates = {

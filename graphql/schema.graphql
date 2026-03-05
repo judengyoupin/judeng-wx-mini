@@ -2759,6 +2759,9 @@ type companies {
 
   """微信加好友二维码"""
   wechat_code: String
+
+  """微信小程序二维码"""
+  wx_scan_code: String
 }
 
 """
@@ -2832,6 +2835,7 @@ input companies_bool_exp {
   resource_file_url: String_comparison_exp
   updated_at: timestamptz_comparison_exp
   wechat_code: String_comparison_exp
+  wx_scan_code: String_comparison_exp
 }
 
 """
@@ -2915,6 +2919,9 @@ input companies_insert_input {
 
   """微信加好友二维码"""
   wechat_code: String
+
+  """微信小程序二维码"""
+  wx_scan_code: String
 }
 
 """aggregate max on columns"""
@@ -2961,6 +2968,9 @@ type companies_max_fields {
 
   """微信加好友二维码"""
   wechat_code: String
+
+  """微信小程序二维码"""
+  wx_scan_code: String
 }
 
 """aggregate min on columns"""
@@ -3007,6 +3017,9 @@ type companies_min_fields {
 
   """微信加好友二维码"""
   wechat_code: String
+
+  """微信小程序二维码"""
+  wx_scan_code: String
 }
 
 """
@@ -3065,6 +3078,7 @@ input companies_order_by {
   resource_file_url: order_by
   updated_at: order_by
   wechat_code: order_by
+  wx_scan_code: order_by
 }
 
 """primary key columns input for table: companies"""
@@ -3123,6 +3137,9 @@ enum companies_select_column {
 
   """column name"""
   wechat_code
+
+  """column name"""
+  wx_scan_code
 }
 
 """
@@ -3174,6 +3191,9 @@ input companies_set_input {
 
   """微信加好友二维码"""
   wechat_code: String
+
+  """微信小程序二维码"""
+  wx_scan_code: String
 }
 
 """aggregate stddev on columns"""
@@ -3255,6 +3275,9 @@ input companies_stream_cursor_value_input {
 
   """微信加好友二维码"""
   wechat_code: String
+
+  """微信小程序二维码"""
+  wx_scan_code: String
 }
 
 """aggregate sum on columns"""
@@ -3315,6 +3338,9 @@ enum companies_update_column {
 
   """column name"""
   wechat_code
+
+  """column name"""
+  wx_scan_code
 }
 
 input companies_updates {

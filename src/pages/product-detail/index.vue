@@ -450,9 +450,23 @@ const formatPrice = (price: number) => {
   return Number(price).toFixed(2);
 };
 
-onLoad((options?: { id?: string }) => {
-  if (options?.id) {
-    productId.value = Number(options.id);
+onLoad(async (options?: { id?: string; companyId?: string; scene?: string }) => {
+  let id: number | null = null;
+  let companyId: number | null = null;
+  if (options?.scene) {
+    const scene = decodeURIComponent(options.scene);
+    const params = new URLSearchParams(scene);
+    id = params.has('id') ? Number(params.get('id')) : null;
+    companyId = params.has('companyId') ? Number(params.get('companyId')) : null;
+  }
+  if (id == null && options?.id) id = Number(options.id);
+  if (companyId == null && options?.companyId) companyId = Number(options.companyId);
+  if (id != null) {
+    productId.value = id;
+    if (companyId != null) {
+      const { syncCompanyInfo } = await import('@/api/company/index');
+      await syncCompanyInfo(companyId, true);
+    }
     loadProductDetail();
   }
   loadCartCount();

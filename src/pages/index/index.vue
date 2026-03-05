@@ -443,10 +443,16 @@ export default defineComponent({
     };
 
     onLoad((options: any) => {
-      if (options?.companyId) {
-        uni.setStorageSync("companyId", options.companyId);
+      let companyId: string | null = options?.companyId ?? null;
+      if (options?.scene) {
+        const scene = decodeURIComponent(options.scene);
+        const params = new URLSearchParams(scene);
+        companyId = params.get("companyId") ?? companyId;
+      }
+      if (companyId) {
+        uni.setStorageSync("companyId", companyId);
         import("@/api/company/index").then(({ syncCompanyInfo }) => {
-          syncCompanyInfo(options.companyId).then(() => {
+          syncCompanyInfo(companyId!).then(() => {
             fetchHomeData(true);
           }).catch((err) => {
             console.error("同步公司信息失败:", err);
