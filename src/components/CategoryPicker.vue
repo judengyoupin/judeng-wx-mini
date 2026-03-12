@@ -309,13 +309,14 @@ function findPathInTree(cats: any[], targetId: number, pathSoFar: string[]): str
   return null;
 }
 
-// 选择分类（传出 id、name、pathLabel 便于编辑页展示完整路径）
+// 选择分类（传出 id、name、pathLabel、level 便于编辑页计算子分类 level）
 const selectCategory = (category: any) => {
   const id = category?.id;
   const name = category?.name ?? '';
+  const level = category?.level;
   const pathArr = id != null ? findPathInTree(categories.value, Number(id), []) : null;
   const pathLabel = pathArr && pathArr.length > 0 ? pathArr.join(' / ') : name;
-  emit('select', { id, name, pathLabel });
+  emit('select', { id, name, pathLabel, level });
   handleClose();
 };
 

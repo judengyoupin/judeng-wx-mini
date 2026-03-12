@@ -40,12 +40,15 @@
           class="product-item"
           @click="goDetail(product)"
         >
-          <image
-            class="product-image"
-            :src="product.cover_image_url"
-            mode="aspectFill"
-            lazy-load
-          ></image>
+          <view class="product-image-wrap">
+            <image
+              class="product-image"
+              :src="product.cover_image_url"
+              mode="aspectFill"
+              lazy-load
+            ></image>
+            <view v-if="isProductOutOfStock(product)" class="product-out-of-stock">缺货</view>
+          </view>
           <view class="product-info">
             <view class="product-name">{{ product.name }}</view>
             <view class="product-desc" v-if="product.description">
@@ -126,6 +129,11 @@ const getMinPrice = (product: any) => {
   if (!product.product_skus || product.product_skus.length === 0) return '0.00';
   const prices = product.product_skus.map((sku: any) => (sku.price || 0) * priceFactor.value);
   return Math.min(...prices).toFixed(2);
+};
+
+const isProductOutOfStock = (product: any) => {
+  const total = product?.product_skus_aggregate?.aggregate?.sum?.stock ?? 0;
+  return Number(total) <= 0;
 };
 
 const checkPermissions = async () => {
@@ -304,10 +312,27 @@ onLoad(async (options?) => {
   box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.05);
 }
 
+.product-image-wrap {
+  position: relative;
+  width: 100%;
+}
+
 .product-image {
   width: 100%;
   height: 340rpx;
   background: #f0f0f0;
+  display: block;
+}
+
+.product-out-of-stock {
+  position: absolute;
+  left: 12rpx;
+  bottom: 12rpx;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  padding: 6rpx 14rpx;
+  border-radius: 8rpx;
+  font-size: 22rpx;
 }
 
 .product-info {

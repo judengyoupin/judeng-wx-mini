@@ -53,6 +53,7 @@
           <view class="product-card-image-wrap">
             <image class="product-card-image" :src="product.cover_image_url" mode="aspectFill" lazy-load />
             <view v-if="getFirstTag(product.tags)" class="product-tag">{{ getFirstTag(product.tags) }}</view>
+            <view v-if="isProductOutOfStock(product)" class="product-out-of-stock">缺货</view>
           </view>
           <view class="product-card-info">
             <view class="product-card-name">{{ product.name }}</view>
@@ -152,6 +153,11 @@ const searchPlaceholder = computed(() =>
 const getFirstTag = (tagsStr: string | null | undefined) => {
   if (!tagsStr || !String(tagsStr).trim()) return '';
   return String(tagsStr).split(/[,，|｜]/)[0].trim() || '';
+};
+
+const isProductOutOfStock = (product: any) => {
+  const total = product?.product_skus_aggregate?.aggregate?.sum?.stock ?? 0;
+  return Number(total) <= 0;
 };
 
 const loadData = async (refresh = false) => {
@@ -407,6 +413,17 @@ onShareTimeline(() => {
   width: 100%;
   height: 100%;
   display: block;
+}
+
+.product-out-of-stock {
+  position: absolute;
+  right: 12rpx;
+  bottom: 12rpx;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  padding: 6rpx 14rpx;
+  border-radius: 8rpx;
+  font-size: 22rpx;
 }
 
 .product-tag {

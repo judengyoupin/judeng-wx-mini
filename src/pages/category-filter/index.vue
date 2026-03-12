@@ -19,9 +19,9 @@
     </view>
 
     <view class="content-container">
-      <!-- 有子分类时：三列分类网格（图片绿框 + 名称） -->
+      <!-- route_ui_style=categories 且有子分类时：三列分类网格；否则展示商品 -->
       <scroll-view
-        v-if="subCategories.length > 0"
+        v-if="showSubCategories"
         scroll-y
         class="main-content category-grid-wrap"
         refresher-enabled
@@ -80,6 +80,7 @@
                 lazy-load
               />
               <view v-if="getFirstTag(product.tags)" class="product-tag">{{ getFirstTag(product.tags) }}</view>
+              <view v-if="isProductOutOfStock(product)" class="product-out-of-stock">缺货</view>
             </view>
             <view class="product-card-info">
               <view class="product-card-name">{{ product.name }}</view>
@@ -120,6 +121,8 @@ import { safeNavigateBack } from '@/utils/navigation';
 const parentId = ref<number | null>(null);
 const pageTitle = ref('分类筛选');
 const subCategories = ref<any[]>([]);
+/** 当前分类的 route_ui_style：products=展示商品，categories=展示子分类（或本分类商品） */
+const parentRouteUiStyle = ref<'products' | 'categories' | ''>('');
 const currentCategoryId = ref<number | null>(null);
 const products = ref<any[]>([]);
 const loading = ref(false);
@@ -130,6 +133,12 @@ const pageSize = 12;
 
 const currentCategory = computed(() => {
   return subCategories.value.find(c => c.id === currentCategoryId.value);
+});
+
+/** 是否展示子分类网格：route_ui_style 为 categories 且有子分类时展示，否则展示商品 */
+const showSubCategories = computed(() => {
+  if (parentRouteUiStyle.value === 'products') return false;
+  return subCategories.value.length > 0;
 });
 
 const searchKeyword = ref('');
@@ -147,7 +156,7 @@ const displayProducts = computed(() => {
 
 // 展示分类时：带关键词跳转搜索页；展示商品时：仅当前页筛选（由 displayProducts 完成）
 const onSearchConfirm = () => {
-  if (subCategories.value.length > 0) {
+  if (showSubCategories.value) {
     const kw = (searchKeyword.value || '').trim();
     let url = `/pages/search/index?type=product`;
     if (parentId.value != null) url += `&categoryId=${parentId.value}`;
@@ -164,7 +173,7 @@ const clearSearchKeyword = () => {
 // 导航栏标题：展示分类时 [分类名称]-分类，展示商品时 [分类名称]-商品，不显示公司名
 const navTitle = computed(() => {
   const name = pageTitle.value && pageTitle.value !== '分类筛选' ? pageTitle.value : '分类筛选';
-  const suffix = subCategories.value.length > 0 ? '分类' : '商品';
+  const suffix = showSubCategories.value ? '分类' : '商品';
   return `${name}-${suffix}`;
 });
 
@@ -173,7 +182,12 @@ const getFirstTag = (tagsStr: string | null | undefined) => {
   return String(tagsStr).split(/[,，|｜]/)[0].trim() || '';
 };
 
-// 加载子分类（按父级 ID 拉取；无子分类时用当前分类 ID 展示该分类下的商品）
+const isProductOutOfStock = (product: any) => {
+  const total = product?.product_skus_aggregate?.aggregate?.sum?.stock ?? 0;
+  return Number(total) <= 0;
+};
+
+// 加载子分类（按父级 ID 拉取）；按 route_ui_style 决定展示子分类或商品
 const loadSubCategories = async () => {
   if (!parentId.value) return;
 
@@ -181,10 +195,13 @@ const loadSubCategories = async () => {
     const res = await getCategoryChildren(parentId.value, companyInfo.value?.id ?? undefined);
     if (res.code === 0 && res.data) {
       subCategories.value = res.data;
-      if (subCategories.value.length > 0) {
+      const routeStyle = res.parentCategory?.route_ui_style;
+      parentRouteUiStyle.value = routeStyle === 'products' ? 'products' : 'categories';
+      // route_ui_style=products 时始终展示商品；否则有子分类则展示子分类，无则展示商品
+      const showSubs = parentRouteUiStyle.value !== 'products' && subCategories.value.length > 0;
+      if (showSubs) {
         currentCategoryId.value = subCategories.value[0].id;
       } else {
-        // 无子分类：直接展示当前分类（父级）下的商品
         currentCategoryId.value = parentId.value;
       }
       loadProducts(true);
@@ -470,6 +487,17 @@ onShareTimeline(() => {
   width: 100%;
   height: 100%;
   display: block;
+}
+
+.product-out-of-stock {
+  position: absolute;
+  right: 12rpx;
+  bottom: 12rpx;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  padding: 6rpx 14rpx;
+  border-radius: 8rpx;
+  font-size: 22rpx;
 }
 
 .product-tag {

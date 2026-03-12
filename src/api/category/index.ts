@@ -16,6 +16,7 @@ export function mapCategoryNode(c: any, hiddenCategoryIds: number[]): any | null
     ui_style: c.route_ui_style,
     icon_url: c.icon_url,
     parent_categories: c.parent_categories,
+    level: c.level,
     type: c.type,
     skip: c.route_ui_style === "products",
     img: c.icon_url ? { url: c.icon_url } : null,
@@ -171,6 +172,7 @@ export async function getCategoryChildren(parentId: number, companyId?: number |
       ? `
       query GetCategoryChildrenWithHidden${varStr} {
         company: companies_by_pk(id: $currentCompanyId) { hidden_category_ids }
+        parentCategory: categories_by_pk(id: $parentId) { id name route_ui_style }
         categories(
           where: { _and: [ ${whereConditions.join(', ')} ] }
           order_by: { sort_order: asc }
@@ -188,6 +190,7 @@ export async function getCategoryChildren(parentId: number, companyId?: number |
     `
       : `
       query GetCategoryChildren${varStr} {
+        parentCategory: categories_by_pk(id: $parentId) { id name route_ui_style }
         categories(
           where: { _and: [ ${whereConditions.join(', ')} ] }
           order_by: { sort_order: asc }
@@ -210,6 +213,7 @@ export async function getCategoryChildren(parentId: number, companyId?: number |
 
     const result = await client.execute<{
       company?: { hidden_category_ids: (string | number)[] | null } | null;
+      parentCategory?: { id: number; name: string; route_ui_style: string | null } | null;
       categories: any[];
     }>({
       query,
@@ -239,7 +243,8 @@ export async function getCategoryChildren(parentId: number, companyId?: number |
       image: child.icon_url,
     }));
 
-    return { code: 0, data, message: "获取成功" };
+    const parentCategory = result?.parentCategory ?? null;
+    return { code: 0, data, parentCategory, message: "获取成功" };
   } catch (error: any) {
     console.error("获取子分类失败:", error);
     return {

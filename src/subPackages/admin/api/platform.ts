@@ -340,3 +340,24 @@ export async function searchUserByMobileForPlatform(mobile: string) {
 
   return result?.users?.[0] || null;
 }
+
+/** 根据手机号创建默认账号（用于「创建并授权」） */
+export async function createUserByMobile(mobile: string) {
+  const mutation = `
+    mutation CreateUserByMobile($mobile: String!) {
+      insert_users_one(object: { mobile: $mobile, role: "user" }) {
+        id
+        mobile
+        nickname
+        avatar_url
+      }
+    }
+  `;
+
+  const result = await client.execute({
+    query: mutation,
+    variables: { mobile },
+  });
+
+  return result?.insert_users_one || null;
+}

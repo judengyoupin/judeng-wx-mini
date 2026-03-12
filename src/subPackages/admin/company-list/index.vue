@@ -104,6 +104,7 @@
                 maxlength="11"
                 type="number"
                 placeholder-style="color: #c0c0c0;"
+                @input="() => { hasSearched.value = false; searchedUser.value = null }"
               />
             </view>
             <button 
@@ -140,9 +141,20 @@
               </view>
             </view>
           </view>
+
+          <view v-if="hasSearched && !searchedUser" class="create-user-tip">
+            <text class="create-user-tip-text">该手机号尚未注册</text>
+            <text class="create-user-tip-desc">可点击下方「创建并授权」直接创建账号并授权为管理员</text>
+          </view>
         </view>
         <view class="modal-footer">
-          <button class="modal-btn" @click="handleAuthorize">确认授权</button>
+          <button 
+            class="modal-btn" 
+            @click="handleAuthorize"
+            :disabled="!hasSearched || authorizeSubmitting"
+          >
+            {{ authorizeSubmitting ? '处理中…' : (searchedUser ? '确认授权' : '创建并授权') }}
+          </button>
           <button class="modal-btn cancel" @click="showAuthorizeModal = false">取消</button>
         </view>
       </view>
@@ -153,7 +165,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { onPullDownRefresh, onReachBottom, onShow } from '@dcloudio/uni-app';
-import { getCompanyList, authorizeCompanyAdmin, searchUserByMobileForPlatform } from '@/subPackages/admin/api/platform';
+import { getCompanyList, authorizeCompanyAdmin, searchUserByMobileForPlatform, createUserByMobile } from '@/subPackages/admin/api/platform';
 import { syncCompanyInfo } from '@/api/company/index';
 
 const companies = ref<any[]>([]);
@@ -166,6 +178,8 @@ const hasMore = ref(true);
 const showAuthorizeModal = ref(false);
 const authorizingCompany = ref<any>(null);
 const searchedUser = ref<any>(null);
+const hasSearched = ref(false);
+const authorizeSubmitting = ref(false);
 const authorizeForm = ref({
   mobile: '',
 });
@@ -223,14 +237,10 @@ const searchUserForAuthorize = async () => {
 
   try {
     const user = await searchUserByMobileForPlatform(authorizeForm.value.mobile);
+    hasSearched.value = true;
     if (user) {
       searchedUser.value = user;
     } else {
-      uni.showToast({
-        title: '未找到该用户，请先让用户在小程序中登录',
-        icon: 'none',
-        duration: 3000,
-      });
       searchedUser.value = null;
     }
   } catch (error: any) {
@@ -245,34 +255,45 @@ const searchUserForAuthorize = async () => {
 const authorizeAdmin = (company: any) => {
   authorizingCompany.value = company;
   searchedUser.value = null;
+  hasSearched.value = false;
   authorizeForm.value.mobile = '';
   showAuthorizeModal.value = true;
 };
 
-// 确认授权
+// 确认授权 / 创建并授权
 const handleAuthorize = async () => {
-  if (!searchedUser.value) {
-    uni.showToast({
-      title: '请先搜索用户',
-      icon: 'none',
-    });
+  const mobile = (authorizeForm.value.mobile || '').trim().replace(/\D/g, '');
+  if (mobile.length !== 11) {
+    uni.showToast({ title: '请输入正确的手机号', icon: 'none' });
     return;
   }
-
-  if (!authorizingCompany.value) {
+  if (!hasSearched.value) {
+    uni.showToast({ title: '请先搜索用户', icon: 'none' });
     return;
   }
+  if (!authorizingCompany.value) return;
 
+  authorizeSubmitting.value = true;
   try {
+    let userId = searchedUser.value?.id;
+    if (!userId) {
+      const newUser = await createUserByMobile(mobile);
+      if (!newUser?.id) {
+        uni.showToast({ title: '创建账号失败', icon: 'none' });
+        return;
+      }
+      userId = newUser.id;
+    }
+
     await authorizeCompanyAdmin({
-      userId: searchedUser.value.id,
+      userId,
       companyId: authorizingCompany.value.id,
       canViewPrice: true,
       priceFactor: 1,
     });
 
     uni.showToast({
-      title: '授权成功',
+      title: searchedUser.value ? '授权成功' : '已创建账号并授权',
       icon: 'success',
     });
 
@@ -280,9 +301,11 @@ const handleAuthorize = async () => {
     loadCompanies(true);
   } catch (error: any) {
     uni.showToast({
-      title: error.message || '授权失败',
+      title: error.message || '操作失败',
       icon: 'none',
     });
+  } finally {
+    authorizeSubmitting.value = false;
   }
 };
 
@@ -828,6 +851,28 @@ onReachBottom(() => {
 .searched-phone {
   font-size: 26rpx;
   color: #64748b;
+}
+
+.create-user-tip {
+  margin-top: 24rpx;
+  padding: 24rpx;
+  background: #fff8e6;
+  border: 1rpx solid #ffd666;
+  border-radius: 12rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 12rpx;
+}
+
+.create-user-tip-text {
+  font-size: 28rpx;
+  color: #333;
+  font-weight: 500;
+}
+
+.create-user-tip-desc {
+  font-size: 24rpx;
+  color: #666;
 }
 
 .searched-check {

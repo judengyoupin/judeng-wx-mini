@@ -11,13 +11,13 @@
 
     <!-- 商品详情 -->
     <scroll-view v-else-if="productDetail" scroll-y class="scroll-content">
-      <!-- 顶部仅展示封面图 -->
+      <!-- 顶部仅展示封面图：原始比例、高度自适应 -->
       <view class="cover-section">
         <image
           v-if="productDetail.cover_image_url"
           class="cover-image"
           :src="productDetail.cover_image_url"
-          mode="aspectFill"
+          mode="widthFix"
           @click="previewImages([productDetail.cover_image_url], 0)"
         />
         <view v-else class="cover-placeholder">暂无封面</view>
@@ -543,20 +543,19 @@ onShareTimeline(() => {
 
 .cover-section {
   width: 100%;
-  height: 750rpx;
   background: #ffffff;
   margin-bottom: 20rpx;
 }
 
 .cover-image {
   width: 100%;
-  height: 100%;
   display: block;
+  vertical-align: top;
 }
 
 .cover-placeholder {
   width: 100%;
-  height: 100%;
+  min-height: 400rpx;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -618,18 +617,18 @@ onShareTimeline(() => {
 .detail-media-list {
   display: flex;
   flex-direction: column;
-  gap: 20rpx;
+  gap: 0;
 }
 
 .detail-media-item.img {
   width: 100%;
-  border-radius: 12rpx;
+  display: block;
+  vertical-align: top;
 }
 
 .detail-media-item.video-wrap,
 .scene-media-item.video-wrap {
   width: 100%;
-  border-radius: 12rpx;
   overflow: hidden;
   background: #000;
 }
@@ -641,16 +640,17 @@ onShareTimeline(() => {
   display: block;
 }
 
-/* 实景拍摄：一行一个，高度自适应（与产品详情一致） */
+/* 实景拍摄：一行一个，高度自适应，无间隔 */
 .scene-media-list {
   display: flex;
   flex-direction: column;
-  gap: 20rpx;
+  gap: 0;
 }
 
 .scene-media-item.img {
   width: 100%;
-  border-radius: 12rpx;
+  display: block;
+  vertical-align: top;
 }
 
 .scene-video {

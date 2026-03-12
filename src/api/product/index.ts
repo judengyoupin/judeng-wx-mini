@@ -179,6 +179,14 @@ export async function getProductList(params: {
             id
             price
           }
+          product_skus_aggregate(
+            where: { 
+              is_deleted: { _eq: false }
+              is_shelved: { _eq: false }
+            }
+          ) {
+            aggregate { sum { stock } }
+          }
         }
         products_aggregate(
           where: {
@@ -230,6 +238,14 @@ export async function getProductList(params: {
             id
             price
           }
+          product_skus_aggregate(
+            where: { 
+              is_deleted: { _eq: false }
+              is_shelved: { _eq: false }
+            }
+          ) {
+            aggregate { sum { stock } }
+          }
         }
         products_aggregate(
           where: {
@@ -280,6 +296,14 @@ export async function getProductList(params: {
             id
             price
           }
+          product_skus_aggregate(
+            where: { 
+              is_deleted: { _eq: false }
+              is_shelved: { _eq: false }
+            }
+          ) {
+            aggregate { sum { stock } }
+          }
         }
         products_aggregate(
           where: {
@@ -329,6 +353,14 @@ export async function getProductList(params: {
           ) {
             id
             price
+          }
+          product_skus_aggregate(
+            where: { 
+              is_deleted: { _eq: false }
+              is_shelved: { _eq: false }
+            }
+          ) {
+            aggregate { sum { stock } }
           }
         }
         products_aggregate(
