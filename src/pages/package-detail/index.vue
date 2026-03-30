@@ -11,12 +11,17 @@
 
     <!-- 套餐详情 -->
     <scroll-view v-else scroll-y class="scroll-content">
-      <!-- 套餐封面 -->
-      <image
-        class="package-cover"
-        :src="packageDetail?.cover_image_url || '/static/default.png'"
-        mode="aspectFill"
-      ></image>
+      <!-- 套餐封面：与商品详情一致，宽度铺满、高度随比例；点击预览大图 -->
+      <view class="cover-section">
+        <image
+          v-if="packageDetail?.cover_image_url"
+          class="cover-image"
+          :src="packageDetail.cover_image_url"
+          mode="widthFix"
+          @click="previewCover"
+        />
+        <view v-else class="cover-placeholder">暂无封面</view>
+      </view>
 
       <!-- 套餐信息 -->
       <view class="package-info-section">
@@ -245,6 +250,22 @@ const formatPrice = (price: number) => {
   return Number(price).toFixed(2);
 };
 
+const previewImages = (urls: string[], current: number) => {
+  if (!urls || urls.length === 0) return;
+  uni.previewImage({
+    urls,
+    current: current >= 0 ? current : 0,
+    loop: true,
+    indicator: 'number',
+  });
+};
+
+const previewCover = () => {
+  const url = packageDetail.value?.cover_image_url;
+  if (!url) return;
+  previewImages([url], 0);
+};
+
 onLoad(async (options?: { id?: string; companyId?: string; scene?: string }) => {
   let id: number | null = null;
   let companyId: number | null = null;
@@ -334,10 +355,26 @@ onShareTimeline(() => {
   to { transform: rotate(360deg); }
 }
 
-.package-cover {
+.cover-section {
   width: 100%;
-  height: 500rpx;
-  background: #f0f0f0;
+  background: #ffffff;
+  margin-bottom: 20rpx;
+}
+
+.cover-image {
+  width: 100%;
+  display: block;
+  vertical-align: top;
+}
+
+.cover-placeholder {
+  width: 100%;
+  min-height: 400rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #666666;
+  font-size: 28rpx;
 }
 
 .package-info-section {
