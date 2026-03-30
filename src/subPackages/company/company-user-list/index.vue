@@ -99,6 +99,7 @@
         </view>
         <view v-if="!isViewOnly" class="user-actions">
           <view class="action-btn" @click="editUser(user)">编辑</view>
+          <view class="action-btn delete" @click="confirmRemoveUser(user)">移除</view>
         </view>
       </view>
 
@@ -310,7 +311,7 @@ import { ref, computed, watch } from 'vue';
 import { onLoad, onPullDownRefresh, onShow } from '@dcloudio/uni-app';
 import { companyInfo } from '@/store/userStore';
 import { getCompanyDetailCached } from '@/subPackages/company/api/platform';
-import { getCompanyUserList, searchUserByMobile, createUserByMobile, addCompanyUser, updateCompanyUser, batchUpdateCompanyUsersByLevel, COMPANY_USER_LEVELS, type CompanyUserLevel } from '@/subPackages/company/api/company-user';
+import { getCompanyUserList, searchUserByMobile, createUserByMobile, addCompanyUser, updateCompanyUser, removeCompanyUser, batchUpdateCompanyUsersByLevel, COMPANY_USER_LEVELS, type CompanyUserLevel } from '@/subPackages/company/api/company-user';
 
 const users = ref<any[]>([]);
 const loading = ref(false);
@@ -524,6 +525,31 @@ const searchUser = async () => {
     searchedUser.value = null;
     showCreateAndAddMode.value = false;
   }
+};
+
+// 从公司移除（删除 company_users 关系，不删账号）
+const confirmRemoveUser = (row: any) => {
+  const name = row.user?.nickname || row.user?.mobile || '该用户';
+  uni.showModal({
+    title: '移除用户',
+    content: `确定将「${name}」从本公司移除？对方账号仍存在，仅不再归属该公司。`,
+    confirmText: '移除',
+    confirmColor: '#ff6b6b',
+    success: async (res) => {
+      if (!res.confirm) return;
+      try {
+        const ok = await removeCompanyUser(row.id);
+        if (!ok) {
+          uni.showToast({ title: '移除失败', icon: 'none' });
+          return;
+        }
+        uni.showToast({ title: '已移除', icon: 'success' });
+        loadUsers(true);
+      } catch (error: any) {
+        uni.showToast({ title: error.message || '移除失败', icon: 'none' });
+      }
+    },
+  });
 };
 
 // 编辑用户

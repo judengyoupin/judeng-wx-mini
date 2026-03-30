@@ -1,12 +1,37 @@
 <template>
   <view class="company-list-page">
-    <!-- 顶部操作栏 -->
+    <!-- 顶部：搜索、分类、排序、添加 -->
     <view class="header-bar">
-      <button class="add-btn" @click="goToAddCompany">+ 添加公司</button>
+      <view class="search-row">
+        <input
+          class="search-input"
+          type="text"
+          v-model="searchInput"
+          placeholder="搜索公司名称"
+          confirm-type="search"
+          @confirm="applySearchNow"
+        />
+      </view>
+      <view class="filter-row">
+        <picker mode="selector" :range="filterLabels" :value="filterIndex" @change="onFilterChange">
+          <view class="filter-chip">分类：{{ filterLabels[filterIndex] }} ▾</view>
+        </picker>
+        <picker mode="selector" :range="sortLabels" :value="sortIndex" @change="onSortChange">
+          <view class="filter-chip">排序：{{ sortLabels[sortIndex] }} ▾</view>
+        </picker>
+      </view>
+      <view class="header-actions">
+        <button class="add-btn" @click="goToAddCompany">+ 添加公司</button>
+      </view>
     </view>
 
-    <!-- 公司列表（仅此区域滚动） -->
-    <scroll-view scroll-y class="company-list-scroll">
+    <!-- 公司列表（仅此区域滚动；触底加载更多须用 scroll-view 的 scrolltolower，页面 onReachBottom 不会触发） -->
+    <scroll-view
+      scroll-y
+      class="company-list-scroll"
+      :lower-threshold="100"
+      @scrolltolower="onScrollToLower"
+    >
       <view class="company-list">
       <view 
         v-for="company in companies" 
@@ -69,16 +94,20 @@
 
       <!-- 加载中 -->
       <view v-if="loading" class="loading-state">
-        <text>加载中...</text>
+        <text>{{ companies.length > 0 ? '加载更多…' : '加载中…' }}</text>
+      </view>
+
+      <view v-if="!hasMore && companies.length > 0 && !loading" class="load-end-state">
+        <text>已加载全部</text>
       </view>
       </view>
     </scroll-view>
 
-    <!-- 授权管理员弹窗 -->
+    <!-- 授权用户加入公司 -->
     <view v-if="showAuthorizeModal" class="modal-overlay" @click="showAuthorizeModal = false">
       <view class="modal-content" @click.stop>
         <view class="modal-header">
-          <text class="modal-title">授权管理员</text>
+          <text class="modal-title">授权加入公司</text>
           <text class="modal-close" @click="showAuthorizeModal = false">×</text>
         </view>
         <view class="modal-body">
@@ -90,6 +119,15 @@
             <view class="company-name-display">
               <text class="company-name-text">{{ authorizingCompany?.name }}</text>
             </view>
+          </view>
+          <view class="form-item">
+            <view class="label">
+              <text class="label-icon">👤</text>
+              在公司中的角色
+            </view>
+            <picker mode="selector" :range="authorizeRoleLabels" :value="authorizeRoleIndex" @change="onAuthorizeRoleChange">
+              <view class="modal-role-picker">{{ authorizeRoleLabels[authorizeRoleIndex] }} ▾</view>
+            </picker>
           </view>
           <view class="form-item">
             <view class="label">
@@ -144,7 +182,7 @@
 
           <view v-if="hasSearched && !searchedUser" class="create-user-tip">
             <text class="create-user-tip-text">该手机号尚未注册</text>
-            <text class="create-user-tip-desc">可点击下方「创建并授权」直接创建账号并授权为管理员</text>
+            <text class="create-user-tip-desc">可点击下方「创建并授权」创建账号，并以当前所选角色加入该公司</text>
           </view>
         </view>
         <view class="modal-footer">
@@ -163,8 +201,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
-import { onPullDownRefresh, onReachBottom, onShow } from '@dcloudio/uni-app';
+import { ref, onMounted, watch } from 'vue';
+import { onPullDownRefresh, onShow } from '@dcloudio/uni-app';
 import { getCompanyList, authorizeCompanyAdmin, searchUserByMobileForPlatform, createUserByMobile } from '@/subPackages/admin/api/platform';
 import { syncCompanyInfo } from '@/api/company/index';
 
@@ -173,6 +211,38 @@ const loading = ref(false);
 const page = ref(1);
 const pageSize = 20;
 const hasMore = ref(true);
+
+const searchInput = ref('');
+const searchKeyword = ref('');
+const FILTER_VALUES = ['all', 'has_admin', 'no_admin'] as const;
+const filterLabels = ['全部', '已有管理员', '暂无管理员'];
+const filterIndex = ref(0);
+const SORT_VALUES = ['created_desc', 'created_asc', 'name_asc', 'name_desc'] as const;
+const sortLabels = ['创建·新→旧', '创建·旧→新', '名称·A→Z', '名称·Z→A'];
+const sortIndex = ref(0);
+
+let searchDebounce: ReturnType<typeof setTimeout> | null = null;
+watch(searchInput, (v) => {
+  if (searchDebounce) clearTimeout(searchDebounce);
+  searchDebounce = setTimeout(() => {
+    searchKeyword.value = v.trim();
+  }, 400);
+});
+
+const applySearchNow = () => {
+  if (searchDebounce) clearTimeout(searchDebounce);
+  searchKeyword.value = searchInput.value.trim();
+};
+
+const onFilterChange = (e: { detail: { value: string } }) => {
+  filterIndex.value = Number(e.detail.value);
+  loadCompanies(true);
+};
+
+const onSortChange = (e: { detail: { value: string } }) => {
+  sortIndex.value = Number(e.detail.value);
+  loadCompanies(true);
+};
 
 // 授权相关
 const showAuthorizeModal = ref(false);
@@ -184,9 +254,19 @@ const authorizeForm = ref({
   mobile: '',
 });
 
+const authorizeRoleLabels = ['公司管理员', '普通用户'];
+const AUTHORIZE_ROLE_VALUES = ['admin', 'user'] as const;
+const authorizeRoleIndex = ref(0);
+const onAuthorizeRoleChange = (e: { detail: { value: string } }) => {
+  authorizeRoleIndex.value = Number(e.detail.value);
+};
+
 // 加载公司列表
 const loadCompanies = async (reset = false) => {
-  if (loading.value || (!hasMore.value && !reset)) {
+  if (!reset && loading.value) {
+    return;
+  }
+  if (!reset && !hasMore.value) {
     return;
   }
 
@@ -201,6 +281,9 @@ const loadCompanies = async (reset = false) => {
     const result = await getCompanyList({
       limit: pageSize,
       offset: (page.value - 1) * pageSize,
+      q: searchKeyword.value || undefined,
+      filter: FILTER_VALUES[filterIndex.value],
+      sort: SORT_VALUES[sortIndex.value],
     });
 
     if (reset) {
@@ -223,6 +306,16 @@ const loadCompanies = async (reset = false) => {
     loading.value = false;
     uni.stopPullDownRefresh();
   }
+};
+
+watch(searchKeyword, () => {
+  loadCompanies(true);
+});
+
+/** scroll-view 滑到底部时加载下一页（与页面 onReachBottom 无关） */
+const onScrollToLower = () => {
+  if (!hasMore.value || loading.value) return;
+  loadCompanies(false);
 };
 
 // 搜索用户
@@ -251,12 +344,13 @@ const searchUserForAuthorize = async () => {
   }
 };
 
-// 授权管理员
+// 打开授权弹窗
 const authorizeAdmin = (company: any) => {
   authorizingCompany.value = company;
   searchedUser.value = null;
   hasSearched.value = false;
   authorizeForm.value.mobile = '';
+  authorizeRoleIndex.value = 0;
   showAuthorizeModal.value = true;
 };
 
@@ -285,15 +379,18 @@ const handleAuthorize = async () => {
       userId = newUser.id;
     }
 
+    const companyRole = AUTHORIZE_ROLE_VALUES[authorizeRoleIndex.value];
     await authorizeCompanyAdmin({
       userId,
       companyId: authorizingCompany.value.id,
+      companyRole,
       canViewPrice: true,
       priceFactor: 1,
     });
 
+    const roleTip = companyRole === 'admin' ? '管理员' : '普通用户';
     uni.showToast({
-      title: searchedUser.value ? '授权成功' : '已创建账号并授权',
+      title: searchedUser.value ? `已授权为${roleTip}` : `已创建账号并加入为${roleTip}`,
       icon: 'success',
     });
 
@@ -406,16 +503,12 @@ onMounted(() => {
 });
 
 onShow(() => {
-  // 页面显示时刷新数据（从编辑页面返回时）
+  // 页面显示时刷新数据（从编辑页面返回时）；避免与首次 watch(searchKeyword) 重复可依赖已有列表
   loadCompanies(true);
 });
 
 onPullDownRefresh(() => {
   loadCompanies(true);
-});
-
-onReachBottom(() => {
-  loadCompanies();
 });
 </script>
 
@@ -433,6 +526,41 @@ onReachBottom(() => {
   background: #ffffff;
   padding: 20rpx 30rpx;
   border-bottom: 1rpx solid #e0e0e0;
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+}
+
+.search-row {
+  width: 100%;
+}
+
+.search-input {
+  width: 100%;
+  height: 72rpx;
+  padding: 0 24rpx;
+  background: #f5f5f5;
+  border-radius: 12rpx;
+  font-size: 28rpx;
+  box-sizing: border-box;
+}
+
+.filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16rpx;
+  align-items: center;
+}
+
+.filter-chip {
+  font-size: 24rpx;
+  color: #444;
+  padding: 12rpx 20rpx;
+  background: #f0f4ff;
+  border-radius: 8rpx;
+}
+
+.header-actions {
   display: flex;
   justify-content: flex-end;
 }
@@ -603,6 +731,13 @@ onReachBottom(() => {
   font-size: 28rpx;
 }
 
+.load-end-state {
+  padding: 32rpx 0 48rpx;
+  text-align: center;
+  color: #bbbbbb;
+  font-size: 26rpx;
+}
+
 /* 弹窗样式 */
 .modal-overlay {
   position: fixed;
@@ -707,6 +842,15 @@ onReachBottom(() => {
 
 .label-icon {
   font-size: 32rpx;
+}
+
+.modal-role-picker {
+  padding: 24rpx 28rpx;
+  background: #f8f9fa;
+  border: 2rpx solid #e9ecef;
+  border-radius: 16rpx;
+  font-size: 28rpx;
+  color: #333333;
 }
 
 .required {

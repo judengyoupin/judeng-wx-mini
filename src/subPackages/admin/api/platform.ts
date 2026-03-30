@@ -21,16 +21,59 @@ export interface CompanyInput {
   default_for_price_factor?: number;
 }
 
+const COMPANY_SORT_ORDER: Record<
+  string,
+  Array<Record<string, string>>
+> = {
+  created_desc: [{ created_at: 'desc' }],
+  created_asc: [{ created_at: 'asc' }],
+  name_asc: [{ name: 'asc' }],
+  name_desc: [{ name: 'desc' }],
+};
+
+function buildCompaniesWhere(q?: string, filter?: string): Record<string, unknown> {
+  const parts: Record<string, unknown>[] = [];
+  const keyword = (q || '')
+    .trim()
+    .slice(0, 100)
+    .replace(/[%_]/g, '');
+  if (keyword) {
+    parts.push({ name: { _ilike: `%${keyword}%` } });
+  }
+  const f = filter || 'all';
+  if (f === 'has_admin') {
+    parts.push({ company_users: { role: { _eq: 'admin' } } });
+  } else if (f === 'no_admin') {
+    parts.push({ _not: { company_users: { role: { _eq: 'admin' } } } });
+  }
+  if (parts.length === 0) return {};
+  if (parts.length === 1) return parts[0];
+  return { _and: parts };
+}
+
 export async function getCompanyList(params: {
   limit?: number;
   offset?: number;
+  /** 公司名称模糊搜索 */
+  q?: string;
+  /** all | has_admin | no_admin */
+  filter?: string;
+  /** created_desc | created_asc | name_asc | name_desc */
+  sort?: string;
 }) {
+  const sortKey = COMPANY_SORT_ORDER[params.sort || 'created_desc']
+    ? params.sort || 'created_desc'
+    : 'created_desc';
+  const orderBy = COMPANY_SORT_ORDER[sortKey];
+  const where = buildCompaniesWhere(params.q, params.filter);
+
   const query = `
-    query GetCompanyList($limit: Int, $offset: Int) {
+    query GetCompanyList($limit: Int!, $offset: Int!, $orderBy: [companies_order_by!]!, $where: companies_bool_exp!) {
       companies(
         limit: $limit
         offset: $offset
-        order_by: { created_at: desc }
+        order_by: $orderBy
+        where: $where
       ) {
         id
         name
@@ -51,7 +94,7 @@ export async function getCompanyList(params: {
           }
         }
       }
-      companies_aggregate {
+      companies_aggregate(where: $where) {
         aggregate {
           count
         }
@@ -64,6 +107,8 @@ export async function getCompanyList(params: {
     variables: {
       limit: params.limit || 20,
       offset: params.offset || 0,
+      orderBy,
+      where,
     },
   });
 
@@ -197,20 +242,24 @@ export async function deleteCompany(companyId: number) {
 export async function authorizeCompanyAdmin(params: {
   userId: number;
   companyId: number;
+  /** 在公司中的角色，默认 admin */
+  companyRole?: 'admin' | 'user';
   canViewPrice?: boolean;
   priceFactor?: number;
 }) {
+  const companyRole = params.companyRole === 'user' ? 'user' : 'admin';
   const mutation = `
-    mutation AuthorizeCompanyAdmin($user: company_users_insert_input!) {
+    mutation AuthorizeCompanyMember($user: company_users_insert_input!) {
       insert_company_users_one(
         object: $user
         on_conflict: {
           constraint: company_users_company_companies_user_users_key
-          update_columns: [role, can_view_price, price_factor]
+          update_columns: [role, level, can_view_price, price_factor]
         }
       ) {
         id
         role
+        level
         can_view_price
         price_factor
         user {
@@ -228,7 +277,8 @@ export async function authorizeCompanyAdmin(params: {
       user: {
         user_users: params.userId,
         company_companies: params.companyId,
-        role: 'admin',
+        role: companyRole,
+        level: 'A',
         can_view_price: params.canViewPrice ?? true,
         price_factor: params.priceFactor ?? 1,
       },

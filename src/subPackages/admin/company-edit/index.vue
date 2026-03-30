@@ -81,11 +81,11 @@
       </view>
     </view>
 
-    <!-- 授权管理员弹窗 -->
+    <!-- 创建公司后：授权用户加入 -->
     <view v-if="showAuthorizeModal" class="modal-overlay" @click="skipAuthorize">
       <view class="modal-content" @click.stop>
         <view class="modal-header">
-          <text class="modal-title">设置公司管理员</text>
+          <text class="modal-title">授权用户加入公司</text>
           <text class="modal-close" @click="skipAuthorize">×</text>
         </view>
         <view class="modal-body">
@@ -101,11 +101,18 @@
           </view>
 
           <view class="form-item">
-            <view class="form-label">管理员手机号 <text class="required">*</text></view>
+            <view class="form-label">在公司中的角色</view>
+            <picker mode="selector" :range="authorizeRoleLabels" :value="authorizeRoleIndex" @change="onAuthorizeRoleChange">
+              <view class="modal-role-picker">{{ authorizeRoleLabels[authorizeRoleIndex] }} ▾</view>
+            </picker>
+          </view>
+
+          <view class="form-item">
+            <view class="form-label">手机号 <text class="required">*</text></view>
             <input 
               class="form-input" 
               v-model="authorizeForm.mobile" 
-              placeholder="请输入管理员手机号"
+              placeholder="请输入11位手机号"
               maxlength="11"
               type="number"
             />
@@ -141,7 +148,7 @@
           </view>
 
           <view class="form-hint" style="margin-top: 20rpx;">
-            <text>提示：管理员账号可以管理该公司的商品分类、商品和订单</text>
+            <text>提示：管理员可管理分类、商品、套餐与公司用户；普通用户为客户身份，价格与等级可在「用户管理」中调整</text>
           </view>
         </view>
         <view class="modal-footer">
@@ -187,6 +194,12 @@ const searchedUser = ref<any>(null);
 const authorizeForm = ref({
   mobile: '',
 });
+const authorizeRoleLabels = ['公司管理员', '普通用户'];
+const AUTHORIZE_ROLE_VALUES = ['admin', 'user'] as const;
+const authorizeRoleIndex = ref(0);
+const onAuthorizeRoleChange = (e: { detail: { value: string } }) => {
+  authorizeRoleIndex.value = Number(e.detail.value);
+};
 const authorizing = ref(false);
 const createdCompanyId = ref<number | null>(null);
 
@@ -346,15 +359,17 @@ const handleAuthorize = async () => {
   authorizing.value = true;
 
   try {
+    const companyRole = AUTHORIZE_ROLE_VALUES[authorizeRoleIndex.value];
     await authorizeCompanyAdmin({
       userId: searchedUser.value.id,
       companyId: createdCompanyId.value,
+      companyRole,
       canViewPrice: true,
       priceFactor: 1,
     });
 
     uni.showToast({
-      title: '管理员授权成功',
+      title: companyRole === 'admin' ? '已授权为公司管理员' : '已加入公司为普通用户',
       icon: 'success',
     });
 
@@ -426,6 +441,7 @@ const handleSave = async () => {
         showAuthorizeModal.value = true;
         authorizeForm.value.mobile = '';
         searchedUser.value = null;
+        authorizeRoleIndex.value = 0;
       }, 500);
     }
   } catch (error: any) {
@@ -637,6 +653,15 @@ onLoad((options?) => {
   padding: 30rpx;
   max-height: 60vh;
   overflow-y: auto;
+}
+
+.modal-role-picker {
+  padding: 24rpx 28rpx;
+  background: #f8f9fa;
+  border: 2rpx solid #e9ecef;
+  border-radius: 12rpx;
+  font-size: 28rpx;
+  color: #333333;
 }
 
 .success-tip {
