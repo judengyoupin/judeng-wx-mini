@@ -13,10 +13,74 @@ import {
 import { addCompanyUserAsNormal, getCompanyUserDefaults } from "@/api/company-user";
 import { isCompanyUser, getCompanyUserRoleCached, clearCompanyUserRoleCache } from "@/utils/auth";
 import { setAppReady } from "@/utils/appReady";
+import { parseMiniProgramScene } from "@/utils/sceneParams";
+
+/** 本地已持久化的公司 ID（有效正整数才算「有本地公司」） */
+function readValidCompanyIdFromStorage(): number | null {
+  try {
+    const raw = uni.getStorageSync("companyId");
+    if (raw === "" || raw == null) return null;
+    const n = Number(raw);
+    return Number.isInteger(n) && n > 0 ? n : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * 从启动/入口参数解析 companyId（query 或小程序码自带的 query.scene）
+ * 注意：App.onLaunch 顶层的 options.scene 是微信「场景值」整数（如 1047），不是小程序码的自定义 scene 字符串。
+ * 自定义 scene 在 options.query.scene 中（与页面 onLoad 的 options.scene 一致）。
+ */
+function extractCompanyIdFromEntryOptions(options: Record<string, unknown> | null | undefined): number | null {
+  if (!options) return null;
+  const q = options.query as Record<string, string | undefined> | undefined;
+  if (q?.companyId != null && q.companyId !== "") {
+    const n = Number(q.companyId);
+    if (Number.isInteger(n) && n > 0) return n;
+  }
+  const sceneFromQuery = q?.scene;
+  if (sceneFromQuery != null && sceneFromQuery !== "") {
+    const params = parseMiniProgramScene(sceneFromQuery);
+    if (params?.has("companyId")) {
+      const n = Number(params.get("companyId"));
+      if (Number.isInteger(n) && n > 0) return n;
+    }
+  }
+  return null;
+}
+
+/**
+ * 解析当前应使用的公司 ID，优先级：
+ * 1. 本地 storage（用户在「切换公司」等写入的）
+ * 2. 若本地没有：入口链接上的 companyId（分享 / 外链场景）
+ * 3. 若仍没有：系统配置的默认公司（最低优先级）
+ */
+async function resolveInitialCompanyId(launchOptions: Record<string, unknown> | null | undefined): Promise<number | null> {
+  const fromLocal = readValidCompanyIdFromStorage();
+  if (fromLocal != null) {
+    return fromLocal;
+  }
+
+  const fromLink = extractCompanyIdFromEntryOptions(launchOptions ?? undefined);
+  if (fromLink != null) {
+    uni.setStorageSync("companyId", String(fromLink));
+    console.log("无本地公司，使用启动入口链接中的 companyId:", fromLink);
+    return fromLink;
+  }
+
+  const defaultRaw = getDefaultCompanyIdFromStorage() ?? (await getDefaultCompanyIdCached());
+  if (defaultRaw == null) return null;
+  const defaultNum = Number(defaultRaw);
+  if (!Number.isInteger(defaultNum) || defaultNum <= 0) return null;
+  uni.setStorageSync("companyId", String(defaultNum));
+  console.log("无本地与链接公司，使用系统默认公司 ID:", defaultNum);
+  return defaultNum;
+}
 
 /** 全局请求就绪后再允许页面请求：onLaunch 内完成公司 ID、公司信息、用户信息等后再 setAppReady，页面请求前 await whenAppReady() */
 
-/** 同步指定公司并刷新用户/角色（含自动注册为公司普通用户），onLaunch 与 onShow 切公司时复用 */
+/** 同步指定公司并刷新用户/角色（含自动注册为公司普通用户）；由 onLaunch、「切换公司」页、登录绑定公司等显式调用 */
 async function applyCompanyAndRefreshUserRole(companyId: number) {
   try {
     await syncCompanyInfo(companyId, true);
@@ -54,30 +118,10 @@ async function applyCompanyAndRefreshUserRole(companyId: number) {
 onLaunch(async (options) => {
   console.log("App Launch", options);
   try {
-    // 1. 恢复用户登录状态（token、userId、userInfo 存本地，此处恢复）
     restoreUserFromStorage();
 
-    // 2. 分享链接带 companyId：直接存本地，作为当前公司
-    const linkCompanyId = options?.query?.companyId;
-    if (linkCompanyId) {
-      uni.setStorageSync("companyId", linkCompanyId);
-    }
-
-    // 3. 当前公司 ID：优先本地
-    let currentCompanyId: string | number | null = uni.getStorageSync("companyId");
-
-    // 4. 本地没有当前公司 ID：用系统配置的默认公司 ID（优先读本地 defaultCompanyId，没有再请求 config）
-    if (!currentCompanyId) {
-      const defaultId = getDefaultCompanyIdFromStorage() ?? (await getDefaultCompanyIdCached());
-      if (defaultId != null) {
-        currentCompanyId = defaultId;
-        uni.setStorageSync("companyId", defaultId);
-        console.log("使用系统默认公司ID:", defaultId);
-      }
-    }
-
-    const finalCompanyId = currentCompanyId != null ? Number(currentCompanyId) : null;
-    if (finalCompanyId == null || Number.isNaN(finalCompanyId)) {
+    const finalCompanyId = await resolveInitialCompanyId(options as unknown as Record<string, unknown>);
+    if (finalCompanyId == null) {
       console.warn("无法确定公司ID，跳过公司信息同步");
       return;
     }
@@ -88,22 +132,22 @@ onLaunch(async (options) => {
   }
 });
 
-/** 从后台/分享链接进入时：若本次进入的 query 带 companyId 且与当前公司不同，则切换公司并同步（onLaunch 不会再次执行） */
+/**
+ * 非冷启动入口（如从分享卡进入）：仅当本地尚无公司时，才用本次进入链接里的 companyId（不覆盖用户已选公司）
+ */
 onShow(() => {
   try {
-    const enterOptions = (uni as any).getEnterOptionsSync?.();
-    console.log("enterOptions", enterOptions);
-    const linkCompanyId = enterOptions?.query?.companyId;
-    if (!linkCompanyId) return;
-    const newId = Number(linkCompanyId);
-    if (Number.isNaN(newId)) return;
-    const currentId = Number(uni.getStorageSync("companyId") || companyInfo?.value?.id || 0);
-    if (currentId === newId) return;
-    uni.setStorageSync("companyId", linkCompanyId);
-    console.log("从链接切换公司:", currentId, "->", newId);
-    applyCompanyAndRefreshUserRole(newId);
-  } catch (_) {
-    console.error("从链接切换公司失败:", _);
+    if (readValidCompanyIdFromStorage() != null) {
+      return;
+    }
+    const enterOptions = (uni as any).getEnterOptionsSync?.() as Record<string, unknown> | undefined;
+    const fromLink = extractCompanyIdFromEntryOptions(enterOptions);
+    if (fromLink == null) return;
+    uni.setStorageSync("companyId", String(fromLink));
+    console.log("本地无公司，使用本次进入链接中的 companyId:", fromLink);
+    void applyCompanyAndRefreshUserRole(fromLink);
+  } catch (e) {
+    console.error("onShow 解析入口公司失败:", e);
   }
 });
 

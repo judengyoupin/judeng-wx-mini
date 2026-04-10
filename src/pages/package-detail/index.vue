@@ -83,6 +83,8 @@ import { addToCart, getCartList } from '@/api/cart/index';
 import { user_token, userInfo, companyInfo } from '@/store/userStore';
 import { getCompanyUserRoleCached } from '@/utils/auth';
 import { safeNavigateBack } from '@/utils/navigation';
+import { parseMiniProgramScene, parsePositiveIntParam } from '@/utils/sceneParams';
+import { whenAppReady } from '@/utils/appReady';
 import PageNavBar from '@/components/PageNavBar.vue';
 import DetailFooterBar from '@/components/DetailFooterBar.vue';
 import SkeletonScreen from '@/components/SkeletonScreen.vue';
@@ -266,26 +268,21 @@ const previewCover = () => {
   previewImages([url], 0);
 };
 
-onLoad(async (options?: { id?: string; companyId?: string; scene?: string }) => {
-  let id: number | null = null;
-  let companyId: number | null = null;
-  if (options?.scene) {
-    const scene = decodeURIComponent(options.scene);
-    const params = new URLSearchParams(scene);
-    id = params.has('id') ? Number(params.get('id')) : null;
-    companyId = params.has('companyId') ? Number(params.get('companyId')) : null;
-  }
-  if (id == null && options?.id) id = Number(options.id);
-  if (companyId == null && options?.companyId) companyId = Number(options.companyId);
-  if (id != null) {
-    packageId.value = id;
-    if (companyId != null) {
-      const { syncCompanyInfo } = await import('@/api/company/index');
-      await syncCompanyInfo(companyId, true);
+onLoad((options?: Record<string, string | undefined>) => {
+  void (async () => {
+    await whenAppReady();
+    let id: number | null = null;
+    if (options?.scene) {
+      const params = parseMiniProgramScene(options.scene);
+      if (params?.has('id')) id = parsePositiveIntParam(params.get('id'));
     }
-    loadPackageDetail();
-  }
-  loadCartCount();
+    if (id == null && options?.id) id = parsePositiveIntParam(options.id);
+    if (id != null) {
+      packageId.value = id;
+      await loadPackageDetail();
+    }
+    await loadCartCount();
+  })();
 });
 
 onShow(() => {

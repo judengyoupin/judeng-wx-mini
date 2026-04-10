@@ -69,7 +69,7 @@ const onSelectCompany = async (item: UserJoinedCompany) => {
   try {
     clearCompanyUserRoleCache();
     uni.setStorageSync('companyId', item.id);
-    await syncCompanyInfo(item.id);
+    await syncCompanyInfo(item.id, true);
     uni.hideLoading();
     uni.showToast({ title: '已切换', icon: 'success' });
     setTimeout(() => {

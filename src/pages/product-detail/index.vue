@@ -158,13 +158,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed } from 'vue';
 import { onLoad, onShow, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app';
 import { getProductDetail } from '@/api/product/index';
 import { addToCart, getCartList, updateCartQuantity, toggleCartSelected } from '@/api/cart/index';
 import { user_token, userInfo, companyInfo } from '@/store/userStore';
 import { getCompanyUserRoleCached } from '@/utils/auth';
 import { safeNavigateBack } from '@/utils/navigation';
+import { parseMiniProgramScene, parsePositiveIntParam } from '@/utils/sceneParams';
+import { whenAppReady } from '@/utils/appReady';
 import PageNavBar from '@/components/PageNavBar.vue';
 import SkeletonScreen from '@/components/SkeletonScreen.vue';
 import DetailFooterBar from '@/components/DetailFooterBar.vue';
@@ -448,26 +450,21 @@ const formatPrice = (price: number) => {
   return Number(price).toFixed(2);
 };
 
-onLoad(async (options?: { id?: string; companyId?: string; scene?: string }) => {
-  let id: number | null = null;
-  let companyId: number | null = null;
-  if (options?.scene) {
-    const scene = decodeURIComponent(options.scene);
-    const params = new URLSearchParams(scene);
-    id = params.has('id') ? Number(params.get('id')) : null;
-    companyId = params.has('companyId') ? Number(params.get('companyId')) : null;
-  }
-  if (id == null && options?.id) id = Number(options.id);
-  if (companyId == null && options?.companyId) companyId = Number(options.companyId);
-  if (id != null) {
-    productId.value = id;
-    if (companyId != null) {
-      const { syncCompanyInfo } = await import('@/api/company/index');
-      await syncCompanyInfo(companyId, true);
+onLoad((options?: Record<string, string | undefined>) => {
+  void (async () => {
+    await whenAppReady();
+    let id: number | null = null;
+    if (options?.scene) {
+      const params = parseMiniProgramScene(options.scene);
+      if (params?.has('id')) id = parsePositiveIntParam(params.get('id'));
     }
-    loadProductDetail();
-  }
-  loadCartCount();
+    if (id == null && options?.id) id = parsePositiveIntParam(options.id);
+    if (id != null) {
+      productId.value = id;
+      await loadProductDetail();
+    }
+    await loadCartCount();
+  })();
 });
 
 onShow(() => {

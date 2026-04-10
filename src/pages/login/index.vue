@@ -6,60 +6,68 @@
     <!-- 登录表单 -->
     <view class="login-form">
       <view class="form-title">欢迎登录</view>
-      <view class="form-subtitle">请选择登录方式</view>
 
-      <!-- 密码登录表单 -->
-      <view class="form-content">
-        <view class="input-group">
-          <view class="input-label">手机号</view>
-          <input
-            class="input-field"
-            type="number"
-            placeholder="请输入手机号"
-            v-model="passwordForm.mobile"
-            maxlength="11"
-          />
+      <!-- 默认：手机号快捷登录为主 -->
+      <template v-if="!showPasswordMode">
+        <view class="form-lead">授权手机号，一键登录</view>
+        <view class="quick-login-block">
+          <button
+            class="quick-login-btn"
+            open-type="getPhoneNumber"
+            @getphonenumber="handleWechatLogin"
+            :disabled="isLoading"
+          >
+            <text class="quick-login-btn__icon">📱</text>
+            <text class="quick-login-btn__text">{{ isLoading ? '登录中…' : '手机号快捷登录' }}</text>
+          </button>
+          <text class="quick-login-hint">使用微信在本小程序已绑定的手机号</text>
         </view>
+        <view class="mode-switch mode-switch--subtle" @click="showPasswordMode = true">
+          使用账号密码登录
+        </view>
+      </template>
 
-        <view class="input-group">
-          <view class="input-label">密码</view>
-          <input
-            class="input-field"
-            :type="showPassword ? 'text' : 'password'"
-            placeholder="请输入密码"
-            v-model="passwordForm.password"
-          />
-          <view class="password-toggle" @click="showPassword = !showPassword">
-            <text class="toggle-icon">{{ showPassword ? '👁️' : '👁️‍🗨️' }}</text>
+      <!-- 账号密码登录（小字切换后展示） -->
+      <template v-else>
+        <view class="form-subtitle">账号密码登录</view>
+        <view class="form-content">
+          <view class="input-group">
+            <view class="input-label">手机号</view>
+            <input
+              class="input-field"
+              type="number"
+              placeholder="请输入手机号"
+              v-model="passwordForm.mobile"
+              maxlength="11"
+            />
           </view>
+
+          <view class="input-group">
+            <view class="input-label">密码</view>
+            <input
+              class="input-field"
+              :type="showPassword ? 'text' : 'password'"
+              placeholder="请输入密码"
+              v-model="passwordForm.password"
+            />
+            <view class="password-toggle" @click="showPassword = !showPassword">
+              <text class="toggle-icon">{{ showPassword ? '👁️' : '👁️‍🗨️' }}</text>
+            </view>
+          </view>
+
+          <button
+            class="login-button"
+            :disabled="!canSubmitPassword || isLoading"
+            :loading="isLoading"
+            @click="handlePasswordLogin"
+          >
+            {{ isLoading ? '登录中…' : '登录' }}
+          </button>
         </view>
-
-        <button 
-          class="login-button" 
-          :disabled="!canSubmitPassword || isLoading"
-          :loading="isLoading"
-          @click="handlePasswordLogin"
-        >
-          {{ isLoading ? '登录中...' : '密码登录' }}
-        </button>
-
-        <view class="divider">
-          <view class="divider-line"></view>
-          <text class="divider-text">或</text>
-          <view class="divider-line"></view>
+        <view class="mode-switch mode-switch--subtle" @click="showPasswordMode = false">
+          返回手机号快捷登录
         </view>
-
-        <!-- 手机号快捷登录 -->
-        <button 
-          class="wechat-login-button"
-          open-type="getPhoneNumber"
-          @getphonenumber="handleWechatLogin"
-          :disabled="isLoading"
-        >
-          <text class="wechat-icon">🔐</text>
-          <text>手机号快捷登录</text>
-        </button>
-      </view>
+      </template>
     </view>
   </view>
 </template>
@@ -73,6 +81,8 @@ import { refreshManagedCompanyAfterLogin } from '@/utils/auth';
 import { syncCompanyInfo } from '@/api/company/index';
 
 const showPassword = ref(false);
+/** false：主界面为手机号快捷登录；true：展示账号密码表单 */
+const showPasswordMode = ref(false);
 const isLoading = ref(false);
 
 // 密码登录表单
@@ -250,13 +260,83 @@ onLoad((options) => {
 
 .form-subtitle {
   font-size: 28rpx;
-  color: #999999;
+  color: #666666;
   text-align: center;
-  margin-bottom: 60rpx;
+  margin-bottom: 36rpx;
+}
+
+.form-lead {
+  font-size: 32rpx;
+  color: #444444;
+  text-align: center;
+  line-height: 1.5;
+  margin-bottom: 48rpx;
+  font-weight: 500;
+}
+
+.quick-login-block {
+  margin-bottom: 32rpx;
+}
+
+.quick-login-btn {
+  width: 100%;
+  height: 100rpx;
+  background: #07c160;
+  color: #ffffff;
+  border-radius: 16rpx;
+  font-size: 34rpx;
+  font-weight: 600;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16rpx;
+  box-shadow: 0 8rpx 24rpx rgba(7, 193, 96, 0.35);
+}
+
+.quick-login-btn::after {
+  border: none;
+}
+
+.quick-login-btn[disabled] {
+  background: #a0d9b8;
+  color: rgba(255, 255, 255, 0.9);
+  box-shadow: none;
+}
+
+.quick-login-btn__icon {
+  font-size: 40rpx;
+}
+
+.quick-login-btn__text {
+  letter-spacing: 1rpx;
+}
+
+.quick-login-hint {
+  display: block;
+  text-align: center;
+  font-size: 24rpx;
+  color: #999999;
+  margin-top: 24rpx;
+  line-height: 1.5;
+  padding: 0 16rpx;
+}
+
+.mode-switch {
+  text-align: center;
+  font-size: 26rpx;
+  padding: 24rpx 0 8rpx;
+}
+
+.mode-switch--subtle {
+  font-size: 24rpx;
+  color: #667eea;
+  text-decoration: underline;
+  text-underline-offset: 4rpx;
 }
 
 .form-content {
-  margin-top: 40rpx;
+  margin-top: 8rpx;
 }
 
 .input-group {
@@ -315,50 +395,12 @@ onLoad((options) => {
   justify-content: center;
 }
 
+.login-button::after {
+  border: none;
+}
+
 .login-button[disabled] {
   background: #cccccc;
   color: #999999;
-}
-
-.divider {
-  display: flex;
-  align-items: center;
-  margin: 40rpx 0;
-}
-
-.divider-line {
-  flex: 1;
-  height: 1rpx;
-  background: #e0e0e0;
-}
-
-.divider-text {
-  margin: 0 24rpx;
-  font-size: 28rpx;
-  color: #999999;
-}
-
-.wechat-login-button {
-  width: 100%;
-  height: 88rpx;
-  background: #07c160;
-  color: #ffffff;
-  border-radius: 12rpx;
-  font-size: 32rpx;
-  font-weight: bold;
-  border: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12rpx;
-}
-
-.wechat-login-button[disabled] {
-  background: #cccccc;
-  color: #999999;
-}
-
-.wechat-icon {
-  font-size: 36rpx;
 }
 </style>

@@ -153,7 +153,7 @@ import { getPinia } from "@/store/piniaInstance";
 import { useUserStore } from "@/store/user";
 import { getHomePageCacheValid, setHomePageCache, userInfo, companyInfo } from "@/store/userStore";
 import { whenAppReady } from "@/utils/appReady";
-import { onLoad, onShow, onShareAppMessage, onShareTimeline } from "@dcloudio/uni-app";
+import { onShow, onShareAppMessage, onShareTimeline } from "@dcloudio/uni-app";
 import type { BannerArray } from "@/types/companies";
 
 import PageNavBar from '@/components/PageNavBar.vue';
@@ -441,25 +441,6 @@ export default defineComponent({
         },
       });
     };
-
-    onLoad((options: any) => {
-      let companyId: string | null = options?.companyId ?? null;
-      if (options?.scene) {
-        const scene = decodeURIComponent(options.scene);
-        const params = new URLSearchParams(scene);
-        companyId = params.get("companyId") ?? companyId;
-      }
-      if (companyId) {
-        uni.setStorageSync("companyId", companyId);
-        import("@/api/company/index").then(({ syncCompanyInfo }) => {
-          syncCompanyInfo(companyId!).then(() => {
-            fetchHomeData(true);
-          }).catch((err) => {
-            console.error("同步公司信息失败:", err);
-          });
-        });
-      }
-    });
 
     onShow(async () => {
       await whenAppReady();

@@ -208,12 +208,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, watch } from 'vue';
 import { whenAppReady } from '@/utils/appReady';
 import { onShow } from '@dcloudio/uni-app';
 import { userInfo, user_token, companyInfo, clearUserContext, getCompanyDetailFromCache, ensureUserInfoCached } from '@/store/userStore';
 import { getCompanyUserRoleCached } from '@/utils/auth';
-import { getCompanyPublicInfo } from '@/api/company/index';
+import { getCompanyPublicInfo, syncCompanyInfo } from '@/api/company/index';
 import type { CompanyPublicInfo } from '@/api/company/index';
 
 const isCompanyUser = ref(false);
@@ -223,7 +223,32 @@ const isAdmin = ref(false);
 const isCompanyAdminUser = ref(false);
 
 const PERMISSIONS_CACHE_TTL = 5 * 60 * 1000;
-const permissionsCache = ref<{ userId: number; isAdmin: boolean; isCompanyUser: boolean; isCompanyAdminUser: boolean; ts: number } | null>(null);
+/** 必须包含 companyId：切换公司后旧缓存不能与当前公司混用 */
+const permissionsCache = ref<{
+  userId: number;
+  companyId: number | null;
+  isAdmin: boolean;
+  isCompanyUser: boolean;
+  isCompanyAdminUser: boolean;
+  ts: number;
+} | null>(null);
+
+function readStoredCompanyId(): number | null {
+  try {
+    const raw = uni.getStorageSync('companyId');
+    if (raw === '' || raw == null) return null;
+    const n = Number(raw);
+    return Number.isInteger(n) && n > 0 ? n : null;
+  } catch {
+    return null;
+  }
+}
+
+function normalizeCompanyId(id: unknown): number | null {
+  if (id == null || id === '') return null;
+  const n = Number(id);
+  return Number.isInteger(n) && n > 0 ? n : null;
+}
 
 // 权限与展示数据：先确保全局 userInfo 已拉取（昵称、头像、role），再根据缓存或接口得到 isAdmin / 公司角色
 const checkUserPermissions = async () => {
@@ -239,8 +264,14 @@ const checkUserPermissions = async () => {
   // 先保证全局 userInfo 有昵称、头像、role（从 App 缓存或接口拉取），我的页直接读 userInfo 展示
   await ensureUserInfoCached();
 
+  const currentCompanyId = normalizeCompanyId(companyInfo.value?.id);
   const cache = permissionsCache.value;
-  if (cache && cache.userId === Number(userId) && Date.now() - cache.ts < PERMISSIONS_CACHE_TTL) {
+  if (
+    cache &&
+    cache.userId === Number(userId) &&
+    cache.companyId === currentCompanyId &&
+    Date.now() - cache.ts < PERMISSIONS_CACHE_TTL
+  ) {
     isAdmin.value = cache.isAdmin;
     isCompanyUser.value = cache.isCompanyUser;
     isCompanyAdminUser.value = cache.isCompanyAdminUser;
@@ -249,8 +280,8 @@ const checkUserPermissions = async () => {
 
   isAdmin.value = userInfo.value?.role === 'admin';
 
-  if (companyInfo.value?.id) {
-    const role = await getCompanyUserRoleCached();
+  if (currentCompanyId != null) {
+    const role = await getCompanyUserRoleCached(currentCompanyId, true);
     isCompanyUser.value = role != null;
     isCompanyAdminUser.value = role?.isAdmin ?? false;
   } else {
@@ -260,6 +291,7 @@ const checkUserPermissions = async () => {
 
   permissionsCache.value = {
     userId: Number(userId),
+    companyId: currentCompanyId,
     isAdmin: isAdmin.value,
     isCompanyUser: isCompanyUser.value,
     isCompanyAdminUser: isCompanyAdminUser.value,
@@ -509,12 +541,8 @@ const handleLogout = () => {
   });
 };
 
-// onShow：等全局就绪后再拉取/补齐 userInfo 与权限，再填公司公开信息（优先缓存）
-onShow(async () => {
-  await whenAppReady();
-  await checkUserPermissions();
-
-  const companyId = companyInfo.value?.id;
+async function loadCompanyPublicSection() {
+  const companyId = normalizeCompanyId(companyInfo.value?.id);
   if (!companyId) {
     companyPublicInfo.value = null;
     return;
@@ -537,6 +565,41 @@ onShow(async () => {
   }).catch(() => {
     companyPublicInfo.value = null;
   });
+}
+
+// storage 与 Pinia 不一致时（例如切公司后 tab 页 onShow 早于上下文写回），先对齐再算权限
+async function ensureCompanyContextMatchesStorage(): Promise<void> {
+  const stored = readStoredCompanyId();
+  const storeId = normalizeCompanyId(companyInfo.value?.id);
+  if (stored != null && storeId !== stored) {
+    permissionsCache.value = null;
+    try {
+      await syncCompanyInfo(stored, true);
+    } catch (e) {
+      console.error('我的页：对齐公司上下文失败', e);
+    }
+  }
+}
+
+// 切换公司后即使未再次触发 onShow，store 的 companyId 变化也应刷新权限（tab 页实例常保留在内存）
+watch(
+  () => normalizeCompanyId(companyInfo.value?.id),
+  async (id, prev) => {
+    if (id === prev) return;
+    await whenAppReady();
+    if (!user_token.value) return;
+    permissionsCache.value = null;
+    await checkUserPermissions();
+    await loadCompanyPublicSection();
+  }
+);
+
+// onShow：等全局就绪后再拉取/补齐 userInfo 与权限，再填公司公开信息（优先缓存）
+onShow(async () => {
+  await whenAppReady();
+  await ensureCompanyContextMatchesStorage();
+  await checkUserPermissions();
+  await loadCompanyPublicSection();
 });
 </script>
 
