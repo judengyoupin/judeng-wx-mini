@@ -47,7 +47,7 @@
               mode="aspectFill"
               lazy-load
             ></image>
-            <view v-if="isProductOutOfStock(product)" class="product-out-of-stock">缺货</view>
+            <ProductImageBadges :tags="product.tags" :out-of-stock="isProductOutOfStock(product)" />
           </view>
           <view class="product-info">
             <view class="product-name">{{ product.name }}</view>
@@ -95,6 +95,7 @@ import { getCompanyUserRoleCached } from '@/utils/auth';
 import { safeNavigateBack } from '@/utils/navigation';
 import PageNavBar from '@/components/PageNavBar.vue';
 import SkeletonScreen from '@/components/SkeletonScreen.vue';
+import ProductImageBadges from '@/components/ProductImageBadges.vue';
 
 const keyword = ref('');
 const products = ref<any[]>([]);
@@ -327,17 +328,6 @@ onShow(async () => {
   height: 340rpx;
   background: #f0f0f0;
   display: block;
-}
-
-.product-out-of-stock {
-  position: absolute;
-  left: 12rpx;
-  bottom: 12rpx;
-  background: rgba(0, 0, 0, 0.6);
-  color: #fff;
-  padding: 6rpx 14rpx;
-  border-radius: 8rpx;
-  font-size: 22rpx;
 }
 
 .product-info {

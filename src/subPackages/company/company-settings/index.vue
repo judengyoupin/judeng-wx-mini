@@ -137,7 +137,7 @@
               @click="!isAuditMode && (form.mode_for_price = 'user')"
             >
               <text class="mode-title">按用户单独</text>
-              <text class="mode-desc">在成员列表为每人设置系数与可看价；访客不可看价</text>
+              <text class="mode-desc">在成员列表为每人设置系数与可看价；未入库成员沿用下方默认</text>
             </view>
           </view>
         </view>
@@ -150,7 +150,7 @@
               「公司统一」：仅对微信访客（wx_guest_user）是否可看价生效；正式成员均可看价
             </view>
             <view v-else class="form-hint">
-              「按用户」：能否看价以成员列表为准；访客不可看价（此项不作用于访客）
+              「按用户」：已在成员表中的用户以列表为准；尚无成员行的用户（含微信访客）使用下方默认可看价与系数
             </view>
           </view>
           <switch

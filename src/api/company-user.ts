@@ -10,8 +10,7 @@ export interface CompanyUserDefaults {
 }
 
 /**
- * 自动注册为 company_users 时的默认字段。
- * default_for_can_view_price 仅约束微信访客；正式成员默认可看价。
+ * 自动注册为 company_users 时的默认字段（系数取公司 default_for_price_factor）。
  */
 export async function getCompanyUserDefaults(
   companyId: number

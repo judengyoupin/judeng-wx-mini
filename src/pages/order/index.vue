@@ -1,6 +1,6 @@
 <template>
   <view class="order-page">
-    <PageNavBar title="确认订单" :show-back="true" @back="goBack" />
+    <PageNavBar title="生成清单" :show-back="true" @back="goBack" />
 
     <view v-if="loading && !orderItems.length" class="skeleton-area">
       <SkeletonScreen type="list-row" :count="3" />
@@ -17,7 +17,7 @@
           <text class="receiver-address">{{ selectedAddress.receiver_address }}</text>
         </view>
         <view v-else class="address-placeholder">
-          <text class="placeholder-text">请选择收货地址</text>
+          <text class="placeholder-text">选填收货地址，不填也可提交</text>
         </view>
         <text class="arrow">›</text>
       </view>
@@ -75,11 +75,11 @@
         </view>
         <button
           class="submit-btn"
-          :class="{ disabled: !selectedAddress || submitting }"
+          :class="{ disabled: submitting }"
           :loading="submitting"
           @click="submitOrder"
         >
-          {{ submitting ? '提交中...' : '提交订单' }}
+          {{ submitting ? '提交中...' : '提交生成清单' }}
         </button>
       </view>
     </template>
@@ -199,10 +199,6 @@ function chooseAddress() {
 }
 
 async function submitOrder() {
-  if (!selectedAddress.value) {
-    uni.showToast({ title: '请选择收货地址', icon: 'none' });
-    return;
-  }
   if (orderItems.value.length === 0) {
     uni.showToast({ title: '商品列表为空', icon: 'none' });
     return;
@@ -244,15 +240,16 @@ async function submitOrder() {
     const totalPrice = totalPriceRaw.value;
     const totalAmountVal = totalPrice * priceFactor.value;
 
+    const addr = selectedAddress.value;
     const order = await createOrder({
       userId,
       companyId,
-      receiver_name: selectedAddress.value.receiver_name,
-      receiver_phone: selectedAddress.value.receiver_phone,
-      receiver_address: selectedAddress.value.receiver_address,
-      receiver_province: selectedAddress.value.receiver_province ?? null,
-      receiver_city: selectedAddress.value.receiver_city ?? null,
-      receiver_district: selectedAddress.value.receiver_district ?? null,
+      receiver_name: addr?.receiver_name?.trim() || '',
+      receiver_phone: addr?.receiver_phone?.trim() || '',
+      receiver_address: addr?.receiver_address?.trim() || '',
+      receiver_province: addr?.receiver_province ?? null,
+      receiver_city: addr?.receiver_city ?? null,
+      receiver_district: addr?.receiver_district ?? null,
       price_factor: priceFactor.value,
       total_price: totalPrice,
       total_amount: totalAmountVal,
@@ -308,10 +305,13 @@ defineExpose({ onAddressSelected });
 </script>
 
 <style scoped>
+/* 底部 footer-bar 为 fixed，需预留足够高度，避免长列表时「订单备注」等被遮挡 */
 .order-page {
   min-height: 100vh;
   background: #f5f5f5;
-  padding-bottom: 140rpx;
+  padding-bottom: calc(260rpx + constant(safe-area-inset-bottom));
+  padding-bottom: calc(260rpx + env(safe-area-inset-bottom));
+  box-sizing: border-box;
 }
 
 .skeleton-area {
@@ -505,13 +505,16 @@ defineExpose({ onAddressSelected });
   bottom: 0;
   left: 0;
   right: 0;
+  z-index: 200;
   padding: 20rpx 30rpx;
   padding-bottom: calc(20rpx + env(safe-area-inset-bottom));
-  background: #fff;
-  border-top: 1rpx solid #eee;
+  background-color: #ffffff;
+  border-top: 1rpx solid #e8e8e8;
+  box-shadow: 0 -8rpx 24rpx rgba(0, 0, 0, 0.06);
   display: flex;
   align-items: center;
   justify-content: space-between;
+  box-sizing: border-box;
 }
 
 .footer-total-wrap {
@@ -548,6 +551,10 @@ defineExpose({ onAddressSelected });
   color: #fff;
   border-radius: 40rpx;
   font-size: 30rpx;
+  border: none;
+}
+
+.submit-btn::after {
   border: none;
 }
 

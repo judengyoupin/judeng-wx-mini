@@ -52,8 +52,7 @@
         >
           <view class="product-card-image-wrap">
             <image class="product-card-image" :src="product.cover_image_url" mode="aspectFill" lazy-load />
-            <view v-if="getFirstTag(product.tags)" class="product-tag">{{ getFirstTag(product.tags) }}</view>
-            <view v-if="isProductOutOfStock(product)" class="product-out-of-stock">缺货</view>
+            <ProductImageBadges :tags="product.tags" :out-of-stock="isProductOutOfStock(product)" />
           </view>
           <view class="product-card-info">
             <view class="product-card-name">{{ product.name }}</view>
@@ -96,7 +95,7 @@
               mode="aspectFill"
               lazy-load
             />
-            <view v-if="getFirstTag(pkg.tags)" class="package-tag">{{ getFirstTag(pkg.tags) }}</view>
+            <ProductImageBadges :tags="pkg.tags" :out-of-stock="false" />
           </view>
           <view class="package-info">
             <view class="package-name">{{ pkg.name }}</view>
@@ -127,6 +126,7 @@ import { userInfo, companyInfo } from '@/store/userStore';
 import { safeNavigateBack } from '@/utils/navigation';
 import PageNavBar from '@/components/PageNavBar.vue';
 import SkeletonScreen from '@/components/SkeletonScreen.vue';
+import ProductImageBadges from '@/components/ProductImageBadges.vue';
 
 const searchType = ref<'product' | 'package'>('product');
 const keyword = ref('');
@@ -149,11 +149,6 @@ const pageTitle = computed(() => {
 const searchPlaceholder = computed(() =>
   searchType.value === 'product' ? '请输入商品名称' : '请输入套餐名称'
 );
-
-const getFirstTag = (tagsStr: string | null | undefined) => {
-  if (!tagsStr || !String(tagsStr).trim()) return '';
-  return String(tagsStr).split(/[,，|｜]/)[0].trim() || '';
-};
 
 const isProductOutOfStock = (product: any) => {
   const total = product?.product_skus_aggregate?.aggregate?.sum?.stock ?? 0;
@@ -415,28 +410,6 @@ onShareTimeline(() => {
   display: block;
 }
 
-.product-out-of-stock {
-  position: absolute;
-  right: 12rpx;
-  bottom: 12rpx;
-  background: rgba(0, 0, 0, 0.6);
-  color: #fff;
-  padding: 6rpx 14rpx;
-  border-radius: 8rpx;
-  font-size: 22rpx;
-}
-
-.product-tag {
-  position: absolute;
-  left: 12rpx;
-  bottom: 12rpx;
-  background: #22c55e;
-  color: #fff;
-  padding: 6rpx 14rpx;
-  border-radius: 24rpx;
-  font-size: 22rpx;
-}
-
 .product-card-info {
   padding: 20rpx 16rpx;
 }
@@ -478,17 +451,6 @@ onShareTimeline(() => {
   width: 100%;
   height: 100%;
   display: block;
-}
-
-.package-tag {
-  position: absolute;
-  left: 12rpx;
-  bottom: 12rpx;
-  background: #22c55e;
-  color: #fff;
-  padding: 6rpx 14rpx;
-  border-radius: 24rpx;
-  font-size: 22rpx;
 }
 
 .package-info {

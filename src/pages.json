@@ -94,7 +94,7 @@
 			"path": "pages/order/index",
 			"style": {
 				"navigationStyle": "custom",
-				"navigationBarTitleText": "确认订单"
+				"navigationBarTitleText": "生成清单"
 			}
 		},
 		{

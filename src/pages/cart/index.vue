@@ -78,7 +78,7 @@
         </view>
       </scroll-view>
 
-      <!-- 底部栏：管理模式显示「删除选中」，否则显示「结算」；内层固定高度保证垂直居中 -->
+      <!-- 底部栏：管理模式显示「删除选中」，否则显示「生成清单」；内层固定高度保证垂直居中 -->
       <view class="cart-footer">
         <view class="cart-footer-inner">
           <view class="footer-left">
@@ -87,7 +87,6 @@
                 <text v-if="isAllSelected">✓</text>
               </view>
               <text class="select-all-text">全选</text>
-              <text class="no-pay-hint">（无需支付）</text>
             </view>
             <template v-if="!isManageMode">
               <view class="total-info">
@@ -108,11 +107,19 @@
           </template>
           <button
             v-else
+            type="primary"
             class="checkout-btn"
             :class="{ disabled: selectedCount === 0 }"
+            hover-class="checkout-btn-hover"
             @click="handleCheckout"
           >
-            结算({{ selectedCount }})
+            <view class="checkout-btn-inner">
+              <view class="checkout-line-top">
+                <text>生成清单</text>
+                <text v-if="selectedCount > 0" class="checkout-count">{{ selectedCount }}</text>
+              </view>
+              <text class="checkout-line-sub">（无需支付）</text>
+            </view>
           </button>
         </view>
       </view>
@@ -377,11 +384,11 @@ const deleteSelectedItems = async () => {
   });
 };
 
-// 结算
+// 生成清单（跳转确认页，无需支付）
 const handleCheckout = () => {
   if (selectedCount.value === 0) {
     uni.showToast({
-      title: '请选择要结算的商品',
+      title: '请选择商品',
       icon: 'none',
     });
     return;
@@ -664,8 +671,8 @@ onPullDownRefresh(() => {
 }
 
 .cart-footer-inner {
-  height: 100rpx;
-  padding: 0 24rpx;
+  min-height: 100rpx;
+  padding: 12rpx 24rpx;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -681,12 +688,6 @@ onPullDownRefresh(() => {
 .select-all-text {
   font-size: 26rpx;
   color: #333333;
-}
-
-.no-pay-hint {
-  font-size: 24rpx;
-  color: #999999;
-  margin-left: 4rpx;
 }
 
 .total-info {
@@ -706,26 +707,73 @@ onPullDownRefresh(() => {
   color: #f97316;
 }
 
-/* 结算按钮：修长圆角、绿色底、白字 */
+/* 生成清单：需 type="primary"，否则小程序 button 默认 default 为灰底；内层 text 需单独设白色 */
 .checkout-btn {
-  height: 64rpx;
-  padding: 0 36rpx;
-  background: #22c55e;
-  color: #ffffff;
-  border-radius: 32rpx;
-  font-size: 28rpx;
-  font-weight: 600;
-  border: none;
+  min-height: 72rpx;
+  padding: 8rpx 32rpx;
+  background: #22c55e !important;
+  color: #ffffff !important;
+  border-radius: 36rpx;
+  border: none !important;
   display: flex;
   align-items: center;
   justify-content: center;
-  line-height: 1;
+}
+
+.checkout-btn::after {
+  border: none !important;
+}
+
+.checkout-btn-hover:not(.disabled) {
+  background: #16a34a !important;
+  opacity: 0.98;
+}
+
+.checkout-btn-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2rpx;
+}
+
+.checkout-line-top {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 8rpx;
+  font-size: 28rpx;
+  font-weight: 600;
+  line-height: 1.2;
+  color: #ffffff;
+}
+
+.checkout-count {
+  font-size: 22rpx;
+  font-weight: 500;
+  opacity: 0.95;
+  color: #ffffff;
+}
+
+.checkout-line-sub {
+  font-size: 20rpx;
+  font-weight: 400;
+  line-height: 1.2;
+  opacity: 0.92;
+  color: #ffffff;
 }
 
 .checkout-btn.disabled {
-  background: #e5e7eb;
-  color: #9ca3af;
-  font-weight: 500;
+  background: #e5e7eb !important;
+  color: #9ca3af !important;
+}
+
+.checkout-btn.disabled .checkout-line-top,
+.checkout-btn.disabled .checkout-count,
+.checkout-btn.disabled .checkout-line-sub {
+  color: #9ca3af !important;
+  opacity: 1;
 }
 
 .empty-state {

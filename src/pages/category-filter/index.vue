@@ -79,8 +79,7 @@
                 mode="aspectFill"
                 lazy-load
               />
-              <view v-if="getFirstTag(product.tags)" class="product-tag">{{ getFirstTag(product.tags) }}</view>
-              <view v-if="isProductOutOfStock(product)" class="product-out-of-stock">缺货</view>
+              <ProductImageBadges :tags="product.tags" :out-of-stock="isProductOutOfStock(product)" />
             </view>
             <view class="product-card-info">
               <view class="product-card-name">{{ product.name }}</view>
@@ -116,6 +115,7 @@ import { getCategoryChildren } from '@/api/category/index';
 import { getProductList } from '@/api/product/index';
 import { userInfo, companyInfo } from '@/store/userStore';
 import PageNavBar from '@/components/PageNavBar.vue';
+import ProductImageBadges from '@/components/ProductImageBadges.vue';
 import { safeNavigateBack } from '@/utils/navigation';
 
 const parentId = ref<number | null>(null);
@@ -176,11 +176,6 @@ const navTitle = computed(() => {
   const suffix = showSubCategories.value ? '分类' : '商品';
   return `${name}-${suffix}`;
 });
-
-const getFirstTag = (tagsStr: string | null | undefined) => {
-  if (!tagsStr || !String(tagsStr).trim()) return '';
-  return String(tagsStr).split(/[,，|｜]/)[0].trim() || '';
-};
 
 const isProductOutOfStock = (product: any) => {
   const total = product?.product_skus_aggregate?.aggregate?.sum?.stock ?? 0;
@@ -487,28 +482,6 @@ onShareTimeline(() => {
   width: 100%;
   height: 100%;
   display: block;
-}
-
-.product-out-of-stock {
-  position: absolute;
-  right: 12rpx;
-  bottom: 12rpx;
-  background: rgba(0, 0, 0, 0.6);
-  color: #fff;
-  padding: 6rpx 14rpx;
-  border-radius: 8rpx;
-  font-size: 22rpx;
-}
-
-.product-tag {
-  position: absolute;
-  left: 12rpx;
-  bottom: 12rpx;
-  background: #22c55e;
-  color: #fff;
-  padding: 6rpx 14rpx;
-  border-radius: 24rpx;
-  font-size: 22rpx;
 }
 
 .product-card-info {

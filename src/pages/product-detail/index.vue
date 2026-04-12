@@ -27,10 +27,12 @@
       <view class="product-info-section">
         <view class="product-name-row">
           <text class="product-name-label">产品名称：</text>
-          <text class="product-name">{{ productDetail.name }}</text>
-        </view>
-        <view v-if="productTags.length > 0" class="product-tags">
-          <view v-for="(tag, i) in productTags" :key="i" class="product-tag">{{ tag }}</view>
+          <view class="product-name-trail">
+            <text class="product-name">{{ productDetail.name }}</text>
+            <view v-if="productTags.length > 0" class="product-tags-inline">
+              <text v-for="(tag, i) in productTags" :key="i" class="product-tag-inline">{{ tag }}</text>
+            </view>
+          </view>
         </view>
         <view v-if="canViewPrice && minPrice" class="product-price">
           <text class="price-label">产品价格：</text>
@@ -655,35 +657,59 @@ onShareTimeline(() => {
 }
 
 .product-name-row {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
   margin-bottom: 16rpx;
-  line-height: 1.5;
+  line-height: 1.45;
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .product-name-label {
+  flex-shrink: 0;
   font-size: 28rpx;
   color: #666666;
   margin-right: 8rpx;
 }
 
+.product-name-trail {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 12rpx;
+  flex: 1;
+  min-width: 0;
+}
+
 .product-name {
+  flex-shrink: 0;
   font-size: 32rpx;
   font-weight: bold;
   color: #000000;
 }
 
-.product-tags {
+.product-tags-inline {
   display: flex;
-  flex-wrap: wrap;
-  gap: 12rpx;
-  margin-bottom: 16rpx;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 8rpx;
+  flex-shrink: 0;
 }
 
-.product-tag {
-  font-size: 22rpx;
+.product-tag-inline {
+  font-size: 38rpx;
+  font-weight: 600;
   color: #22c55e;
   background: #f0fdf4;
-  padding: 6rpx 14rpx;
+  padding: 4rpx 16rpx;
   border-radius: 24rpx;
+  white-space: nowrap;
+  line-height: 1.3;
 }
 
 .product-price {

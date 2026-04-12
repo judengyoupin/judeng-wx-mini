@@ -26,10 +26,16 @@
             <view v-if="isAdmin" class="role-badge admin">
               <text class="role-text">平台管理员</text>
             </view>
-            <view v-else-if="isCompanyAdminUser" class="role-badge company-admin">
+            <view
+              v-else-if="isCompanyAdminUser"
+              class="role-badge company-admin"
+            >
               <text class="role-text">公司管理员</text>
             </view>
-            <view v-else-if="userInfo?.role === 'wx_guest_user'" class="role-badge guest">
+            <view
+              v-else-if="userInfo?.role === 'wx_guest_user'"
+              class="role-badge guest"
+            >
               <text class="role-text">访客</text>
             </view>
             <view v-else-if="isCompanyUser" class="role-badge user">
@@ -40,14 +46,29 @@
             <text class="phone-icon">📱</text>
             <text class="phone-number">{{ userInfo.mobile }}</text>
           </view>
-          <view v-if="user_token && !isMember" class="login-prompt phone-auth-prompt">
-            <text class="prompt-text">请使用已向管理员登记的本机微信手机号授权，成为正式用户。</text>
-            <button class="login-btn" open-type="getPhoneNumber" @getphonenumber="onPhoneNumberAuth">
+          <view
+            v-if="user_token && !isMember"
+            class="login-prompt phone-auth-prompt"
+          >
+            <text class="prompt-text"
+              >请使用已向管理员登记的本机微信手机号授权，成为正式用户。</text
+            >
+            <button
+              class="login-btn"
+              open-type="getPhoneNumber"
+              @getphonenumber="onPhoneNumberAuth"
+            >
               手机号快捷授权
             </button>
-            <view class="admin-login-hint" @click.stop="goToPasswordLogin">管理员账号密码登录</view>
+            <view class="admin-login-hint" @click.stop="goToPasswordLogin"
+              >管理员账号密码登录</view
+            >
           </view>
-          <view v-else-if="isMember" class="password-link" @click.stop="goToSetPassword">
+          <view
+            v-else-if="isMember"
+            class="password-link"
+            @click.stop="goToSetPassword"
+          >
             <text class="password-link-icon">🔒</text>
             <text class="password-link-text">设置密码</text>
           </view>
@@ -57,32 +78,50 @@
         </view>
       </view>
     </view>
-
+    <!-- 无公司账号提示：进入某公司但该用户未注册为公司用户时显示 -->
+    <view
+      v-if="user_token && companyInfo?.id && !isCompanyUser"
+      class="register-tip"
+    >
+      <view class="tip-icon">⚠️</view>
+      <view class="tip-content">
+        <text class="tip-title">提示</text>
+        <text class="tip-text"
+          >您在公司尚未注册账号或开通价格访问权限，请联系客服管理员为您注册或开通后使用</text
+        >
+      </view>
+    </view>
     <!-- 快捷功能区域 -->
     <view class="quick-actions">
       <view class="action-item" @click="goToOrders">
         <view class="action-icon-wrapper order">
-          <image class="action-icon" src="../../static/mine/order.png" mode="aspectFit"></image>
+          <image
+            class="action-icon"
+            src="../../static/mine/order.png"
+            mode="aspectFit"
+          ></image>
         </view>
         <text class="action-label">我的订单</text>
       </view>
       <view class="action-item" @click="goToFiles">
         <view class="action-icon-wrapper resource">
-          <image class="action-icon" src="../../static/mine/ziliao.png" mode="aspectFit"></image>
+          <image
+            class="action-icon"
+            src="../../static/mine/ziliao.png"
+            mode="aspectFit"
+          ></image>
         </view>
         <text class="action-label">资料库</text>
       </view>
       <view class="action-item" @click="goToAddressList">
         <view class="action-icon-wrapper settings">
-          <image class="action-icon" src="../../static/mine/shezhi.png" mode="aspectFit"></image>
+          <image
+            class="action-icon"
+            src="../../static/mine/shezhi.png"
+            mode="aspectFit"
+          ></image>
         </view>
         <text class="action-label">地址管理</text>
-      </view>
-      <view class="action-item" @click="goToContact">
-        <view class="action-icon-wrapper contact">
-          <text class="action-icon-emoji">💬</text>
-        </view>
-        <text class="action-label">联系客服</text>
       </view>
       <view v-if="user_token" class="action-item" @click="goToSwitchCompany">
         <view class="action-icon-wrapper company-switch">
@@ -98,85 +137,109 @@
         <text class="section-title">超级管理员</text>
       </view>
       <view class="admin-grid">
-          <view class="admin-item" @click="goToCompanyManagement">
-            <view class="admin-icon-wrapper company">
-              <text class="admin-icon">🏢</text>
-            </view>
-            <text class="admin-label">公司管理</text>
-            <text class="admin-desc">管理公司信息</text>
+        <view class="admin-item" @click="goToCompanyManagement">
+          <view class="admin-icon-wrapper company">
+            <text class="admin-icon">🏢</text>
           </view>
-          <view class="admin-item" @tap="goToUserManagement" @click="goToUserManagement">
-            <view class="admin-icon-wrapper user">
-              <text class="admin-icon">👥</text>
-            </view>
-            <text class="admin-label">账号管理</text>
-            <text class="admin-desc">管理用户账号</text>
-          </view>
+          <text class="admin-label">公司管理</text>
+          <text class="admin-desc">管理公司信息</text>
         </view>
+        <view
+          class="admin-item"
+          @tap="goToUserManagement"
+          @click="goToUserManagement"
+        >
+          <view class="admin-icon-wrapper user">
+            <text class="admin-icon">👥</text>
+          </view>
+          <text class="admin-label">账号管理</text>
+          <text class="admin-desc">管理用户账号</text>
+        </view>
+      </view>
     </view>
 
     <!-- 我的公司板块：进入某公司且 company_user.role === admin 可见 -->
     <view v-if="isCompanyAdminUser" class="admin-section">
       <view class="section-header">
-        <text class="section-title">我的公司{{ companyInfo?.name ? `（${companyInfo.name}）` : '' }}</text>
+        <text class="section-title"
+          >我的公司{{
+            companyInfo?.name ? `（${companyInfo.name}）` : ""
+          }}</text
+        >
       </view>
       <view class="admin-grid">
-          <view class="admin-item" @click="goToCompanySettings">
-            <view class="admin-icon-wrapper settings">
-              <text class="admin-icon">⚙️</text>
-            </view>
-            <text class="admin-label">公司设置</text>
-            <text class="admin-desc">设置logo、轮播图、名称</text>
+        <view class="admin-item" @click="goToCompanySettings">
+          <view class="admin-icon-wrapper settings">
+            <text class="admin-icon">⚙️</text>
           </view>
-          <view class="admin-item" @click="goToCategoryManagement">
-            <view class="admin-icon-wrapper category">
-              <text class="admin-icon">📂</text>
-            </view>
-            <text class="admin-label">分类管理</text>
-            <text class="admin-desc">管理本公司下的分类</text>
-          </view>
-          <view class="admin-item" @click="goToProductManagement">
-            <view class="admin-icon-wrapper product">
-              <text class="admin-icon">📦</text>
-            </view>
-            <text class="admin-label">商品管理</text>
-            <text class="admin-desc">管理本公司下的商品</text>
-          </view>
-          <view class="admin-item" @click="goToPackageManagement">
-            <view class="admin-icon-wrapper package">
-              <text class="admin-icon">🎁</text>
-            </view>
-            <text class="admin-label">套餐管理</text>
-            <text class="admin-desc">管理本公司下的套餐</text>
-          </view>
-          <view class="admin-item" @click="goToCompanyUserManagement">
-            <view class="admin-icon-wrapper user">
-              <text class="admin-icon">👥</text>
-            </view>
-            <text class="admin-label">用户管理</text>
-            <text class="admin-desc">管理本公司下的用户</text>
-          </view>
-          <view class="admin-item" @click="goToCompanyOrderManagement">
-            <view class="admin-icon-wrapper order">
-              <text class="admin-icon">📋</text>
-            </view>
-            <text class="admin-label">订单管理</text>
-            <text class="admin-desc">查看本公司下的用户订单</text>
-          </view>
+          <text class="admin-label">公司设置</text>
+          <text class="admin-desc">设置logo、轮播图、名称</text>
         </view>
+        <view class="admin-item" @click="goToCategoryManagement">
+          <view class="admin-icon-wrapper category">
+            <text class="admin-icon">📂</text>
+          </view>
+          <text class="admin-label">分类管理</text>
+          <text class="admin-desc">管理本公司下的分类</text>
+        </view>
+        <view class="admin-item" @click="goToProductManagement">
+          <view class="admin-icon-wrapper product">
+            <text class="admin-icon">📦</text>
+          </view>
+          <text class="admin-label">商品管理</text>
+          <text class="admin-desc">管理本公司下的商品</text>
+        </view>
+        <view class="admin-item" @click="goToPackageManagement">
+          <view class="admin-icon-wrapper package">
+            <text class="admin-icon">🎁</text>
+          </view>
+          <text class="admin-label">套餐管理</text>
+          <text class="admin-desc">管理本公司下的套餐</text>
+        </view>
+        <view class="admin-item" @click="goToCompanyUserManagement">
+          <view class="admin-icon-wrapper user">
+            <text class="admin-icon">👥</text>
+          </view>
+          <text class="admin-label">用户管理</text>
+          <text class="admin-desc">管理本公司下的用户</text>
+        </view>
+        <view class="admin-item" @click="goToCompanyOrderManagement">
+          <view class="admin-icon-wrapper order">
+            <text class="admin-icon">📋</text>
+          </view>
+          <text class="admin-label">订单管理</text>
+          <text class="admin-desc">查看本公司下的用户订单</text>
+        </view>
+      </view>
     </view>
 
     <!-- C 端：联系我们、关于我们（有公司且配置了联系/介绍时展示） -->
-    <view v-if="user_token && companyInfo?.id && companyPublicInfo && (companyPublicInfo.contact_code || companyPublicInfo.description)" class="more-section">
+    <view
+      v-if="
+        user_token &&
+        companyInfo?.id &&
+        companyPublicInfo &&
+        (companyPublicInfo.contact_code || companyPublicInfo.description)
+      "
+      class="more-section"
+    >
       <view class="section-header">
         <text class="section-title">更多</text>
       </view>
       <view class="more-grid">
-        <view v-if="companyPublicInfo.contact_code || companyPublicInfo.description" class="more-item" @click="goToContact">
+        <view
+          v-if="companyPublicInfo.contact_code || companyPublicInfo.description"
+          class="more-item"
+          @click="goToContact"
+        >
           <text class="more-icon">📞</text>
           <text class="more-label">联系我们</text>
         </view>
-        <view v-if="companyPublicInfo.description" class="more-item" @click="showAboutModal = true">
+        <view
+          v-if="companyPublicInfo.description"
+          class="more-item"
+          @click="showAboutModal = true"
+        >
           <text class="more-icon">ℹ️</text>
           <text class="more-label">关于我们</text>
         </view>
@@ -184,25 +247,22 @@
     </view>
 
     <!-- 关于我们弹窗 -->
-    <view v-if="showAboutModal" class="modal-overlay" @click="showAboutModal = false">
+    <view
+      v-if="showAboutModal"
+      class="modal-overlay"
+      @click="showAboutModal = false"
+    >
       <view class="modal-content about-modal" @click.stop>
         <view class="modal-header">
           <text class="modal-title">关于我们</text>
           <text class="modal-close" @click="showAboutModal = false">×</text>
         </view>
         <scroll-view scroll-y class="modal-body">
-          <text v-if="companyPublicInfo?.description" class="about-desc">{{ companyPublicInfo.description }}</text>
+          <text v-if="companyPublicInfo?.description" class="about-desc">{{
+            companyPublicInfo.description
+          }}</text>
           <view v-else class="empty-tip">暂无介绍</view>
         </scroll-view>
-      </view>
-    </view>
-
-    <!-- 无公司账号提示：进入某公司但该用户未注册为公司用户时显示 -->
-    <view v-if="user_token && companyInfo?.id && !isCompanyUser" class="register-tip">
-      <view class="tip-icon">⚠️</view>
-      <view class="tip-content">
-        <text class="tip-title">提示</text>
-        <text class="tip-text">您在公司尚未注册账号或开通价格访问权限，请联系客服管理员为您注册或开通后使用</text>
       </view>
     </view>
 
@@ -214,16 +274,27 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, computed } from 'vue';
-import { whenAppReady } from '@/utils/appReady';
-import { onShow } from '@dcloudio/uni-app';
-import { userInfo, user_token, companyInfo, clearUserContext, getCompanyDetailFromCache, ensureUserInfoCached } from '@/store/userStore';
-import { getCompanyUserRoleCached, clearCompanyUserRoleCache } from '@/utils/auth';
-import { ensureWxSilentAuth } from '@/utils/wxSilentAuth';
-import { isRegisteredMember } from '@/utils/memberSession';
-import { completePhoneNumberAuth } from '@/utils/wechatPhoneAuth';
-import { getCompanyPublicInfo, syncCompanyInfo } from '@/api/company/index';
-import type { CompanyPublicInfo } from '@/api/company/index';
+import { ref, watch, computed } from "vue";
+import { whenAppReady } from "@/utils/appReady";
+import { onShow } from "@dcloudio/uni-app";
+import {
+  userInfo,
+  user_token,
+  companyInfo,
+  clearUserContext,
+  getCompanyDetailFromCache,
+  ensureUserInfoCached,
+} from "@/store/userStore";
+import {
+  getCompanyUserRoleCached,
+  clearCompanyUserRoleCache,
+  isCompanyUser as queryHasCompanyMembershipRow,
+} from "@/utils/auth";
+import { ensureWxSilentAuth } from "@/utils/wxSilentAuth";
+import { isRegisteredMember } from "@/utils/memberSession";
+import { completePhoneNumberAuth } from "@/utils/wechatPhoneAuth";
+import { getCompanyPublicInfo, syncCompanyInfo } from "@/api/company/index";
+import type { CompanyPublicInfo } from "@/api/company/index";
 
 const isCompanyUser = ref(false);
 const companyPublicInfo = ref<CompanyPublicInfo | null>(null);
@@ -234,14 +305,18 @@ const isCompanyAdminUser = ref(false);
 const isMember = computed(() => isRegisteredMember(userInfo.value?.role));
 
 const displayNickname = computed(() => {
-  const u = userInfo.value as { nickname?: string; mobile?: string; role?: string };
-  return u?.nickname || u?.mobile || '用户';
+  const u = userInfo.value as {
+    nickname?: string;
+    mobile?: string;
+    role?: string;
+  };
+  return u?.nickname || u?.mobile || "用户";
 });
 
 /** 访客展示为未登录；正式用户展示昵称/手机号 */
 const sessionTitle = computed(() => {
-  if (!user_token.value) return '未登录';
-  if (!isMember.value) return '未登录';
+  if (!user_token.value) return "未登录";
+  if (!isMember.value) return "未登录";
   return displayNickname.value;
 });
 
@@ -258,8 +333,8 @@ const permissionsCache = ref<{
 
 function readStoredCompanyId(): number | null {
   try {
-    const raw = uni.getStorageSync('companyId');
-    if (raw === '' || raw == null) return null;
+    const raw = uni.getStorageSync("companyId");
+    if (raw === "" || raw == null) return null;
     const n = Number(raw);
     return Number.isInteger(n) && n > 0 ? n : null;
   } catch {
@@ -268,7 +343,7 @@ function readStoredCompanyId(): number | null {
 }
 
 function normalizeCompanyId(id: unknown): number | null {
-  if (id == null || id === '') return null;
+  if (id == null || id === "") return null;
   const n = Number(id);
   return Number.isInteger(n) && n > 0 ? n : null;
 }
@@ -301,12 +376,13 @@ const checkUserPermissions = async () => {
     return;
   }
 
-  isAdmin.value = userInfo.value?.role === 'admin';
+  isAdmin.value = userInfo.value?.role === "admin";
 
   if (currentCompanyId != null) {
     const role = await getCompanyUserRoleCached(currentCompanyId, true);
-    isCompanyUser.value = role != null;
-    isCompanyAdminUser.value = role?.isAdmin ?? false;
+    /** 是否存在 company_users 行；无行时 getCompanyUserRoleCached 仍可能返回公司 default_* 策略，不能用来判断成员身份 */
+    isCompanyUser.value = await queryHasCompanyMembershipRow(currentCompanyId);
+    isCompanyAdminUser.value = (role?.isAdmin ?? false) && isCompanyUser.value;
   } else {
     isCompanyUser.value = false;
     isCompanyAdminUser.value = false;
@@ -324,28 +400,30 @@ const checkUserPermissions = async () => {
 
 const goToPasswordLogin = () => {
   uni.navigateTo({
-    url: '/pages/login/index',
+    url: "/pages/login/index",
   });
 };
 
-const onPhoneNumberAuth = async (e: { detail?: { errMsg?: string; code?: string } }) => {
+const onPhoneNumberAuth = async (e: {
+  detail?: { errMsg?: string; code?: string };
+}) => {
   const detail = e?.detail ?? {};
   const { ok, message } = await completePhoneNumberAuth(detail);
   if (ok) {
-    uni.showToast({ title: '授权成功', icon: 'success' });
+    uni.showToast({ title: "授权成功", icon: "success" });
     permissionsCache.value = null;
     await checkUserPermissions();
     await loadCompanyPublicSection();
     return;
   }
   if (message) {
-    uni.showToast({ title: message, icon: 'none', duration: 3200 });
+    uni.showToast({ title: message, icon: "none", duration: 3200 });
   }
 };
 
 function needUserId(): boolean {
   if (!userInfo.value?.id) {
-    uni.showToast({ title: '请稍候…', icon: 'none' });
+    uni.showToast({ title: "请稍候…", icon: "none" });
     return false;
   }
   return true;
@@ -355,7 +433,7 @@ function needUserId(): boolean {
 const goToOrders = () => {
   if (!needUserId()) return;
   uni.navigateTo({
-    url: '/pages/order-list/index',
+    url: "/pages/order-list/index",
   });
 };
 
@@ -363,7 +441,7 @@ const goToOrders = () => {
 const goToFiles = () => {
   if (!needUserId()) return;
   uni.navigateTo({
-    url: '/pages/resource/index',
+    url: "/pages/resource/index",
   });
 };
 
@@ -371,11 +449,11 @@ const goToFiles = () => {
 const goToSetPassword = () => {
   if (!needUserId()) return;
   if (!isRegisteredMember(userInfo.value?.role)) {
-    uni.showToast({ title: '请先完成手机号授权', icon: 'none' });
+    uni.showToast({ title: "请先完成手机号授权", icon: "none" });
     return;
   }
   uni.navigateTo({
-    url: '/pages/set-password/index',
+    url: "/pages/set-password/index",
   });
 };
 
@@ -383,7 +461,7 @@ const goToSetPassword = () => {
 const goToAddressList = () => {
   if (!needUserId()) return;
   uni.navigateTo({
-    url: '/pages/address-list/index',
+    url: "/pages/address-list/index",
   });
 };
 
@@ -393,8 +471,8 @@ const goToContact = () => {
   const companyId = companyInfo.value?.id;
   if (!companyId) {
     uni.showToast({
-      title: '请先选择公司',
-      icon: 'none',
+      title: "请先选择公司",
+      icon: "none",
     });
     return;
   }
@@ -407,7 +485,7 @@ const goToContact = () => {
 const goToSwitchCompany = () => {
   if (!needUserId()) return;
   uni.navigateTo({
-    url: '/pages/switch-company/index',
+    url: "/pages/switch-company/index",
   });
 };
 
@@ -416,8 +494,8 @@ const goToCompanySettings = () => {
   if (!needUserId()) return;
   if (!companyInfo.value?.id) {
     uni.showToast({
-      title: '公司信息不存在',
-      icon: 'none',
+      title: "公司信息不存在",
+      icon: "none",
     });
     return;
   }
@@ -430,7 +508,7 @@ const goToCompanySettings = () => {
 const goToCategoryManagement = () => {
   if (!needUserId()) return;
   uni.navigateTo({
-    url: '/subPackages/company/category-list/index',
+    url: "/subPackages/company/category-list/index",
   });
 };
 
@@ -438,7 +516,7 @@ const goToCategoryManagement = () => {
 const goToProductManagement = () => {
   if (!needUserId()) return;
   uni.navigateTo({
-    url: '/subPackages/company/product-list/index',
+    url: "/subPackages/company/product-list/index",
   });
 };
 
@@ -446,7 +524,7 @@ const goToProductManagement = () => {
 const goToPackageManagement = () => {
   if (!needUserId()) return;
   uni.navigateTo({
-    url: '/subPackages/company/package-list/index',
+    url: "/subPackages/company/package-list/index",
   });
 };
 
@@ -454,7 +532,7 @@ const goToPackageManagement = () => {
 const goToCompanyUserManagement = () => {
   if (!needUserId()) return;
   uni.navigateTo({
-    url: '/subPackages/company/company-user-list/index',
+    url: "/subPackages/company/company-user-list/index",
   });
 };
 
@@ -463,13 +541,13 @@ const goToCompanyOrderManagement = () => {
   if (!needUserId()) return;
   if (!companyInfo.value?.id) {
     uni.showToast({
-      title: '公司信息不存在',
-      icon: 'none',
+      title: "公司信息不存在",
+      icon: "none",
     });
     return;
   }
   uni.navigateTo({
-    url: '/subPackages/company/order-list/index',
+    url: "/subPackages/company/order-list/index",
   });
 };
 
@@ -477,25 +555,25 @@ const goToCompanyOrderManagement = () => {
 const goToCompanyManagement = () => {
   if (!needUserId()) return;
   uni.navigateTo({
-    url: '/subPackages/admin/company-list/index',
+    url: "/subPackages/admin/company-list/index",
   });
 };
 
 // 跳转到账号管理（平台管理员）
 const goToUserManagement = () => {
-  console.log('点击账号管理');
+  console.log("点击账号管理");
   if (!needUserId()) return;
-  console.log('准备跳转到账号管理页面');
+  console.log("准备跳转到账号管理页面");
   uni.navigateTo({
-    url: '/subPackages/admin/user-list/index',
+    url: "/subPackages/admin/user-list/index",
     success: () => {
-      console.log('跳转成功');
+      console.log("跳转成功");
     },
     fail: (err) => {
-      console.error('跳转失败:', err);
+      console.error("跳转失败:", err);
       uni.showToast({
-        title: '页面跳转失败: ' + (err.errMsg || '未知错误'),
-        icon: 'none',
+        title: "页面跳转失败: " + (err.errMsg || "未知错误"),
+        icon: "none",
         duration: 3000,
       });
     },
@@ -506,15 +584,15 @@ const goToUserManagement = () => {
 const handleAvatarClick = () => {
   if (!needUserId()) return;
   uni.navigateTo({
-    url: '/pages/user-profile/index',
+    url: "/pages/user-profile/index",
   });
 };
 
 // 退出登录：清 JWT 后必须再次静默登录，否则会长期无 token，卡在「正在初始化」
 const handleLogout = () => {
   uni.showModal({
-    title: '提示',
-    content: '确定要退出登录吗？',
+    title: "提示",
+    content: "确定要退出登录吗？",
     success: (res) => {
       void (async () => {
         if (!res.confirm) return;
@@ -531,12 +609,12 @@ const handleLogout = () => {
           await checkUserPermissions();
           await loadCompanyPublicSection();
         } catch (e) {
-          console.error('退出后恢复访客身份失败:', e);
+          console.error("退出后恢复访客身份失败:", e);
         }
 
         uni.showToast({
-          title: '已退出登录',
-          icon: 'success',
+          title: "已退出登录",
+          icon: "success",
         });
       })();
     },
@@ -550,7 +628,7 @@ async function loadCompanyPublicSection() {
     return;
   }
   const cached = getCompanyDetailFromCache(companyId);
-  if (cached && typeof cached === 'object') {
+  if (cached && typeof cached === "object") {
     companyPublicInfo.value = {
       id: cached.id,
       name: cached.name,
@@ -562,11 +640,13 @@ async function loadCompanyPublicSection() {
     };
     return;
   }
-  getCompanyPublicInfo(companyId).then((info) => {
-    companyPublicInfo.value = info;
-  }).catch(() => {
-    companyPublicInfo.value = null;
-  });
+  getCompanyPublicInfo(companyId)
+    .then((info) => {
+      companyPublicInfo.value = info;
+    })
+    .catch(() => {
+      companyPublicInfo.value = null;
+    });
 }
 
 // storage 与 Pinia 不一致时（例如切公司后 tab 页 onShow 早于上下文写回），先对齐再算权限
@@ -578,7 +658,7 @@ async function ensureCompanyContextMatchesStorage(): Promise<void> {
     try {
       await syncCompanyInfo(stored, true);
     } catch (e) {
-      console.error('我的页：对齐公司上下文失败', e);
+      console.error("我的页：对齐公司上下文失败", e);
     }
   }
 }
@@ -593,7 +673,7 @@ watch(
     permissionsCache.value = null;
     await checkUserPermissions();
     await loadCompanyPublicSection();
-  }
+  },
 );
 
 // onShow：等全局就绪后再拉取/补齐 userInfo 与权限，再填公司公开信息（优先缓存）
@@ -604,7 +684,7 @@ onShow(async () => {
       await ensureWxSilentAuth();
       await ensureUserInfoCached(true);
     } catch (e) {
-      console.warn('我的页：补齐静默登录失败', e);
+      console.warn("我的页：补齐静默登录失败", e);
     }
   }
   await ensureCompanyContextMatchesStorage();
@@ -895,10 +975,6 @@ onShow(async () => {
   background: linear-gradient(135deg, #d299c2 0%, #fef9d7 100%);
 }
 
-.action-icon-wrapper.contact {
-  background: linear-gradient(135deg, #a8c0ff 0%, #c2e9fb 100%);
-}
-
 .action-icon-wrapper.company-switch {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
@@ -940,7 +1016,7 @@ onShow(async () => {
 }
 
 .section-title::before {
-  content: '';
+  content: "";
   position: absolute;
   left: 0;
   top: 50%;
@@ -1132,6 +1208,10 @@ onShow(async () => {
   color: #999;
   text-align: center;
   padding: 40rpx;
+}
+
+.register-tip--top {
+  margin-top: 8rpx;
 }
 
 .register-tip {

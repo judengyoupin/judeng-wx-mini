@@ -61,7 +61,7 @@
             :src="pkg.cover_image_url || '/static/default.png'"
             mode="aspectFill"
           />
-          <view v-if="getFirstTag(pkg.tags)" class="package-tag">{{ getFirstTag(pkg.tags) }}</view>
+          <ProductImageBadges :tags="pkg.tags" :out-of-stock="false" />
         </view>
         <view class="package-info">
           <view class="package-name">{{ pkg.name }}</view>
@@ -93,6 +93,7 @@ import { getCategoryTree } from '@/api/category/index';
 import { companyInfo } from '@/store/userStore';
 import PageNavBar from '@/components/PageNavBar.vue';
 import SkeletonScreen from '@/components/SkeletonScreen.vue';
+import ProductImageBadges from '@/components/ProductImageBadges.vue';
 
 const packages = ref<any[]>([]);
 const loading = ref(false);
@@ -127,11 +128,6 @@ const packagePageCache = ref<{
   packages: any[];
   timestamp: number;
 } | null>(null);
-
-const getFirstTag = (tagsStr: string | null | undefined) => {
-  if (!tagsStr || !String(tagsStr).trim()) return '';
-  return String(tagsStr).split(/[,，|｜]/)[0].trim() || '';
-};
 
 // 加载分类列表（套餐分类），成功时更新缓存
 const loadCategories = async (useCache = true) => {
@@ -374,17 +370,6 @@ onShareTimeline(() => {
   width: 100%;
   height: 100%;
   display: block;
-}
-
-.package-tag {
-  position: absolute;
-  left: 12rpx;
-  bottom: 12rpx;
-  background: #22c55e;
-  color: #fff;
-  padding: 6rpx 14rpx;
-  border-radius: 24rpx;
-  font-size: 22rpx;
 }
 
 .package-info {

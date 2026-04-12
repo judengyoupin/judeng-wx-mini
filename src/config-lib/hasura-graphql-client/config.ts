@@ -20,10 +20,12 @@ function getHeaders(): Record<string, string> {
   return headers;
 }
 
+/** 默认 30s 在弱网/Hasura 较慢时易触发 wx.request → Error: timeout，略延长以减少误报（仍无法解决「完全连不上」） */
 export const graphqlOrmifyClientConfig: GraphQLClientConfig = {
   endpoint: config.endpoint,
   headers: getHeaders(),
   debug: false,
+  timeout: 60000,
 };  
 
 export const graphqlOrmifyClientRequestListener: RequestListener = {

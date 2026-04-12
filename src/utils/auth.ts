@@ -57,7 +57,7 @@ function resolveEffectivePriceFactor(row: CompanyUserPolicyRow): number {
 
 /**
  * mode=company：users.role=wx_guest_user 用 default_for_can_view_price；其余正式成员一律可看价。
- * mode=user：company_users.can_view_price；访客无行时由 fetchCompanyGuestPolicy（访客不可看价）。
+ * mode=user：company_users.can_view_price；无 company_users 行时由 fetchCompanyPriceWhenNoMembership（公司 default_*）。
  */
 function resolveEffectiveCanViewPrice(
   row: CompanyUserPolicyRow,
@@ -79,14 +79,18 @@ function resolveEffectiveCanViewPrice(
   return userCan;
 }
 
-/** wx_guest_user 且无 company_users 行：仅按公司表策略给默认可看价与系数 */
-async function fetchCompanyGuestPolicy(companyId: number): Promise<CompanyUserRoleResult | null> {
+/**
+ * 当前公司下无 company_users 行时（含微信访客、尚未被管理员拉进成员表的账号）：
+ * 按 companies.default_for_can_view_price、default_for_price_factor 展示，与「按用户」模式下新成员默认值一致。
+ */
+async function fetchCompanyPriceWhenNoMembership(
+  companyId: number
+): Promise<CompanyUserRoleResult | null> {
   try {
     const res = (await client.execute({
       query: `
-        query GuestCompanyPolicy($id: bigint!) {
+        query CompanyDefaultsWhenNoMembership($id: bigint!) {
           companies_by_pk(id: $id) {
-            mode_for_price
             default_for_price_factor
             default_for_can_view_price
           }
@@ -95,28 +99,20 @@ async function fetchCompanyGuestPolicy(companyId: number): Promise<CompanyUserRo
       variables: { id: companyId },
     })) as {
       companies_by_pk?: {
-        mode_for_price?: string | null;
         default_for_price_factor?: number | string | null;
         default_for_can_view_price?: boolean | null;
       } | null;
     };
     const c = res?.companies_by_pk;
     if (!c) return null;
-    if (c.mode_for_price === 'company') {
-      const pf = Number(c.default_for_price_factor ?? 1);
-      return {
-        isAdmin: false,
-        canViewPrice: Boolean(c.default_for_can_view_price),
-        priceFactor: pf > 0 ? pf : 1,
-      };
-    }
+    const pf = Number(c.default_for_price_factor ?? 1);
     return {
       isAdmin: false,
-      canViewPrice: false,
-      priceFactor: 1,
+      canViewPrice: Boolean(c.default_for_can_view_price),
+      priceFactor: pf > 0 ? pf : 1,
     };
   } catch (e) {
-    console.error('fetchCompanyGuestPolicy', e);
+    console.error('fetchCompanyPriceWhenNoMembership', e);
     return null;
   }
 }
@@ -331,10 +327,7 @@ export async function getCompanyUserRole(companyId?: number): Promise<CompanyUse
     });
 
     if (!result?.company_users || result.company_users.length === 0) {
-      if (userInfo.value?.role === 'wx_guest_user') {
-        return await fetchCompanyGuestPolicy(Number(targetCompanyId));
-      }
-      return null;
+      return await fetchCompanyPriceWhenNoMembership(Number(targetCompanyId));
     }
 
     const companyUser = result.company_users[0];
