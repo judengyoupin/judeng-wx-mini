@@ -19,5 +19,5 @@ const API_BASE_DEV =
 
 // Vite 在构建时替换 import.meta.env；`npm run dev` 为 development，打包为 production
 export const projectConfig = {
-  apiBaseUrl: import.meta.env.DEV ? API_BASE_DEV : API_BASE_PROD,
+  apiBaseUrl: API_BASE_PROD//import.meta.env.DEV ? API_BASE_DEV : API_BASE_PROD,
 };
