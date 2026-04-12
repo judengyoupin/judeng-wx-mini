@@ -19,6 +19,7 @@ export interface CompanyInput {
   resource_file_url?: string;
   default_for_can_view_price?: boolean;
   default_for_price_factor?: number;
+  mode_for_price?: 'company' | 'user';
 }
 
 const COMPANY_SORT_ORDER: Record<
@@ -136,6 +137,7 @@ export async function getCompanyDetail(companyId: number) {
         resource_file_url
         default_for_can_view_price
         default_for_price_factor
+        mode_for_price
         created_at
         updated_at
         company_users(

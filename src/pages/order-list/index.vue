@@ -3,10 +3,18 @@
     <!-- 统一导航栏（带返回） -->
     <PageNavBar title="我的订单" :show-back="true" @back="goBack" />
 
-    <!-- 未登录 -->
-    <view v-if="!user_token" class="need-login">
-      <text class="need-login-text">请先登录后查看订单</text>
-      <button class="login-btn" type="button" @click="goToLogin">去登录</button>
+    <!-- 静默登录未完成 -->
+    <view v-if="!userInfo?.id" class="need-login">
+      <text class="need-login-text">正在初始化…</text>
+    </view>
+
+    <!-- 访客：需完成手机号授权（已登记手机号） -->
+    <view v-else-if="!isMember" class="need-login">
+      <text class="need-login-text">查看订单需为正式用户，请在「我的」完成手机号授权（须已向管理员登记）。</text>
+      <button class="login-btn" type="button" @click="goToMine">去「我的」</button>
+      <button class="login-btn login-btn--secondary" type="button" @click="goToPasswordLogin">
+        管理员密码登录
+      </button>
     </view>
 
     <template v-else>
@@ -128,7 +136,7 @@
                 <text class="item-quantity">×{{ item.quantity }}</text>
                 <text v-if="item.remark" class="item-remark">备注: {{ item.remark }}</text>
               </view>
-              <text v-if="canViewPrice" class="item-price">¥{{ item.product_price }}</text>
+              <text v-if="orderCanViewPrice(order)" class="item-price">¥{{ itemUnitPrice(order, item) }}</text>
               <text v-else class="item-price item-price-hidden">--</text>
             </view>
           </view>
@@ -136,18 +144,14 @@
           <view class="order-footer">
             <view class="order-totals">
               <view class="order-total-row">
-                <text class="total-label">总价:</text>
-                <text v-if="canViewPrice" class="total-price">¥{{ order.total_price }}</text>
-                <text v-else class="total-price total-price-hidden">--</text>
-              </view>
-              <view class="order-total-row">
                 <text class="total-label">总金额:</text>
-                <text v-if="canViewPrice" class="total-price">¥{{ order.total_amount }}</text>
+                <text v-if="orderCanViewPrice(order)" class="total-price">¥{{ formatMoney(order.total_amount) }}</text>
                 <text v-else class="total-price total-price-hidden">--</text>
               </view>
               <view class="order-total-row">
                 <text class="total-label">实收:</text>
-                <text class="total-price">¥{{ order.actual_amount != null ? order.actual_amount : '--' }}</text>
+                <text v-if="orderCanViewPrice(order)" class="total-price">¥{{ order.actual_amount != null ? formatMoney(order.actual_amount) : '--' }}</text>
+                <text v-else class="total-price total-price-hidden">--</text>
               </view>
             </view>
             <view class="order-arrow">›</view>
@@ -172,10 +176,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { ref, watch, computed } from 'vue';
 import { whenAppReady } from '@/utils/appReady';
 import { onLoad, onShow, onPullDownRefresh, onReachBottom } from '@dcloudio/uni-app';
-import { user_token, userInfo } from '@/store/userStore';
+import { userInfo, companyInfo } from '@/store/userStore';
+import { isRegisteredMember } from '@/utils/memberSession';
 import { getMyOrderList } from '@/api/order/index';
 import { getCompanyUserRoleCached } from '@/utils/auth';
 import { safeNavigateBack } from '@/utils/navigation';
@@ -183,7 +188,8 @@ import PageNavBar from '@/components/PageNavBar.vue';
 import SkeletonScreen from '@/components/SkeletonScreen.vue';
 
 const orders = ref<any[]>([]);
-const canViewPrice = ref(false);
+/** 按订单所属公司解析能否看价（多公司时不能用单一全局标记） */
+const canViewPriceByCompanyId = ref<Record<number, boolean>>({});
 const loading = ref(false);
 const isRefreshing = ref(false);
 const searchKeyword = ref('');
@@ -192,6 +198,79 @@ const paymentStatusFilter = ref('');
 const page = ref(1);
 const pageSize = 20;
 const hasMore = ref(true);
+
+const isMember = computed(() => isRegisteredMember(userInfo.value?.role));
+
+function parsePositiveCompanyId(raw: unknown): number | null {
+  if (raw == null || raw === '') return null;
+  const n = typeof raw === 'string' ? parseInt(raw, 10) : Number(raw);
+  if (!Number.isFinite(n) || n <= 0) return null;
+  return Math.trunc(n);
+}
+
+/** 订单所属公司：优先接口字段；仅当订单上完全未带回公司信息时用当前上下文（避免嵌套 company 被权限裁掉时整页无看价） */
+function getOrderCompanyId(order: any): number | null {
+  const fromOrder = parsePositiveCompanyId(order?.company?.id ?? order?.company_companies);
+  if (fromOrder != null) return fromOrder;
+  const noCompanyOnRow =
+    order?.company == null &&
+    (order?.company_companies === undefined ||
+      order?.company_companies === null ||
+      order?.company_companies === '');
+  if (noCompanyOnRow) {
+    return parsePositiveCompanyId(companyInfo.value?.id);
+  }
+  return null;
+}
+
+function orderCanViewPrice(order: any): boolean {
+  const cid = getOrderCompanyId(order);
+  if (cid == null) return false;
+  return canViewPriceByCompanyId.value[cid] ?? false;
+}
+
+function formatMoney(v: unknown): string {
+  return Number(v ?? 0).toFixed(2);
+}
+
+/** 订单行单价：库内 product_price 为 SKU 原价，展示需乘订单 price_factor（与下单页一致） */
+function itemUnitPrice(order: any, item: any): string {
+  const pf = Number(order?.price_factor ?? 1);
+  const base = Number(item?.product_price ?? 0);
+  return formatMoney(base * (Number.isFinite(pf) && pf > 0 ? pf : 1));
+}
+
+function extractCompanyIdsFromOrders(list: any[]): number[] {
+  const ids = new Set<number>();
+  for (const o of list) {
+    const cid = getOrderCompanyId(o);
+    if (cid != null) ids.add(cid);
+  }
+  return [...ids];
+}
+
+async function hydrateCanViewPriceMapForCompanies(companyIds: number[]) {
+  const uniq = [...new Set(companyIds.filter((id) => id > 0))];
+  if (uniq.length === 0) return;
+  const next = { ...canViewPriceByCompanyId.value };
+  for (const cid of uniq) {
+    if (next[cid] !== undefined) continue;
+    let can = false;
+    try {
+      const r = await getCompanyUserRoleCached(cid, false);
+      can = r?.canViewPrice ?? false;
+    } catch {
+      try {
+        const r = await getCompanyUserRoleCached(cid, true);
+        can = r?.canViewPrice ?? false;
+      } catch {
+        can = false;
+      }
+    }
+    next[cid] = can;
+  }
+  canViewPriceByCompanyId.value = next;
+}
 
 function orderStatusText(s: string) {
   if (s === 'pending') return '待确认';
@@ -234,6 +313,7 @@ async function loadOrders(reset = false) {
   if (reset) {
     page.value = 1;
     hasMore.value = true;
+    canViewPriceByCompanyId.value = {};
   }
 
   loading.value = true;
@@ -249,9 +329,14 @@ async function loadOrders(reset = false) {
       offset: (page.value - 1) * pageSize,
     });
 
-    if (reset) orders.value = [];
+    const chunk = result.orders || [];
+    if (reset) {
+      orders.value = [...chunk];
+    } else {
+      orders.value = [...orders.value, ...chunk];
+    }
 
-    orders.value = [...orders.value, ...(result.orders || [])];
+    await hydrateCanViewPriceMapForCompanies(extractCompanyIdsFromOrders(chunk));
 
     if (result.total <= orders.value.length) {
       hasMore.value = false;
@@ -274,7 +359,11 @@ function goBack() {
   safeNavigateBack();
 }
 
-function goToLogin() {
+function goToMine() {
+  uni.switchTab({ url: '/pages/mine/index' });
+}
+
+function goToPasswordLogin() {
   uni.navigateTo({ url: '/pages/login/index' });
 }
 
@@ -306,13 +395,11 @@ watch(paymentStatusFilter, () => {
 
 onShow(async () => {
   await whenAppReady();
-  if (user_token.value && userInfo.value?.id) {
-    getCompanyUserRoleCached().then((r) => {
-      canViewPrice.value = r?.canViewPrice ?? false;
-    });
-    loadOrders(true);
+  if (isMember.value && userInfo.value?.id) {
+    await loadOrders(true);
   } else {
-    canViewPrice.value = false;
+    canViewPriceByCompanyId.value = {};
+    orders.value = [];
   }
 });
 
@@ -347,10 +434,12 @@ onReachBottom(() => {
 .need-login-text {
   font-size: 30rpx;
   color: #999;
+  text-align: center;
+  line-height: 1.5;
 }
 
 .login-btn {
-  width: 240rpx;
+  width: 320rpx;
   height: 72rpx;
   line-height: 72rpx;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -362,6 +451,12 @@ onReachBottom(() => {
 
 .login-btn::after {
   border: none;
+}
+
+.login-btn--secondary {
+  background: #fff;
+  color: #667eea;
+  border: 2rpx solid #667eea;
 }
 
 .header-bar {

@@ -1,8 +1,14 @@
 <template>
   <view class="user-profile-page">
-    <view v-if="!user_token" class="need-login">
-      <text class="need-login-text">请先登录</text>
-      <button class="login-btn" type="button" @click="goToLogin">去登录</button>
+    <view v-if="!userInfo?.id" class="need-login">
+      <text class="need-login-text">正在初始化…</text>
+    </view>
+    <view v-else-if="!isMember" class="need-login">
+      <text class="need-login-text">编辑资料需为正式用户，请在「我的」完成手机号授权（须已向管理员登记）。</text>
+      <button class="login-btn" type="button" @click="goToMine">去「我的」</button>
+      <button class="login-btn login-btn--secondary" type="button" @click="goToPasswordLogin">
+        管理员密码登录
+      </button>
     </view>
     <template v-else>
       <view class="profile-form">
@@ -68,10 +74,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue';
+import { ref, reactive, computed } from 'vue';
 import { whenAppReady } from '@/utils/appReady';
 import { onShow } from '@dcloudio/uni-app';
-import { userInfo, user_token, updateUserInfo } from '@/store/userStore';
+import { userInfo, updateUserInfo } from '@/store/userStore';
+import { isRegisteredMember } from '@/utils/memberSession';
 import { getUser, updateUserProfile } from '@/api/user';
 import { uploadFile } from '@/api/upload';
 
@@ -91,6 +98,8 @@ const isUploading = ref(false);
 const uploadProgress = ref(0);
 const saving = ref(false);
 
+const isMember = computed(() => isRegisteredMember(userInfo.value?.role));
+
 function initForm() {
   const u = userInfo.value;
   if (u) {
@@ -101,7 +110,11 @@ function initForm() {
   }
 }
 
-function goToLogin() {
+function goToMine() {
+  uni.switchTab({ url: '/pages/mine/index' });
+}
+
+function goToPasswordLogin() {
   uni.navigateTo({ url: '/pages/login/index' });
 }
 
@@ -198,7 +211,7 @@ async function handleSave() {
 // 仅 onShow 拉数，避免首次与 onMounted 重复请求；等全局就绪后再读 userInfo
 onShow(async () => {
   await whenAppReady();
-  if (user_token.value && userInfo.value?.id) {
+  if (isMember.value && userInfo.value?.id) {
     initForm();
     // 可选：从服务端拉取最新资料
     getUser({ userId: Number(userInfo.value.id) })
@@ -231,10 +244,12 @@ onShow(async () => {
 .need-login-text {
   font-size: 30rpx;
   color: #6b7280;
+  text-align: center;
+  line-height: 1.5;
 }
 
 .login-btn {
-  width: 240rpx;
+  width: 320rpx;
   height: 88rpx;
   line-height: 88rpx;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -246,6 +261,12 @@ onShow(async () => {
 
 .login-btn::after {
   border: none;
+}
+
+.login-btn--secondary {
+  background: #fff;
+  color: #667eea;
+  border: 2rpx solid #667eea;
 }
 
 .profile-form {

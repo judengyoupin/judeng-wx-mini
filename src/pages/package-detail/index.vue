@@ -80,7 +80,7 @@ import { ref, computed } from 'vue';
 import { onLoad, onShow, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app';
 import { getPackageDetail } from '@/api/package/index';
 import { addToCart, getCartList } from '@/api/cart/index';
-import { user_token, userInfo, companyInfo } from '@/store/userStore';
+import { userInfo, companyInfo } from '@/store/userStore';
 import { getCompanyUserRoleCached } from '@/utils/auth';
 import { safeNavigateBack } from '@/utils/navigation';
 import { parseMiniProgramScene, parsePositiveIntParam } from '@/utils/sceneParams';
@@ -94,6 +94,7 @@ const packageDetail = ref<any>(null);
 const loading = ref(false);
 const priceFactor = ref(1); // 价格系数，默认为1
 const canViewPrice = ref(false);
+const canAddToCart = ref(false);
 const cartCount = ref(0);
 
 // 计算套餐总价（应用价格系数）
@@ -113,25 +114,30 @@ const totalPackagePrice = computed(() => {
 });
 
 // 加载价格系数
-const loadPriceFactor = async () => {
-  if (!user_token.value || !userInfo.value?.id) {
+const loadPriceFactor = async (forceRefresh?: boolean) => {
+  if (!userInfo.value?.id) {
     priceFactor.value = 1;
+    canViewPrice.value = false;
+    canAddToCart.value = false;
     return;
   }
 
   try {
-    const roleInfo = await getCompanyUserRoleCached();
+    const roleInfo = await getCompanyUserRoleCached(companyInfo.value?.id, forceRefresh);
     if (roleInfo) {
       priceFactor.value = roleInfo.priceFactor || 1;
       canViewPrice.value = roleInfo.canViewPrice ?? false;
+      canAddToCart.value = true;
     } else {
       priceFactor.value = 1;
       canViewPrice.value = false;
+      canAddToCart.value = false;
     }
   } catch (error) {
     console.error('加载价格系数失败:', error);
     priceFactor.value = 1;
     canViewPrice.value = false;
+    canAddToCart.value = false;
   }
 };
 
@@ -159,16 +165,16 @@ const loadPackageDetail = async () => {
 
 // 加入购物车
 const handleAddToCart = async () => {
-  if (!user_token.value) {
+  if (!userInfo.value?.id) {
+    uni.showToast({ title: '请稍候…', icon: 'none' });
+    return;
+  }
+
+  if (!canAddToCart.value) {
     uni.showToast({
-      title: '请先登录',
+      title: '请联系管理员授权',
       icon: 'none',
     });
-    setTimeout(() => {
-      uni.navigateTo({
-        url: '/pages/login/index',
-      });
-    }, 1500);
     return;
   }
 
@@ -234,7 +240,7 @@ const goCart = () => {
 
 // 加载购物车数量（角标）
 const loadCartCount = async () => {
-  if (!user_token.value || !companyInfo.value?.id) {
+  if (!userInfo.value?.id || !companyInfo.value?.id) {
     cartCount.value = 0;
     return;
   }
@@ -286,7 +292,10 @@ onLoad((options?: Record<string, string | undefined>) => {
 });
 
 onShow(() => {
-  loadCartCount();
+  void loadCartCount();
+  if (packageId.value && userInfo.value?.id) {
+    void loadPriceFactor(true);
+  }
 });
 
 // 分享带 companyId，别人点开可进入对应公司

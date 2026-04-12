@@ -10,6 +10,7 @@
       <!-- 默认：手机号快捷登录为主 -->
       <template v-if="!showPasswordMode">
         <view class="form-lead">授权手机号，一键登录</view>
+        <view class="form-private-hint">仅已向管理员登记的手机号可完成授权；未登记用户无法自动开通。</view>
         <view class="quick-login-block">
           <button
             class="quick-login-btn"
@@ -75,10 +76,10 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import { onLoad } from '@dcloudio/uni-app';
-import { passwordLogin, wechatLogin } from '@/api/user/index';
-import { setUserContext } from '@/store/userStore';
-import { refreshManagedCompanyAfterLogin } from '@/utils/auth';
-import { syncCompanyInfo } from '@/api/company/index';
+import { passwordLogin } from '@/api/user/index';
+import { setUserContext, clearUserContext } from '@/store/userStore';
+import { completePhoneNumberAuth } from '@/utils/wechatPhoneAuth';
+import { syncCompanyContextAfterAuthLogin } from '@/utils/postAuthCompanySync';
 
 const showPassword = ref(false);
 /** false：主界面为手机号快捷登录；true：展示账号密码表单 */
@@ -122,14 +123,16 @@ const handlePasswordLogin = async () => {
         userId: result.userId,
       });
 
-      // 登录后强制刷新角色缓存，若为公司管理员则一次请求拿到管理的公司并写入上下文
       try {
-        const managedCompanyId = await refreshManagedCompanyAfterLogin();
-        if (managedCompanyId != null) {
-          await syncCompanyInfo(managedCompanyId);
-        }
-      } catch (error) {
-        console.error('获取公司信息失败:', error);
+        await syncCompanyContextAfterAuthLogin(result.user || { id: result.userId });
+      } catch (error: any) {
+        clearUserContext();
+        uni.showToast({
+          title: error?.message || '登录失败',
+          icon: 'none',
+          duration: 3200,
+        });
+        return;
       }
 
       uni.showToast({
@@ -159,69 +162,37 @@ const handlePasswordLogin = async () => {
   }
 };
 
-// 微信授权登录
+// 微信手机号快捷登录（与「我的」页共用 completePhoneNumberAuth）
 const handleWechatLogin = async (e: any) => {
-  console.log('微信授权回调:', e);
-
-  if (e.detail.errMsg === 'getPhoneNumber:ok') {
-    isLoading.value = true;
-
-    try {
-      const result = await wechatLogin({
-        code: e.detail.code,
-        codeSource: 'phone',
-      });
-
-      if (result && result.token) {
-        // 保存用户信息（setUserContext 内部会保存到本地存储）
-        setUserContext({
-          user: result.user || { id: result.userId },
-          token: result.token,
-          userId: result.userId,
-        });
-
-        // 登录后强制刷新角色缓存，若为公司管理员则一次请求拿到管理的公司并写入上下文
-        try {
-          const managedCompanyId = await refreshManagedCompanyAfterLogin();
-          if (managedCompanyId != null) {
-            await syncCompanyInfo(managedCompanyId);
-          }
-        } catch (error) {
-          console.error('获取公司信息失败:', error);
-        }
-
-        uni.showToast({
-          title: '登录成功',
-          icon: 'success',
-        });
-
-        // 延迟跳转
-        setTimeout(() => {
-          const pages = getCurrentPages();
-          if (pages.length > 1) {
-            uni.navigateBack();
-          } else {
-            uni.switchTab({
-              url: '/pages/index/index',
-            });
-          }
-        }, 1500);
-      }
-    } catch (error: any) {
+  isLoading.value = true;
+  try {
+    const { ok, message } = await completePhoneNumberAuth(e?.detail ?? {});
+    if (ok) {
       uni.showToast({
-        title: error.message || '登录失败',
-        icon: 'none',
+        title: '登录成功',
+        icon: 'success',
       });
-    } finally {
-      isLoading.value = false;
+      setTimeout(() => {
+        const pages = getCurrentPages();
+        if (pages.length > 1) {
+          uni.navigateBack();
+        } else {
+          uni.switchTab({
+            url: '/pages/index/index',
+          });
+        }
+      }, 1500);
+      return;
     }
-  } else {
-    // 用户拒绝授权
-    console.log('用户拒绝授权手机号');
-    uni.showToast({
-      title: '您拒绝了授权',
-      icon: 'none',
-    });
+    if (message) {
+      uni.showToast({
+        title: message,
+        icon: 'none',
+        duration: 3200,
+      });
+    }
+  } finally {
+    isLoading.value = false;
   }
 };
 
@@ -270,8 +241,17 @@ onLoad((options) => {
   color: #444444;
   text-align: center;
   line-height: 1.5;
-  margin-bottom: 48rpx;
+  margin-bottom: 24rpx;
   font-weight: 500;
+}
+
+.form-private-hint {
+  font-size: 24rpx;
+  color: #888888;
+  text-align: center;
+  line-height: 1.5;
+  margin-bottom: 40rpx;
+  padding: 0 16rpx;
 }
 
 .quick-login-block {

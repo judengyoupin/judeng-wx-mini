@@ -97,7 +97,7 @@ import { whenAppReady } from '@/utils/appReady';
 import { onLoad, onShow } from '@dcloudio/uni-app';
 import PageNavBar from '@/components/PageNavBar.vue';
 import SkeletonScreen from '@/components/SkeletonScreen.vue';
-import { userInfo, user_token, companyInfo } from '@/store/userStore';
+import { userInfo, companyInfo } from '@/store/userStore';
 import { getCartList, deleteCartItems } from '@/api/cart/index';
 import { getAddressList, type AddressItem } from '@/api/address/index';
 import { createOrder } from '@/api/order/index';
@@ -138,10 +138,10 @@ function goBack() {
   safeNavigateBack();
 }
 
-async function loadPriceFactor() {
-  if (!user_token.value || !userInfo.value?.id) return;
+async function loadPriceFactor(forceRefresh?: boolean) {
+  if (!userInfo.value?.id) return;
   try {
-    const roleInfo = await getCompanyUserRoleCached();
+    const roleInfo = await getCompanyUserRoleCached(companyInfo.value?.id, forceRefresh);
     priceFactor.value = roleInfo?.priceFactor ?? 1;
     canViewPrice.value = roleInfo?.canViewPrice ?? false;
   } catch {
@@ -151,13 +151,13 @@ async function loadPriceFactor() {
 }
 
 async function loadCartAndFilter() {
-  if (!user_token.value || !userInfo.value?.id || !companyInfo.value?.id) {
+  if (!userInfo.value?.id || !companyInfo.value?.id) {
     orderItems.value = [];
     return;
   }
   loading.value = true;
   try {
-    await loadPriceFactor();
+    await loadPriceFactor(true);
     const list = await getCartList();
     const idSet = new Set(cartIds.value);
     orderItems.value = list.filter((item: any) => idSet.has(item.id));
@@ -176,7 +176,7 @@ async function loadCartAndFilter() {
 
 async function loadAddressList() {
   const userId = userInfo.value?.id;
-  if (!userId || !user_token.value) return;
+  if (!userId) return;
   const prevSelectedId = selectedAddress.value?.id;
   try {
     addressList.value = await getAddressList(userId);
@@ -294,6 +294,9 @@ onMounted(async () => {
 
 onShow(async () => {
   await whenAppReady();
+  if (orderItems.value.length > 0) {
+    await loadPriceFactor(true);
+  }
   loadAddressList();
 });
 

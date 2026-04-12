@@ -88,9 +88,9 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import { whenAppReady } from '@/utils/appReady';
-import { onLoad } from '@dcloudio/uni-app';
+import { onLoad, onShow } from '@dcloudio/uni-app';
 import { getProductList } from '@/api/product/index';
-import { userInfo, user_token, companyInfo } from '@/store/userStore';
+import { userInfo, companyInfo } from '@/store/userStore';
 import { getCompanyUserRoleCached } from '@/utils/auth';
 import { safeNavigateBack } from '@/utils/navigation';
 import PageNavBar from '@/components/PageNavBar.vue';
@@ -136,14 +136,14 @@ const isProductOutOfStock = (product: any) => {
   return Number(total) <= 0;
 };
 
-const checkPermissions = async () => {
-  if (!user_token.value) {
+const checkPermissions = async (forceRefresh?: boolean) => {
+  if (!userInfo.value?.id) {
     canViewPrice.value = false;
     priceFactor.value = 1;
     return;
   }
   try {
-    const roleInfo = await getCompanyUserRoleCached();
+    const roleInfo = await getCompanyUserRoleCached(companyInfo.value?.id, forceRefresh);
     if (roleInfo) {
       canViewPrice.value = roleInfo.canViewPrice;
       priceFactor.value = roleInfo.priceFactor || 1;
@@ -242,6 +242,11 @@ onLoad(async (options?) => {
 
   await checkPermissions();
   loadData(true);
+});
+
+onShow(async () => {
+  await whenAppReady();
+  await checkPermissions(true);
 });
 </script>
 

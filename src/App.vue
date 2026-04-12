@@ -10,8 +10,8 @@ import {
   getDefaultCompanyIdFromStorage,
   ensureUserInfoCached,
 } from "@/store/userStore";
-import { addCompanyUserAsNormal, getCompanyUserDefaults } from "@/api/company-user";
-import { isCompanyUser, getCompanyUserRoleCached, clearCompanyUserRoleCache } from "@/utils/auth";
+import { ensureWxSilentAuth } from "@/utils/wxSilentAuth";
+import { getCompanyUserRoleCached, clearCompanyUserRoleCache } from "@/utils/auth";
 import { setAppReady } from "@/utils/appReady";
 import { parseMiniProgramScene } from "@/utils/sceneParams";
 
@@ -80,7 +80,7 @@ async function resolveInitialCompanyId(launchOptions: Record<string, unknown> | 
 
 /** 全局请求就绪后再允许页面请求：onLaunch 内完成公司 ID、公司信息、用户信息等后再 setAppReady，页面请求前 await whenAppReady() */
 
-/** 同步指定公司并刷新用户/角色（含自动注册为公司普通用户）；由 onLaunch、「切换公司」页、登录绑定公司等显式调用 */
+/** 同步指定公司并刷新用户/角色；公司成员仅能通过管理员添加，不在此自动写入 company_users */
 async function applyCompanyAndRefreshUserRole(companyId: number) {
   try {
     await syncCompanyInfo(companyId, true);
@@ -91,23 +91,6 @@ async function applyCompanyAndRefreshUserRole(companyId: number) {
   if (user_token.value) {
     try {
       await ensureUserInfoCached(true);
-      const userId = Number(userInfo.value?.id ?? 0);
-        if (userId && companyId) {
-          const already = await isCompanyUser(companyId);
-          if (!already) {
-            try {
-              const defaults = await getCompanyUserDefaults(companyId);
-              await addCompanyUserAsNormal(userId, companyId, {
-                can_view_price: defaults.can_view_price,
-                price_factor: defaults.price_factor,
-              });
-              clearCompanyUserRoleCache();
-              console.log("已自动注册为当前公司普通用户");
-            } catch (err) {
-              console.warn("自动注册公司用户失败（可能已存在）:", err);
-            }
-          }
-        }
       await getCompanyUserRoleCached(undefined, true);
     } catch (e) {
       console.error("预拉用户/角色失败:", e);
@@ -119,6 +102,7 @@ onLaunch(async (options) => {
   console.log("App Launch", options);
   try {
     restoreUserFromStorage();
+    await ensureWxSilentAuth();
 
     const finalCompanyId = await resolveInitialCompanyId(options as unknown as Record<string, unknown>);
     if (finalCompanyId == null) {
@@ -136,19 +120,22 @@ onLaunch(async (options) => {
  * 非冷启动入口（如从分享卡进入）：仅当本地尚无公司时，才用本次进入链接里的 companyId（不覆盖用户已选公司）
  */
 onShow(() => {
-  try {
-    if (readValidCompanyIdFromStorage() != null) {
-      return;
+  void (async () => {
+    try {
+      await ensureWxSilentAuth();
+      if (readValidCompanyIdFromStorage() != null) {
+        return;
+      }
+      const enterOptions = (uni as any).getEnterOptionsSync?.() as Record<string, unknown> | undefined;
+      const fromLink = extractCompanyIdFromEntryOptions(enterOptions);
+      if (fromLink == null) return;
+      uni.setStorageSync("companyId", String(fromLink));
+      console.log("本地无公司，使用本次进入链接中的 companyId:", fromLink);
+      void applyCompanyAndRefreshUserRole(fromLink);
+    } catch (e) {
+      console.error("onShow 解析入口公司失败:", e);
     }
-    const enterOptions = (uni as any).getEnterOptionsSync?.() as Record<string, unknown> | undefined;
-    const fromLink = extractCompanyIdFromEntryOptions(enterOptions);
-    if (fromLink == null) return;
-    uni.setStorageSync("companyId", String(fromLink));
-    console.log("本地无公司，使用本次进入链接中的 companyId:", fromLink);
-    void applyCompanyAndRefreshUserRole(fromLink);
-  } catch (e) {
-    console.error("onShow 解析入口公司失败:", e);
-  }
+  })();
 });
 
 onHide(() => {

@@ -22,22 +22,39 @@ export async function getCompanyUserList(params: {
   companyId: number;
   limit?: number;
   offset?: number;
-  role?: 'admin' | 'user';
+  /** company_users.role，或 wx_guest_user 表示按 users.role 筛选访客 */
+  role?: 'admin' | 'user' | 'wx_guest_user';
   level?: CompanyUserLevel;
 }) {
-  const role = params.role === 'admin' || params.role === 'user' ? params.role : undefined;
+  const companyRole =
+    params.role === 'admin' || params.role === 'user' ? params.role : undefined;
+  const filterPlatformGuest = params.role === 'wx_guest_user';
   const level = params.level && LEVEL_VALUES.includes(params.level) ? params.level : undefined;
-  const conditions = ['{ company_companies: { _eq: $companyId } }'];
+
+  const andParts: string[] = ['{ company_companies: { _eq: $companyId } }'];
   const varDecls = ['$companyId: bigint!', '$limit: Int', '$offset: Int'];
-  if (role) {
-    conditions.push('{ role: { _eq: $role } }');
-    varDecls.push('$role: String!');
+
+  if (companyRole) {
+    andParts.push('{ role: { _eq: $companyRole } }');
+    varDecls.push('$companyRole: String!');
   }
   if (level) {
-    conditions.push('{ level: { _eq: $level } }');
+    andParts.push('{ level: { _eq: $level } }');
     varDecls.push('$level: String!');
   }
-  const whereBody = conditions.length > 1 ? `{ _and: [ ${conditions.join(', ')} ] }` : conditions[0];
+
+  const userPredicates: string[] = [];
+  if (filterPlatformGuest) {
+    userPredicates.push('{ role: { _eq: $userPlatformRole } }');
+    varDecls.push('$userPlatformRole: String!');
+  }
+  if (userPredicates.length === 1) {
+    andParts.push(`{ user: ${userPredicates[0]} }`);
+  } else if (userPredicates.length > 1) {
+    andParts.push(`{ user: { _and: [ ${userPredicates.join(', ')} ] } }`);
+  }
+
+  const whereBody = `{ _and: [ ${andParts.join(', ')} ] }`;
 
   const query = `
     query GetCompanyUserList(${varDecls.join(', ')}) {
@@ -58,6 +75,7 @@ export async function getCompanyUserList(params: {
           mobile
           nickname
           avatar_url
+          role
         }
       }
       company_users_aggregate(where: ${whereBody}) {
@@ -73,8 +91,9 @@ export async function getCompanyUserList(params: {
     limit: params.limit || 20,
     offset: params.offset || 0,
   };
-  if (role) variables.role = role;
+  if (companyRole) variables.companyRole = companyRole;
   if (level) variables.level = level;
+  if (filterPlatformGuest) variables.userPlatformRole = 'wx_guest_user';
 
   const result = await client.execute({
     query,

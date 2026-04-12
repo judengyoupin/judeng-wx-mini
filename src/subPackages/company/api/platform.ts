@@ -21,6 +21,8 @@ export interface CompanyInput {
   default_for_can_view_price?: boolean;
   /** 公司配置的初始用户价格系数，默认 1 */
   default_for_price_factor?: number;
+  /** company：全公司统一系数/可看价；user：按成员单独设置 */
+  mode_for_price?: 'company' | 'user';
 }
 
 const COMPANY_SORT_ORDER: Record<
@@ -135,6 +137,7 @@ export async function getCompanyDetail(companyId: number) {
         resource_file_url
         default_for_can_view_price
         default_for_price_factor
+        mode_for_price
         created_at
         updated_at
         company_users(

@@ -8,11 +8,14 @@ export async function getUserList(params: {
   limit?: number;
   offset?: number;
   keyword?: string;
-  role?: 'user' | 'admin';
+  role?: 'user' | 'admin' | 'wx_guest_user';
 }) {
   const hasKeyword = params.keyword != null && String(params.keyword).trim() !== '';
   const keyword = hasKeyword ? `%${String(params.keyword).trim()}%` : '';
-  const role = params.role === 'user' || params.role === 'admin' ? params.role : undefined;
+  const role =
+    params.role === 'user' || params.role === 'admin' || params.role === 'wx_guest_user'
+      ? params.role
+      : undefined;
 
   const conditions: string[] = [];
   if (hasKeyword) {
@@ -79,7 +82,7 @@ export async function getUserList(params: {
 /**
  * 更新用户角色
  */
-export async function updateUserRole(userId: number, role: 'user' | 'admin') {
+export async function updateUserRole(userId: number, role: 'user' | 'admin' | 'wx_guest_user') {
   const mutation = `
     mutation UpdateUserRole($userId: bigint!, $role: String!) {
       update_users_by_pk(

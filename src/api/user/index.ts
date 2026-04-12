@@ -38,11 +38,35 @@ export const passwordLogin = async (params: {
 };
 
 /**
+ * 小程序静默登录（wx.login code → openid → wx_guest_user）
+ */
+export const wxSilentLogin = async (
+  code: string
+): Promise<{ userId: number; token: string; user: any }> => {
+  const response = await uni.request({
+    url: `${projectConfig.apiBaseUrl}/api/auth/wx-silent-login`,
+    method: 'POST',
+    data: { code },
+    header: {
+      'Content-Type': 'application/json',
+    },
+  });
+
+  const data = response.data as Record<string, unknown> | null | undefined;
+  if (response.statusCode !== 200 || !data) {
+    throw new Error((data && typeof data.error === 'string' ? data.error : null) || '静默登录失败');
+  }
+
+  if (data.error) {
+    throw new Error(String(data.error));
+  }
+
+  return data as { userId: number; token: string; user: any };
+};
+
+/**
  * 微信授权登录（手机号授权）
- * @param params 登录参数
- * @param params.code 微信授权code
- * @param params.codeSource 授权来源（phone表示手机号授权）
- * @returns 用户信息和token
+ * 后端不合并访客数据、不向正式用户写入 wx_mini_openid；openid 仅保留在访客行。
  */
 export const wechatLogin = async (params: {
   code: string;

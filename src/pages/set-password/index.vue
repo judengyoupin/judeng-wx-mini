@@ -1,8 +1,14 @@
 <template>
   <view class="set-password-page">
-    <view v-if="!user_token" class="need-login">
-      <text class="need-login-text">请先登录</text>
-      <button class="login-btn" type="button" @click="goToLogin">去登录</button>
+    <view v-if="!userInfo?.id" class="need-login">
+      <text class="need-login-text">正在初始化…</text>
+    </view>
+    <view v-else-if="!isMember" class="need-login">
+      <text class="need-login-text">设置密码需为正式用户，请在「我的」完成手机号授权（须已向管理员登记）。</text>
+      <button class="login-btn" type="button" @click="goToMine">去「我的」</button>
+      <button class="login-btn login-btn--secondary" type="button" @click="goToPasswordLogin">
+        管理员密码登录
+      </button>
     </view>
     <template v-else>
       <view class="password-form">
@@ -68,10 +74,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue';
+import { ref, reactive, computed } from 'vue';
 import { whenAppReady } from '@/utils/appReady';
 import { onShow } from '@dcloudio/uni-app';
-import { user_token } from '@/store/userStore';
+import { userInfo } from '@/store/userStore';
+import { isRegisteredMember } from '@/utils/memberSession';
 import { setPassword } from '@/api/user';
 
 const form = reactive({
@@ -85,7 +92,13 @@ const showNew = ref(false);
 const showConfirm = ref(false);
 const saving = ref(false);
 
-function goToLogin() {
+const isMember = computed(() => isRegisteredMember(userInfo.value?.role));
+
+function goToMine() {
+  uni.switchTab({ url: '/pages/mine/index' });
+}
+
+function goToPasswordLogin() {
   uni.navigateTo({ url: '/pages/login/index' });
 }
 
@@ -149,10 +162,12 @@ onShow(async () => {
 .need-login-text {
   font-size: 30rpx;
   color: #6b7280;
+  text-align: center;
+  line-height: 1.5;
 }
 
 .login-btn {
-  width: 240rpx;
+  width: 320rpx;
   height: 88rpx;
   line-height: 88rpx;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -164,6 +179,12 @@ onShow(async () => {
 
 .login-btn::after {
   border: none;
+}
+
+.login-btn--secondary {
+  background: #fff;
+  color: #667eea;
+  border: 2rpx solid #667eea;
 }
 
 .password-form {

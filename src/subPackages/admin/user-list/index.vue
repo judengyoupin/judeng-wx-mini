@@ -34,6 +34,13 @@
         >
           管理员
         </view>
+        <view
+          class="filter-tab"
+          :class="{ active: roleFilter === 'wx_guest_user' }"
+          @click="setRoleFilter('wx_guest_user')"
+        >
+          微信访客
+        </view>
       </view>
       <view class="count-row">
         <text class="count-text">{{ countText }}</text>
@@ -67,11 +74,23 @@
           <view class="user-details">
             <view class="user-name-row">
               <text class="user-name">{{ user.nickname || '未设置昵称' }}</text>
-              <view class="user-role-badge" :class="{ 'role-admin': user.role === 'admin' }">
-                {{ user.role === 'admin' ? '管理员' : '普通用户' }}
+              <view
+                class="user-role-badge"
+                :class="{
+                  'role-admin': user.role === 'admin',
+                  'role-guest': user.role === 'wx_guest_user',
+                }"
+              >
+                {{
+                  user.role === 'admin'
+                    ? '管理员'
+                    : user.role === 'wx_guest_user'
+                      ? '微信访客'
+                      : '普通用户'
+                }}
               </view>
             </view>
-            <text class="user-mobile">{{ user.mobile }}</text>
+            <text class="user-mobile">{{ user.mobile || '—' }}</text>
           </view>
         </view>
         <view class="user-actions">
@@ -144,6 +163,13 @@
               >
                 管理员
               </view>
+              <view
+                class="role-option"
+                :class="{ active: selectedRoleIndex === 2 }"
+                @click="selectedRoleIndex = 2"
+              >
+                微信访客
+              </view>
             </view>
           </view>
         </view>
@@ -168,7 +194,7 @@ const page = ref(1);
 const pageSize = 20;
 const hasMore = ref(true);
 const keyword = ref('');
-const roleFilter = ref<'' | 'user' | 'admin'>('');
+const roleFilter = ref<'' | 'user' | 'admin' | 'wx_guest_user'>('');
 const totalCount = ref(0);
 
 // 当前筛选下的用户数量文案
@@ -176,13 +202,14 @@ const countText = computed(() => {
   const n = totalCount.value;
   if (roleFilter.value === 'user') return `普通用户 共 ${n} 人`;
   if (roleFilter.value === 'admin') return `管理员 共 ${n} 人`;
+  if (roleFilter.value === 'wx_guest_user') return `微信访客 共 ${n} 人`;
   return `共 ${n} 人`;
 });
 
 // 弹窗相关
 const showEditModal = ref(false);
 const editingUser = ref<any>(null);
-const userRoles = ['普通用户', '管理员'];
+const PLATFORM_ROLE_VALUES = ['user', 'admin', 'wx_guest_user'] as const;
 const selectedRoleIndex = ref(0);
 
 // 加载用户列表
@@ -232,7 +259,7 @@ const loadUsers = async (reset = false) => {
 };
 
 // 角色筛选
-const setRoleFilter = (role: '' | 'user' | 'admin') => {
+const setRoleFilter = (role: '' | 'user' | 'admin' | 'wx_guest_user') => {
   roleFilter.value = role;
   loadUsers(true);
 };
@@ -264,7 +291,9 @@ const onRefresh = () => {
 // 编辑用户
 const editUser = (user: any) => {
   editingUser.value = user;
-  selectedRoleIndex.value = user.role === 'admin' ? 1 : 0;
+  const r = user.role;
+  selectedRoleIndex.value =
+    r === 'admin' ? 1 : r === 'wx_guest_user' ? 2 : 0;
   showEditModal.value = true;
 };
 
@@ -275,7 +304,7 @@ const handleSave = async () => {
   }
 
   const roleIndex = Number(selectedRoleIndex.value);
-  const newRole = roleIndex === 1 ? 'admin' : 'user';
+  const newRole = PLATFORM_ROLE_VALUES[roleIndex] ?? 'user';
 
   // 如果角色没有变化，直接关闭
   if (editingUser.value.role === newRole) {
@@ -339,6 +368,7 @@ onShow(() => {
 
 .filter-row {
   display: flex;
+  flex-wrap: wrap;
   gap: 20rpx;
   margin-top: 20rpx;
 }
@@ -466,6 +496,11 @@ onShow(() => {
 .user-role-badge.role-admin {
   background: #e0e7ff;
   color: #667eea;
+}
+
+.user-role-badge.role-guest {
+  background: #fef3c7;
+  color: #b45309;
 }
 
 .user-mobile {

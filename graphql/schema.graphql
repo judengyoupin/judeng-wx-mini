@@ -2584,10 +2584,10 @@ type companies {
   contact_code: String
   created_at: timestamptz!
 
-  """公司配置的初始用户能否查看价格"""
+  """公司配置的初始用户/未登录用户能否查看价格，取决于mode_for_price"""
   default_for_can_view_price: Boolean!
 
-  """公司配置的初始用户价格系数"""
+  """公司配置的初始用户价格/全局系数，取决于mode_for_price"""
   default_for_price_factor: numeric!
 
   """富文本，公司介绍"""
@@ -2605,6 +2605,9 @@ type companies {
 
   """公司logo"""
   logo_url: String
+
+  """价格系数模式：1.company公司统一修改价格系数 2.user每个用户单独定制价格系数"""
+  mode_for_price: String!
 
   """公司名称"""
   name: String!
@@ -2791,7 +2794,7 @@ type companies_aggregate_fields {
 
 """aggregate avg on columns"""
 type companies_avg_fields {
-  """公司配置的初始用户价格系数"""
+  """公司配置的初始用户价格/全局系数，取决于mode_for_price"""
   default_for_price_factor: Float
   id: Float
 }
@@ -2823,6 +2826,7 @@ input companies_bool_exp {
   hidden_product_ids: bigint_array_comparison_exp
   id: bigint_comparison_exp
   logo_url: String_comparison_exp
+  mode_for_price: String_comparison_exp
   name: String_comparison_exp
   orders: orders_bool_exp
   orders_aggregate: orders_aggregate_bool_exp
@@ -2857,7 +2861,7 @@ enum companies_constraint {
 input type for incrementing numeric columns in table "companies"
 """
 input companies_inc_input {
-  """公司配置的初始用户价格系数"""
+  """公司配置的初始用户价格/全局系数，取决于mode_for_price"""
   default_for_price_factor: numeric
   id: bigint
 }
@@ -2884,10 +2888,10 @@ input companies_insert_input {
   contact_code: String
   created_at: timestamptz
 
-  """公司配置的初始用户能否查看价格"""
+  """公司配置的初始用户/未登录用户能否查看价格，取决于mode_for_price"""
   default_for_can_view_price: Boolean
 
-  """公司配置的初始用户价格系数"""
+  """公司配置的初始用户价格/全局系数，取决于mode_for_price"""
   default_for_price_factor: numeric
 
   """富文本，公司介绍"""
@@ -2905,6 +2909,9 @@ input companies_insert_input {
 
   """公司logo"""
   logo_url: String
+
+  """价格系数模式：1.company公司统一修改价格系数 2.user每个用户单独定制价格系数"""
+  mode_for_price: String
 
   """公司名称"""
   name: String
@@ -2940,7 +2947,7 @@ type companies_max_fields {
   contact_code: String
   created_at: timestamptz
 
-  """公司配置的初始用户价格系数"""
+  """公司配置的初始用户价格/全局系数，取决于mode_for_price"""
   default_for_price_factor: numeric
 
   """富文本，公司介绍"""
@@ -2958,6 +2965,9 @@ type companies_max_fields {
 
   """公司logo"""
   logo_url: String
+
+  """价格系数模式：1.company公司统一修改价格系数 2.user每个用户单独定制价格系数"""
+  mode_for_price: String
 
   """公司名称"""
   name: String
@@ -2989,7 +2999,7 @@ type companies_min_fields {
   contact_code: String
   created_at: timestamptz
 
-  """公司配置的初始用户价格系数"""
+  """公司配置的初始用户价格/全局系数，取决于mode_for_price"""
   default_for_price_factor: numeric
 
   """富文本，公司介绍"""
@@ -3007,6 +3017,9 @@ type companies_min_fields {
 
   """公司logo"""
   logo_url: String
+
+  """价格系数模式：1.company公司统一修改价格系数 2.user每个用户单独定制价格系数"""
+  mode_for_price: String
 
   """公司名称"""
   name: String
@@ -3070,6 +3083,7 @@ input companies_order_by {
   hidden_product_ids: order_by
   id: order_by
   logo_url: order_by
+  mode_for_price: order_by
   name: order_by
   orders_aggregate: orders_aggregate_order_by
   packages_aggregate: packages_aggregate_order_by
@@ -3127,6 +3141,9 @@ enum companies_select_column {
   logo_url
 
   """column name"""
+  mode_for_price
+
+  """column name"""
   name
 
   """column name"""
@@ -3160,10 +3177,10 @@ input companies_set_input {
   contact_code: String
   created_at: timestamptz
 
-  """公司配置的初始用户能否查看价格"""
+  """公司配置的初始用户/未登录用户能否查看价格，取决于mode_for_price"""
   default_for_can_view_price: Boolean
 
-  """公司配置的初始用户价格系数"""
+  """公司配置的初始用户价格/全局系数，取决于mode_for_price"""
   default_for_price_factor: numeric
 
   """富文本，公司介绍"""
@@ -3182,6 +3199,9 @@ input companies_set_input {
   """公司logo"""
   logo_url: String
 
+  """价格系数模式：1.company公司统一修改价格系数 2.user每个用户单独定制价格系数"""
+  mode_for_price: String
+
   """公司名称"""
   name: String
 
@@ -3198,21 +3218,21 @@ input companies_set_input {
 
 """aggregate stddev on columns"""
 type companies_stddev_fields {
-  """公司配置的初始用户价格系数"""
+  """公司配置的初始用户价格/全局系数，取决于mode_for_price"""
   default_for_price_factor: Float
   id: Float
 }
 
 """aggregate stddev_pop on columns"""
 type companies_stddev_pop_fields {
-  """公司配置的初始用户价格系数"""
+  """公司配置的初始用户价格/全局系数，取决于mode_for_price"""
   default_for_price_factor: Float
   id: Float
 }
 
 """aggregate stddev_samp on columns"""
 type companies_stddev_samp_fields {
-  """公司配置的初始用户价格系数"""
+  """公司配置的初始用户价格/全局系数，取决于mode_for_price"""
   default_for_price_factor: Float
   id: Float
 }
@@ -3244,10 +3264,10 @@ input companies_stream_cursor_value_input {
   contact_code: String
   created_at: timestamptz
 
-  """公司配置的初始用户能否查看价格"""
+  """公司配置的初始用户/未登录用户能否查看价格，取决于mode_for_price"""
   default_for_can_view_price: Boolean
 
-  """公司配置的初始用户价格系数"""
+  """公司配置的初始用户价格/全局系数，取决于mode_for_price"""
   default_for_price_factor: numeric
 
   """富文本，公司介绍"""
@@ -3266,6 +3286,9 @@ input companies_stream_cursor_value_input {
   """公司logo"""
   logo_url: String
 
+  """价格系数模式：1.company公司统一修改价格系数 2.user每个用户单独定制价格系数"""
+  mode_for_price: String
+
   """公司名称"""
   name: String
 
@@ -3282,7 +3305,7 @@ input companies_stream_cursor_value_input {
 
 """aggregate sum on columns"""
 type companies_sum_fields {
-  """公司配置的初始用户价格系数"""
+  """公司配置的初始用户价格/全局系数，取决于mode_for_price"""
   default_for_price_factor: numeric
   id: bigint
 }
@@ -3328,6 +3351,9 @@ enum companies_update_column {
   logo_url
 
   """column name"""
+  mode_for_price
+
+  """column name"""
   name
 
   """column name"""
@@ -3356,21 +3382,21 @@ input companies_updates {
 
 """aggregate var_pop on columns"""
 type companies_var_pop_fields {
-  """公司配置的初始用户价格系数"""
+  """公司配置的初始用户价格/全局系数，取决于mode_for_price"""
   default_for_price_factor: Float
   id: Float
 }
 
 """aggregate var_samp on columns"""
 type companies_var_samp_fields {
-  """公司配置的初始用户价格系数"""
+  """公司配置的初始用户价格/全局系数，取决于mode_for_price"""
   default_for_price_factor: Float
   id: Float
 }
 
 """aggregate variance on columns"""
 type companies_variance_fields {
-  """公司配置的初始用户价格系数"""
+  """公司配置的初始用户价格/全局系数，取决于mode_for_price"""
   default_for_price_factor: Float
   id: Float
 }
@@ -13558,7 +13584,7 @@ type users {
   id: bigint!
 
   """手机号（唯一）"""
-  mobile: String!
+  mobile: String
 
   """昵称"""
   nickname: String
@@ -13602,9 +13628,12 @@ type users {
   """密码，md5 32位小写"""
   password: String
 
-  """用户角色 1.user（普通用户）2.admin（平台管理员）"""
+  """用户角色 1.user（普通用户）2.admin（平台管理员）3.wx_guest_user（微信的匿名访客）"""
   role: String!
   updated_at: timestamptz!
+
+  """role= wx_guest_user时用户的小程序openid"""
+  wx_mini_openid: String
 }
 
 """
@@ -13661,6 +13690,7 @@ input users_bool_exp {
   password: String_comparison_exp
   role: String_comparison_exp
   updated_at: timestamptz_comparison_exp
+  wx_mini_openid: String_comparison_exp
 }
 
 """
@@ -13676,6 +13706,11 @@ enum users_constraint {
   unique or primary key constraint on columns "id"
   """
   users_pkey
+
+  """
+  unique or primary key constraint on columns "wx_mini_openid"
+  """
+  users_wx_mini_openid_key
 }
 
 """
@@ -13711,9 +13746,12 @@ input users_insert_input {
   """密码，md5 32位小写"""
   password: String
 
-  """用户角色 1.user（普通用户）2.admin（平台管理员）"""
+  """用户角色 1.user（普通用户）2.admin（平台管理员）3.wx_guest_user（微信的匿名访客）"""
   role: String
   updated_at: timestamptz
+
+  """role= wx_guest_user时用户的小程序openid"""
+  wx_mini_openid: String
 }
 
 """aggregate max on columns"""
@@ -13735,9 +13773,12 @@ type users_max_fields {
   """密码，md5 32位小写"""
   password: String
 
-  """用户角色 1.user（普通用户）2.admin（平台管理员）"""
+  """用户角色 1.user（普通用户）2.admin（平台管理员）3.wx_guest_user（微信的匿名访客）"""
   role: String
   updated_at: timestamptz
+
+  """role= wx_guest_user时用户的小程序openid"""
+  wx_mini_openid: String
 }
 
 """aggregate min on columns"""
@@ -13759,9 +13800,12 @@ type users_min_fields {
   """密码，md5 32位小写"""
   password: String
 
-  """用户角色 1.user（普通用户）2.admin（平台管理员）"""
+  """用户角色 1.user（普通用户）2.admin（平台管理员）3.wx_guest_user（微信的匿名访客）"""
   role: String
   updated_at: timestamptz
+
+  """role= wx_guest_user时用户的小程序openid"""
+  wx_mini_openid: String
 }
 
 """
@@ -13809,6 +13853,7 @@ input users_order_by {
   password: order_by
   role: order_by
   updated_at: order_by
+  wx_mini_openid: order_by
 }
 
 """primary key columns input for table: users"""
@@ -13846,6 +13891,9 @@ enum users_select_column {
 
   """column name"""
   updated_at
+
+  """column name"""
+  wx_mini_openid
 }
 
 """
@@ -13869,9 +13917,12 @@ input users_set_input {
   """密码，md5 32位小写"""
   password: String
 
-  """用户角色 1.user（普通用户）2.admin（平台管理员）"""
+  """用户角色 1.user（普通用户）2.admin（平台管理员）3.wx_guest_user（微信的匿名访客）"""
   role: String
   updated_at: timestamptz
+
+  """role= wx_guest_user时用户的小程序openid"""
+  wx_mini_openid: String
 }
 
 """aggregate stddev on columns"""
@@ -13919,9 +13970,12 @@ input users_stream_cursor_value_input {
   """密码，md5 32位小写"""
   password: String
 
-  """用户角色 1.user（普通用户）2.admin（平台管理员）"""
+  """用户角色 1.user（普通用户）2.admin（平台管理员）3.wx_guest_user（微信的匿名访客）"""
   role: String
   updated_at: timestamptz
+
+  """role= wx_guest_user时用户的小程序openid"""
+  wx_mini_openid: String
 }
 
 """aggregate sum on columns"""
@@ -13959,6 +14013,9 @@ enum users_update_column {
 
   """column name"""
   updated_at
+
+  """column name"""
+  wx_mini_openid
 }
 
 input users_updates {

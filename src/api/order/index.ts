@@ -225,6 +225,10 @@ export async function getOrderUserCompanyInfo(
       ) {
         can_view_price
         price_factor
+        company {
+          mode_for_price
+          default_for_price_factor
+        }
       }
     }
   `;
@@ -232,11 +236,27 @@ export async function getOrderUserCompanyInfo(
     query,
     variables: { userId: Number(userId), companyId: Number(companyId) },
   });
-  const row = result?.company_users?.[0];
+  const row = result?.company_users?.[0] as
+    | {
+        can_view_price: boolean;
+        price_factor: number | string;
+        company?: {
+          mode_for_price?: string | null;
+          default_for_price_factor?: number | string | null;
+        } | null;
+      }
+    | undefined;
   if (!row) return null;
+  const mode = row.company?.mode_for_price;
+  const companyFactor = Number(row.company?.default_for_price_factor ?? 1);
+  const userFactor = Number(row.price_factor ?? 1);
+  const price_factor =
+    mode === 'company' && companyFactor > 0 ? companyFactor : userFactor > 0 ? userFactor : 1;
+  // 与 auth 一致：公司统一下有成员行的用户视为正式成员，一律可看价
+  const can_view_price = mode === 'company' ? true : Boolean(row.can_view_price);
   return {
-    can_view_price: !!row.can_view_price,
-    price_factor: Number(row.price_factor),
+    can_view_price,
+    price_factor,
   };
 }
 

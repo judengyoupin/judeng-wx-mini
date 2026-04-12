@@ -15,23 +15,18 @@
     </view>
 
     <!-- 骨架屏（首屏加载） -->
-    <view v-if="loading && user_token" class="skeleton-area">
+    <view v-if="loading && userInfo?.id" class="skeleton-area">
       <SkeletonScreen type="list-row" :count="4" />
     </view>
 
-    <!-- 未登录提示 -->
-    <view v-else-if="!loading && !user_token" class="empty-state">
-      <text class="empty-text">请先登录</text>
-      <button class="login-btn" @click="goToLogin">去登录</button>
+    <!-- 静默登录未完成 -->
+    <view v-else-if="!loading && !userInfo?.id" class="empty-state">
+      <text class="empty-text">正在初始化…</text>
     </view>
 
-    <!-- 购物车列表：高度由 scrollListHeight 计算，仅此区域可滚动 -->
-    <view v-else-if="user_token && cartItems.length > 0" class="cart-content">
-      <scroll-view
-        scroll-y
-        class="cart-list"
-        :style="{ height: scrollListHeight + 'px' }"
-      >
+    <!-- 购物车列表：与底部结算栏同属 flex 列，scroll-view 占满剩余高度，避免固定高度算错被遮挡 -->
+    <view v-else-if="userInfo?.id && cartItems.length > 0" class="cart-content">
+      <scroll-view scroll-y class="cart-list" :show-scrollbar="false">
         <view
           v-for="(item, index) in cartItems"
           :key="item.id"
@@ -133,10 +128,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed } from 'vue';
 import { whenAppReady } from '@/utils/appReady';
 import { onShow, onPullDownRefresh } from '@dcloudio/uni-app';
-import { user_token, userInfo, companyInfo } from '@/store/userStore';
+import { userInfo, companyInfo } from '@/store/userStore';
 import { getCompanyUserRoleCached } from '@/utils/auth';
 import PageNavBar from '@/components/PageNavBar.vue';
 import SkeletonScreen from '@/components/SkeletonScreen.vue';
@@ -176,14 +171,14 @@ const totalPrice = computed(() => {
 });
 
 // 加载价格系数
-const loadPriceFactor = async () => {
-  if (!user_token.value || !userInfo.value?.id) {
+const loadPriceFactor = async (forceRefresh?: boolean) => {
+  if (!userInfo.value?.id) {
     priceFactor.value = 1;
     return;
   }
 
   try {
-    const roleInfo = await getCompanyUserRoleCached();
+    const roleInfo = await getCompanyUserRoleCached(companyInfo.value?.id, forceRefresh);
     if (roleInfo) {
       priceFactor.value = roleInfo.priceFactor || 1;
       canViewPrice.value = roleInfo.canViewPrice;
@@ -200,7 +195,7 @@ const loadPriceFactor = async () => {
 
 // 加载购物车，forceRefresh 时跳过 30 秒缓存（下拉刷新、从结算返回等）
 const loadCart = async (forceRefresh = false) => {
-  if (!user_token.value) {
+  if (!userInfo.value?.id) {
     cartItems.value = [];
     return;
   }
@@ -409,13 +404,6 @@ const goToProductDetail = (productId?: number) => {
   }
 };
 
-// 去登录
-const goToLogin = () => {
-  uni.navigateTo({
-    url: '/pages/login/index',
-  });
-};
-
 // 去逛逛
 const goShopping = () => {
   uni.switchTab({
@@ -429,33 +417,11 @@ const formatPrice = (price: number) => {
   return Number(price).toFixed(2);
 };
 
-// 计算列表可滚动区域高度（px），避免外层页面滚动
-const scrollListHeight = ref(400);
-function calcScrollListHeight() {
-  try {
-    const sys = uni.getSystemInfoSync();
-    const windowHeight = sys.windowHeight ?? 0;
-    const statusBarHeight = sys.statusBarHeight ?? 20;
-    const navBarHeight = 44; // 与 PageNavBar 一致 (px)
-    const companyBarHeight = 36; // 公司栏 padding 32rpx + 内容约 28rpx，约 36px
-    const footerHeight = 50; // 底部栏 100rpx 约 50px
-    const safeBottom = sys.safeAreaInsets?.bottom ?? 0;
-    const h =
-      windowHeight - statusBarHeight - navBarHeight - companyBarHeight - footerHeight - safeBottom;
-    scrollListHeight.value = Math.max(200, h);
-  } catch {
-    scrollListHeight.value = 400;
-  }
-}
-
-onMounted(() => {
-  calcScrollListHeight();
-});
-
 onShow(async () => {
   await whenAppReady();
-  loadCart(false);
-  calcScrollListHeight();
+  await loadPriceFactor(true);
+  // 每次进入页面强制拉取，避免加购后仍命中 30s 本地缓存看不到新数据
+  loadCart(true);
 });
 
 onPullDownRefresh(() => {
@@ -548,10 +514,11 @@ onPullDownRefresh(() => {
   overflow: hidden;
 }
 
-/* 高度由 :style 动态计算，仅此区域可滚动 */
+/* flex:1 + height:0 让 scroll-view 在小程序里获得稳定剩余高度，避免与底部结算栏重叠 */
 .cart-list {
   flex: 1;
   min-height: 0;
+  height: 0;
   width: 100%;
   overflow-anchor: auto;
 }
@@ -690,14 +657,10 @@ onPullDownRefresh(() => {
 }
 
 .cart-footer {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
+  flex-shrink: 0;
   padding-bottom: env(safe-area-inset-bottom);
   background: #ffffff;
   border-top: 1rpx solid #e8e8e8;
-  z-index: 1000;
 }
 
 .cart-footer-inner {

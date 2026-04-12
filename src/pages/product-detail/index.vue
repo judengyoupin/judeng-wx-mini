@@ -37,8 +37,8 @@
           <text class="price-value">¥{{ formatPrice(minPrice) }}</text>
           <text v-if="hasMultiplePrices" class="price-range">起</text>
         </view>
-        <view v-else-if="!user_token" class="price-tip">
-          <text>登录后查看价格</text>
+        <view v-else-if="!userInfo?.id" class="price-tip">
+          <text>加载中…</text>
         </view>
         <view v-else class="price-tip">
           <text>请联系管理员授权查看价格</text>
@@ -148,10 +148,10 @@
     <DetailFooterBar :cart-count="cartCount" @home="goHome" @cart="goCart">
       <button
         class="product-detail-footer-btn"
-        :class="{ 'product-detail-footer-btn--disabled': !user_token ? false : (selectedSkuIds.length === 0 || !canAddToCart) }"
+        :class="{ 'product-detail-footer-btn--disabled': !userInfo?.id ? true : (selectedSkuIds.length === 0 || !canAddToCart) }"
         @click="handleAddToCart"
       >
-        {{ !user_token ? '登录后加购' : (selectedSkuIds.length === 0 ? '请先选择规格' : '加入购物车') }}
+        {{ !userInfo?.id ? '请稍候…' : (selectedSkuIds.length === 0 ? '请先选择规格' : '加入购物车') }}
       </button>
     </DetailFooterBar>
   </view>
@@ -162,7 +162,7 @@ import { ref, computed } from 'vue';
 import { onLoad, onShow, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app';
 import { getProductDetail } from '@/api/product/index';
 import { addToCart, getCartList, updateCartQuantity, toggleCartSelected } from '@/api/cart/index';
-import { user_token, userInfo, companyInfo } from '@/store/userStore';
+import { userInfo, companyInfo } from '@/store/userStore';
 import { getCompanyUserRoleCached } from '@/utils/auth';
 import { safeNavigateBack } from '@/utils/navigation';
 import { parseMiniProgramScene, parsePositiveIntParam } from '@/utils/sceneParams';
@@ -275,9 +275,9 @@ const descriptionForRichText = computed(() => {
   return str.replace(/\n/g, '<br/>');
 });
 
-// 检查权限
-const checkPermissions = async () => {
-  if (!user_token.value || !userInfo.value?.id) {
+// 检查权限（forceRefresh：从设置返回等场景下刷新价格系数缓存）
+const checkPermissions = async (forceRefresh?: boolean) => {
+  if (!userInfo.value?.id) {
     canViewPrice.value = false;
     canAddToCart.value = false;
     priceFactor.value = 1;
@@ -285,7 +285,7 @@ const checkPermissions = async () => {
   }
 
   try {
-    const roleInfo = await getCompanyUserRoleCached();
+    const roleInfo = await getCompanyUserRoleCached(companyInfo.value?.id, forceRefresh);
     if (roleInfo) {
       canViewPrice.value = roleInfo.canViewPrice;
       canAddToCart.value = true; // 只要登录且是公司用户即可加入购物车，与是否可看价格无关
@@ -337,16 +337,8 @@ const toggleSku = (sku: any) => {
 
 // 加入购物车（重复加购时数量+1；加购后保持规格选中状态；新加项默认勾选）
 const handleAddToCart = async () => {
-  if (!user_token.value) {
-    uni.showToast({
-      title: '请先登录',
-      icon: 'none',
-    });
-    setTimeout(() => {
-      uni.navigateTo({
-        url: '/pages/login/index',
-      });
-    }, 1500);
+  if (!userInfo.value?.id) {
+    uni.showToast({ title: '请稍候…', icon: 'none' });
     return;
   }
 
@@ -433,7 +425,7 @@ const goCart = () => {
 
 // 加载购物车数量（用于角标：展示加购项数）
 const loadCartCount = async () => {
-  if (!user_token.value || !companyInfo.value?.id) {
+  if (!userInfo.value?.id || !companyInfo.value?.id) {
     cartCount.value = 0;
     return;
   }
@@ -469,9 +461,9 @@ onLoad((options?: Record<string, string | undefined>) => {
 
 onShow(() => {
   loadCartCount();
-  // 登录返回后重新检查权限，确保 canAddToCart 等状态正确
-  if (productDetail.value && user_token.value) {
-    checkPermissions();
+  // 登录返回或公司价格设置变更后，强制刷新角色/价格系数
+  if (productDetail.value && userInfo.value?.id) {
+    void checkPermissions(true);
   }
 });
 

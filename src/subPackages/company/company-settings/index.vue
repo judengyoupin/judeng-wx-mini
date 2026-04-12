@@ -119,11 +119,39 @@
           </view>
         </view>
 
-        <view class="form-item section-label">新用户默认权限</view>
+        <view class="form-item section-label">价格系数与看价</view>
+        <view class="form-item">
+          <view class="form-label">价格模式</view>
+          <view class="mode-row">
+            <view
+              class="mode-option"
+              :class="{ active: form.mode_for_price === 'company' }"
+              @click="!isAuditMode && (form.mode_for_price = 'company')"
+            >
+              <text class="mode-title">公司统一</text>
+              <text class="mode-desc">价格系数全员与访客统一用下方默认值；能否看价仅约束微信访客，正式成员均可看价</text>
+            </view>
+            <view
+              class="mode-option"
+              :class="{ active: form.mode_for_price === 'user' }"
+              @click="!isAuditMode && (form.mode_for_price = 'user')"
+            >
+              <text class="mode-title">按用户单独</text>
+              <text class="mode-desc">在成员列表为每人设置系数与可看价；访客不可看价</text>
+            </view>
+          </view>
+        </view>
         <view class="form-item switch-row">
           <view class="switch-label-wrap">
-            <view class="form-label">默认能否查看价格</view>
-            <view class="form-hint">新加入用户、C 端自动注册用户默认是否可查看价格</view>
+            <view class="form-label">
+              {{ form.mode_for_price === 'company' ? '微信访客默认可查看价格' : '默认能否查看价格' }}
+            </view>
+            <view v-if="form.mode_for_price === 'company'" class="form-hint">
+              「公司统一」：仅对微信访客（wx_guest_user）是否可看价生效；正式成员均可看价
+            </view>
+            <view v-else class="form-hint">
+              「按用户」：能否看价以成员列表为准；访客不可看价（此项不作用于访客）
+            </view>
           </view>
           <switch
             :checked="form.default_for_can_view_price"
@@ -142,7 +170,12 @@
             :disabled="isAuditMode"
             @input="onDefaultPriceFactorInput"
           />
-          <view class="form-hint">新加入用户默认价格系数，1 表示原价</view>
+          <view v-if="form.mode_for_price === 'company'" class="form-hint">
+            「公司统一」：全员与微信访客展示价均乘以该系数；1 为原价，0.9 约九折
+          </view>
+          <view v-else class="form-hint">
+            「按用户」：新成员默认系数；已在列表中的成员请在成员里单独修改；1 为原价
+          </view>
         </view>
       </view>
 
@@ -222,6 +255,9 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import { onLoad } from '@dcloudio/uni-app';
+import { syncCompanyInfo } from '@/api/company/index';
+import { invalidateCompanyDetailCache } from '@/store/userStore';
+import { clearCompanyUserRoleCache } from '@/utils/auth';
 import { getCompanyDetailCached, updateCompany } from '@/subPackages/company/api/platform';
 import { getBanners } from '@/api/banner/index';
 import { useImageUploadWithProgress } from '../utils/useImageUploadWithProgress';
@@ -241,6 +277,7 @@ const form = ref({
   resource_file_url: '',
   default_for_can_view_price: false,
   default_for_price_factor: '1',
+  mode_for_price: 'user' as 'company' | 'user',
 });
 const topBanners = ref<BannerItem[]>([]);
 const bottomBanners = ref<BannerItem[]>([]);
@@ -495,6 +532,8 @@ const loadCompanyDetail = async () => {
         resource_file_url: c.resource_file_url || '',
         default_for_can_view_price: c.default_for_can_view_price ?? false,
         default_for_price_factor: c.default_for_price_factor != null ? String(c.default_for_price_factor) : '1',
+        mode_for_price:
+          c.mode_for_price === 'company' || c.mode_for_price === 'user' ? c.mode_for_price : 'user',
       };
     }
 
@@ -555,7 +594,12 @@ const handleSave = async () => {
       resource_file_url: form.value.resource_file_url || undefined,
       default_for_can_view_price: form.value.default_for_can_view_price,
       default_for_price_factor: defaultFactor,
+      mode_for_price: form.value.mode_for_price,
     });
+
+    clearCompanyUserRoleCache();
+    invalidateCompanyDetailCache(companyId.value);
+    await syncCompanyInfo(companyId.value, true);
 
     uni.showToast({
       title: '保存成功',
@@ -633,6 +677,42 @@ onLoad((options?: { id?: string; companyId?: string; audit?: string }) => {
   font-size: 30rpx;
   font-weight: 600;
   color: #333;
+}
+
+.mode-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16rpx;
+}
+
+.mode-option {
+  flex: 1;
+  min-width: 280rpx;
+  padding: 24rpx;
+  border: 2rpx solid #e2e8f0;
+  border-radius: 12rpx;
+  background: #fff;
+  box-sizing: border-box;
+}
+
+.mode-option.active {
+  border-color: #667eea;
+  background: #f5f3ff;
+}
+
+.mode-title {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #333;
+  display: block;
+}
+
+.mode-desc {
+  display: block;
+  margin-top: 8rpx;
+  font-size: 22rpx;
+  color: #64748b;
+  line-height: 1.4;
 }
 
 .switch-row {

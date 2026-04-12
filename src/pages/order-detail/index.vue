@@ -30,19 +30,20 @@
           <text class="order-id">支付状态</text>
           <text class="order-id-num">{{ paymentStatusText }}</text>
         </view>
-        <view class="order-amount-row">
+        <view v-if="isAdminView" class="order-amount-row">
           <text class="amount-label">总价</text>
-          <text v-if="canViewPrice" class="amount">¥{{ order.total_price }}</text>
+          <text v-if="canViewPrice" class="amount">¥{{ formatOrderMoney(order.total_price) }}</text>
           <text v-else class="amount amount-hidden">--</text>
         </view>
         <view class="order-amount-row">
           <text class="amount-label">总金额</text>
-          <text v-if="canViewPrice" class="amount">¥{{ order.total_amount }}</text>
+          <text v-if="canViewPrice" class="amount">¥{{ formatOrderMoney(order.total_amount) }}</text>
           <text v-else class="amount amount-hidden">--</text>
         </view>
         <view class="order-amount-row order-amount-row--actual">
           <text class="amount-label">实收</text>
-          <text class="amount">¥{{ order.actual_amount != null ? order.actual_amount : '--' }}</text>
+          <text v-if="canViewPrice || isAdminView" class="amount">¥{{ order.actual_amount != null ? formatOrderMoney(order.actual_amount) : '--' }}</text>
+          <text v-else class="amount amount-hidden">--</text>
           <text
             v-if="isAdminView && order.order_status !== 'completed'"
             class="amount-edit-link"
@@ -127,7 +128,7 @@
           <view class="item-info">
             <text class="item-name">{{ item.product_name }}</text>
             <view class="item-meta">
-              <text v-if="canViewPrice" class="item-price">¥{{ item.product_price }}</text>
+              <text v-if="canViewPrice" class="item-price">¥{{ itemUnitDisplayPrice(item) }}</text>
               <text v-else class="item-price item-price-hidden">--</text>
               <text class="item-qty">× {{ item.quantity }}</text>
             </view>
@@ -318,6 +319,19 @@ function goToProductDetail(item: any) {
   }
 }
 
+function formatOrderMoney(v: unknown): string {
+  return Number(v ?? 0).toFixed(2);
+}
+
+/** order_items.product_price 为 SKU 原价，展示为单价需乘订单 price_factor */
+function itemUnitDisplayPrice(item: any): string {
+  const o = order.value;
+  const pf = Number(o?.price_factor ?? 1);
+  const base = Number(item?.product_price ?? 0);
+  const f = Number.isFinite(pf) && pf > 0 ? pf : 1;
+  return formatOrderMoney(base * f);
+}
+
 onLoad((options?: { id?: string }) => {
   if (options?.id) orderId.value = Number(options.id);
 });
@@ -342,13 +356,15 @@ onMounted(async () => {
   }
   loading.value = true;
   try {
-    const [orderRes, roleInfo] = await Promise.all([
-      getOrderDetailById(orderId.value),
-      getCompanyUserRoleCached().then((r) => r ?? null),
-    ]);
+    const orderRes = await getOrderDetailById(orderId.value);
     order.value = orderRes;
-    const companyId = orderRes?.company?.id;
-    const admin = companyId ? await isCompanyAdmin(Number(companyId)) : false;
+    const companyIdRaw = orderRes?.company?.id ?? orderRes?.company_companies;
+    const companyId = companyIdRaw != null ? Number(companyIdRaw) : NaN;
+    const roleInfo =
+      Number.isInteger(companyId) && companyId > 0
+        ? await getCompanyUserRoleCached(companyId, false)
+        : null;
+    const admin = Number.isInteger(companyId) && companyId > 0 ? await isCompanyAdmin(companyId) : false;
     isAdminView.value = !!admin;
     canViewPrice.value = admin || (roleInfo?.canViewPrice ?? false);
     if (isAdminView.value) {

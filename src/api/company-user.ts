@@ -10,7 +10,8 @@ export interface CompanyUserDefaults {
 }
 
 /**
- * 获取公司配置的新用户默认：能否查看价格、价格系数
+ * 自动注册为 company_users 时的默认字段。
+ * default_for_can_view_price 仅约束微信访客；正式成员默认可看价。
  */
 export async function getCompanyUserDefaults(
   companyId: number
@@ -18,7 +19,6 @@ export async function getCompanyUserDefaults(
   const query = `
     query GetCompanyUserDefaults($companyId: bigint!) {
       companies_by_pk(id: $companyId) {
-        default_for_can_view_price
         default_for_price_factor
       }
     }
@@ -29,7 +29,7 @@ export async function getCompanyUserDefaults(
   });
   const row = (result as any)?.companies_by_pk;
   return {
-    can_view_price: row?.default_for_can_view_price ?? false,
+    can_view_price: true,
     price_factor: row?.default_for_price_factor != null ? Number(row.default_for_price_factor) : 1,
   };
 }

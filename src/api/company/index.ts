@@ -70,6 +70,9 @@ export async function syncCompanyInfo(
           id
           name
           logo_url
+          mode_for_price
+          default_for_price_factor
+          default_for_can_view_price
           banner_top
           banner_bottom
           hidden_category_ids
@@ -88,6 +91,9 @@ export async function syncCompanyInfo(
         id: number;
         name: string;
         logo_url?: string | null;
+        mode_for_price?: string | null;
+        default_for_price_factor?: number | string | null;
+        default_for_can_view_price?: boolean | null;
         banner_top?: any;
         banner_bottom?: any;
         hidden_category_ids?: (string | number)[] | null;
@@ -113,6 +119,9 @@ export async function syncCompanyInfo(
       id: row.id,
       name: row.name,
       logo_url: row.logo_url,
+      mode_for_price: row.mode_for_price,
+      default_for_price_factor: row.default_for_price_factor,
+      default_for_can_view_price: row.default_for_can_view_price,
     };
 
     setCompanyContext(companyBasic);

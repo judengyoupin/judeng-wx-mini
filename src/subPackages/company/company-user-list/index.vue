@@ -32,6 +32,13 @@
         >
           管理员
         </view>
+        <view
+          class="filter-tab"
+          :class="{ active: roleFilter === 'wx_guest_user' }"
+          @click="setRoleFilter('wx_guest_user')"
+        >
+          微信访客
+        </view>
       </view>
       <view class="filter-row level-filter-row">
         <text class="level-filter-label">等级：</text>
@@ -83,10 +90,11 @@
           <view class="user-details">
             <view class="user-name">{{ user.user?.nickname || user.user?.mobile }}</view>
             <view class="user-meta">
-              <text class="user-phone">{{ user.user?.mobile }}</text>
+              <text class="user-phone">{{ user.user?.mobile || '—' }}</text>
               <text class="user-role" :class="{ 'role-admin': user.role === 'admin' }">
                 {{ user.role === 'admin' ? '管理员' : '用户' }}
               </text>
+              <text v-if="user.user?.role === 'wx_guest_user'" class="user-platform-guest">微信访客</text>
               <text class="user-level">等级 {{ user.level || 'A' }}</text>
             </view>
             <view class="user-permissions">
@@ -319,7 +327,7 @@ const isRefreshing = ref(false);
 /** 列表页搜索：昵称或手机号 */
 const listSearchKeyword = ref('');
 /** 角色筛选 */
-const roleFilter = ref<'' | 'user' | 'admin'>('');
+const roleFilter = ref<'' | 'user' | 'admin' | 'wx_guest_user'>('');
 /** 等级筛选：空为全部，否则 A/B/C/D/E/F */
 const levelFilter = ref<'' | CompanyUserLevel>('');
 const totalCount = ref(0);
@@ -332,6 +340,7 @@ const countText = computed(() => {
   const parts: string[] = [];
   if (roleFilter.value === 'user') parts.push('普通用户');
   if (roleFilter.value === 'admin') parts.push('管理员');
+  if (roleFilter.value === 'wx_guest_user') parts.push('微信访客');
   if (levelFilter.value) parts.push(`等级${levelFilter.value}`);
   if (parts.length === 0) return `共 ${n} 人`;
   return `${parts.join('、')} 共 ${n} 人`;
@@ -351,8 +360,8 @@ const filteredUsers = computed(() => {
 // 超级管理员从公司管理点进来时传入的 companyId（核查只读）
 const viewCompanyId = ref<number | null>(null);
 const effectiveCompanyId = () => viewCompanyId.value ?? companyInfo.value?.id ?? null;
-/** 公司配置的新用户默认：能否查看价格、价格系数，用于添加用户时默认填充 */
-const companyDefaults = ref<{ default_for_can_view_price: boolean; default_for_price_factor: number } | null>(null);
+/** 公司配置：价格系数等；添加成员时默认可看价与「访客默认可看价」无关 */
+const companyDefaults = ref<{ default_for_price_factor: number } | null>(null);
 /** 核查入口只读：不显示添加/编辑/删除 */
 const isViewOnly = computed(() => !!viewCompanyId.value);
 const page = ref(1);
@@ -398,14 +407,13 @@ const loadCompanyDefaults = async () => {
     if (company) {
       const c = company as any;
       companyDefaults.value = {
-        default_for_can_view_price: c.default_for_can_view_price ?? false,
         default_for_price_factor: Number(c.default_for_price_factor) || 1,
       };
     } else {
-      companyDefaults.value = { default_for_can_view_price: false, default_for_price_factor: 1 };
+      companyDefaults.value = { default_for_price_factor: 1 };
     }
   } catch {
-    companyDefaults.value = { default_for_can_view_price: false, default_for_price_factor: 1 };
+    companyDefaults.value = { default_for_price_factor: 1 };
   }
 };
 
@@ -416,7 +424,7 @@ function getDefaultUserForm() {
     mobile: '',
     role: 'user' as const,
     level: 'A' as CompanyUserLevel,
-    can_view_price: d?.default_for_can_view_price ?? false,
+    can_view_price: true,
     price_factor: String(d?.default_for_price_factor ?? 1),
   };
 }
@@ -486,7 +494,7 @@ function loadMore() {
 }
 
 // 角色筛选
-const setRoleFilter = (role: '' | 'user' | 'admin') => {
+const setRoleFilter = (role: '' | 'user' | 'admin' | 'wx_guest_user') => {
   roleFilter.value = role;
   loadUsers(true);
 };
@@ -809,6 +817,7 @@ onPullDownRefresh(() => {
 
 .filter-row {
   display: flex;
+  flex-wrap: wrap;
   gap: 20rpx;
 }
 
@@ -988,6 +997,13 @@ onPullDownRefresh(() => {
 .role-admin {
   background: #e6f7ff;
   color: #1890ff;
+}
+
+.user-platform-guest {
+  padding: 4rpx 12rpx;
+  background: #fef3c7;
+  color: #b45309;
+  border-radius: 4rpx;
 }
 
 .user-permissions {

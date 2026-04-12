@@ -15,38 +15,44 @@
               :src="userInfo?.avatar_url || '../../static/mine/touxiang.png'"
               mode="aspectFill"
             ></image>
-            <view v-if="user_token" class="avatar-badge">
+            <view v-if="isMember" class="avatar-badge">
               <text class="badge-icon">✓</text>
             </view>
           </view>
         </view>
         <view class="user-info">
           <view class="nickname-section">
-            <text class="nickname" v-if="user_token">
-              {{ userInfo?.nickname || userInfo?.mobile || "用户" }}
-            </text>
-            <text class="nickname" v-else>未登录</text>
+            <text class="nickname">{{ sessionTitle }}</text>
             <view v-if="isAdmin" class="role-badge admin">
               <text class="role-text">平台管理员</text>
             </view>
             <view v-else-if="isCompanyAdminUser" class="role-badge company-admin">
               <text class="role-text">公司管理员</text>
             </view>
+            <view v-else-if="userInfo?.role === 'wx_guest_user'" class="role-badge guest">
+              <text class="role-text">访客</text>
+            </view>
             <view v-else-if="isCompanyUser" class="role-badge user">
               <text class="role-text">公司用户</text>
             </view>
           </view>
-          <view v-if="user_token && userInfo?.mobile" class="phone-section">
+          <view v-if="isMember && userInfo?.mobile" class="phone-section">
             <text class="phone-icon">📱</text>
             <text class="phone-number">{{ userInfo.mobile }}</text>
           </view>
-          <view v-if="user_token" class="password-link" @click.stop="goToSetPassword">
+          <view v-if="user_token && !isMember" class="login-prompt phone-auth-prompt">
+            <text class="prompt-text">请使用已向管理员登记的本机微信手机号授权，成为正式用户。</text>
+            <button class="login-btn" open-type="getPhoneNumber" @getphonenumber="onPhoneNumberAuth">
+              手机号快捷授权
+            </button>
+            <view class="admin-login-hint" @click.stop="goToPasswordLogin">管理员账号密码登录</view>
+          </view>
+          <view v-else-if="isMember" class="password-link" @click.stop="goToSetPassword">
             <text class="password-link-icon">🔒</text>
             <text class="password-link-text">设置密码</text>
           </view>
-          <view v-if="!user_token" class="login-prompt">
-            <text class="prompt-text">登录后享受更多服务</text>
-            <button class="login-btn" @click="goToLogin">立即登录</button>
+          <view v-else-if="!user_token" class="login-prompt">
+            <text class="prompt-text">正在初始化，请稍候…</text>
           </view>
         </view>
       </view>
@@ -201,18 +207,21 @@
     </view>
 
     <!-- 退出登录 -->
-    <view v-if="user_token" class="logout-section">
+    <view v-if="user_token && isMember" class="logout-section">
       <button class="logout-btn" @click="handleLogout">退出登录</button>
     </view>
   </view>
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { ref, watch, computed } from 'vue';
 import { whenAppReady } from '@/utils/appReady';
 import { onShow } from '@dcloudio/uni-app';
 import { userInfo, user_token, companyInfo, clearUserContext, getCompanyDetailFromCache, ensureUserInfoCached } from '@/store/userStore';
-import { getCompanyUserRoleCached } from '@/utils/auth';
+import { getCompanyUserRoleCached, clearCompanyUserRoleCache } from '@/utils/auth';
+import { ensureWxSilentAuth } from '@/utils/wxSilentAuth';
+import { isRegisteredMember } from '@/utils/memberSession';
+import { completePhoneNumberAuth } from '@/utils/wechatPhoneAuth';
 import { getCompanyPublicInfo, syncCompanyInfo } from '@/api/company/index';
 import type { CompanyPublicInfo } from '@/api/company/index';
 
@@ -221,6 +230,20 @@ const companyPublicInfo = ref<CompanyPublicInfo | null>(null);
 const showAboutModal = ref(false);
 const isAdmin = ref(false);
 const isCompanyAdminUser = ref(false);
+
+const isMember = computed(() => isRegisteredMember(userInfo.value?.role));
+
+const displayNickname = computed(() => {
+  const u = userInfo.value as { nickname?: string; mobile?: string; role?: string };
+  return u?.nickname || u?.mobile || '用户';
+});
+
+/** 访客展示为未登录；正式用户展示昵称/手机号 */
+const sessionTitle = computed(() => {
+  if (!user_token.value) return '未登录';
+  if (!isMember.value) return '未登录';
+  return displayNickname.value;
+});
 
 const PERMISSIONS_CACHE_TTL = 5 * 60 * 1000;
 /** 必须包含 companyId：切换公司后旧缓存不能与当前公司混用 */
@@ -299,19 +322,38 @@ const checkUserPermissions = async () => {
   };
 };
 
-// 跳转到登录页
-const goToLogin = () => {
+const goToPasswordLogin = () => {
   uni.navigateTo({
     url: '/pages/login/index',
   });
 };
 
-// 跳转到订单列表
-const goToOrders = () => {
-  if (!user_token.value) {
-    goToLogin();
+const onPhoneNumberAuth = async (e: { detail?: { errMsg?: string; code?: string } }) => {
+  const detail = e?.detail ?? {};
+  const { ok, message } = await completePhoneNumberAuth(detail);
+  if (ok) {
+    uni.showToast({ title: '授权成功', icon: 'success' });
+    permissionsCache.value = null;
+    await checkUserPermissions();
+    await loadCompanyPublicSection();
     return;
   }
+  if (message) {
+    uni.showToast({ title: message, icon: 'none', duration: 3200 });
+  }
+};
+
+function needUserId(): boolean {
+  if (!userInfo.value?.id) {
+    uni.showToast({ title: '请稍候…', icon: 'none' });
+    return false;
+  }
+  return true;
+}
+
+// 跳转到订单列表
+const goToOrders = () => {
+  if (!needUserId()) return;
   uni.navigateTo({
     url: '/pages/order-list/index',
   });
@@ -319,10 +361,7 @@ const goToOrders = () => {
 
 // 跳转到资料库
 const goToFiles = () => {
-  if (!user_token.value) {
-    goToLogin();
-    return;
-  }
+  if (!needUserId()) return;
   uni.navigateTo({
     url: '/pages/resource/index',
   });
@@ -330,8 +369,9 @@ const goToFiles = () => {
 
 // 跳转到设置密码
 const goToSetPassword = () => {
-  if (!user_token.value) {
-    goToLogin();
+  if (!needUserId()) return;
+  if (!isRegisteredMember(userInfo.value?.role)) {
+    uni.showToast({ title: '请先完成手机号授权', icon: 'none' });
     return;
   }
   uni.navigateTo({
@@ -341,10 +381,7 @@ const goToSetPassword = () => {
 
 // 跳转到地址管理
 const goToAddressList = () => {
-  if (!user_token.value) {
-    goToLogin();
-    return;
-  }
+  if (!needUserId()) return;
   uni.navigateTo({
     url: '/pages/address-list/index',
   });
@@ -352,10 +389,7 @@ const goToAddressList = () => {
 
 // 跳转到联系客服页
 const goToContact = () => {
-  if (!user_token.value) {
-    goToLogin();
-    return;
-  }
+  if (!needUserId()) return;
   const companyId = companyInfo.value?.id;
   if (!companyId) {
     uni.showToast({
@@ -371,10 +405,7 @@ const goToContact = () => {
 
 // 跳转到切换公司页（已加入的公司列表，可切换当前访问的公司）
 const goToSwitchCompany = () => {
-  if (!user_token.value) {
-    goToLogin();
-    return;
-  }
+  if (!needUserId()) return;
   uni.navigateTo({
     url: '/pages/switch-company/index',
   });
@@ -382,10 +413,7 @@ const goToSwitchCompany = () => {
 
 // 跳转到公司设置（公司管理员）
 const goToCompanySettings = () => {
-  if (!user_token.value) {
-    goToLogin();
-    return;
-  }
+  if (!needUserId()) return;
   if (!companyInfo.value?.id) {
     uni.showToast({
       title: '公司信息不存在',
@@ -400,10 +428,7 @@ const goToCompanySettings = () => {
 
 // 跳转到分类管理（公司管理员）
 const goToCategoryManagement = () => {
-  if (!user_token.value) {
-    goToLogin();
-    return;
-  }
+  if (!needUserId()) return;
   uni.navigateTo({
     url: '/subPackages/company/category-list/index',
   });
@@ -411,10 +436,7 @@ const goToCategoryManagement = () => {
 
 // 跳转到商品管理（公司管理员）
 const goToProductManagement = () => {
-  if (!user_token.value) {
-    goToLogin();
-    return;
-  }
+  if (!needUserId()) return;
   uni.navigateTo({
     url: '/subPackages/company/product-list/index',
   });
@@ -422,10 +444,7 @@ const goToProductManagement = () => {
 
 // 跳转到套餐管理（公司管理员）
 const goToPackageManagement = () => {
-  if (!user_token.value) {
-    goToLogin();
-    return;
-  }
+  if (!needUserId()) return;
   uni.navigateTo({
     url: '/subPackages/company/package-list/index',
   });
@@ -433,10 +452,7 @@ const goToPackageManagement = () => {
 
 // 跳转到公司用户管理（公司管理员）
 const goToCompanyUserManagement = () => {
-  if (!user_token.value) {
-    goToLogin();
-    return;
-  }
+  if (!needUserId()) return;
   uni.navigateTo({
     url: '/subPackages/company/company-user-list/index',
   });
@@ -444,10 +460,7 @@ const goToCompanyUserManagement = () => {
 
 // 跳转到公司订单管理（公司管理员，查看本公司下的用户订单）
 const goToCompanyOrderManagement = () => {
-  if (!user_token.value) {
-    goToLogin();
-    return;
-  }
+  if (!needUserId()) return;
   if (!companyInfo.value?.id) {
     uni.showToast({
       title: '公司信息不存在',
@@ -462,10 +475,7 @@ const goToCompanyOrderManagement = () => {
 
 // 跳转到公司管理（平台管理员）
 const goToCompanyManagement = () => {
-  if (!user_token.value) {
-    goToLogin();
-    return;
-  }
+  if (!needUserId()) return;
   uni.navigateTo({
     url: '/subPackages/admin/company-list/index',
   });
@@ -474,10 +484,7 @@ const goToCompanyManagement = () => {
 // 跳转到账号管理（平台管理员）
 const goToUserManagement = () => {
   console.log('点击账号管理');
-  if (!user_token.value) {
-    goToLogin();
-    return;
-  }
+  if (!needUserId()) return;
   console.log('准备跳转到账号管理页面');
   uni.navigateTo({
     url: '/subPackages/admin/user-list/index',
@@ -497,46 +504,41 @@ const goToUserManagement = () => {
 
 // 处理头像点击
 const handleAvatarClick = () => {
-  if (!user_token.value) {
-    goToLogin();
-    return;
-  }
+  if (!needUserId()) return;
   uni.navigateTo({
     url: '/pages/user-profile/index',
   });
 };
 
-// 退出登录
+// 退出登录：清 JWT 后必须再次静默登录，否则会长期无 token，卡在「正在初始化」
 const handleLogout = () => {
   uni.showModal({
     title: '提示',
     content: '确定要退出登录吗？',
     success: (res) => {
-      if (res.confirm) {
-        // 清除用户信息
+      void (async () => {
+        if (!res.confirm) return;
         clearUserContext();
-
-        // 清除本地存储
-        uni.removeStorageSync('token');
-        uni.removeStorageSync('userId');
-
-        // 清除公司用户状态
+        clearCompanyUserRoleCache();
+        permissionsCache.value = null;
         isCompanyUser.value = false;
         isAdmin.value = false;
         isCompanyAdminUser.value = false;
+
+        try {
+          await ensureWxSilentAuth();
+          await ensureUserInfoCached(true);
+          await checkUserPermissions();
+          await loadCompanyPublicSection();
+        } catch (e) {
+          console.error('退出后恢复访客身份失败:', e);
+        }
 
         uni.showToast({
           title: '已退出登录',
           icon: 'success',
         });
-
-        // 刷新页面
-        setTimeout(() => {
-          uni.switchTab({
-            url: '/pages/mine/index',
-          });
-        }, 1000);
-      }
+      })();
     },
   });
 };
@@ -597,6 +599,14 @@ watch(
 // onShow：等全局就绪后再拉取/补齐 userInfo 与权限，再填公司公开信息（优先缓存）
 onShow(async () => {
   await whenAppReady();
+  if (!user_token.value) {
+    try {
+      await ensureWxSilentAuth();
+      await ensureUserInfoCached(true);
+    } catch (e) {
+      console.warn('我的页：补齐静默登录失败', e);
+    }
+  }
   await ensureCompanyContextMatchesStorage();
   await checkUserPermissions();
   await loadCompanyPublicSection();
@@ -727,9 +737,39 @@ onShow(async () => {
   color: #333333;
 }
 
+.role-badge.guest {
+  background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%);
+  color: #3730a3;
+}
+
 .role-text {
   font-size: 22rpx;
   font-weight: 500;
+}
+
+.guest-bind-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16rpx;
+  margin-top: 16rpx;
+  padding: 20rpx 24rpx;
+  background: #f5f3ff;
+  border-radius: 12rpx;
+  border: 1rpx solid #e9d5ff;
+}
+
+.guest-bind-text {
+  flex: 1;
+  font-size: 26rpx;
+  color: #5b21b6;
+  line-height: 1.4;
+}
+
+.guest-bind-arrow {
+  font-size: 32rpx;
+  color: #7c3aed;
+  font-weight: 300;
 }
 
 .phone-section {
@@ -798,6 +838,19 @@ onShow(async () => {
 
 .login-btn::after {
   border: none;
+}
+
+.phone-auth-prompt .login-btn {
+  width: 100%;
+  max-width: 100%;
+}
+
+.admin-login-hint {
+  margin-top: 8rpx;
+  font-size: 24rpx;
+  color: #667eea;
+  text-align: center;
+  text-decoration: underline;
 }
 
 /* 快捷功能区域 */

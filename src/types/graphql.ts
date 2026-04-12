@@ -1964,9 +1964,9 @@ export type Companies = {
   /** 联系我们 二维码 */
   contact_code?: Maybe<Scalars['String']['output']>;
   created_at: Scalars['timestamptz']['output'];
-  /** 公司配置的初始用户能否查看价格 */
+  /** 公司配置的初始用户/未登录用户能否查看价格，取决于mode_for_price */
   default_for_can_view_price: Scalars['Boolean']['output'];
-  /** 公司配置的初始用户价格系数 */
+  /** 公司配置的初始用户价格/全局系数，取决于mode_for_price */
   default_for_price_factor: Scalars['numeric']['output'];
   /** 富文本，公司介绍 */
   description?: Maybe<Scalars['String']['output']>;
@@ -1979,6 +1979,8 @@ export type Companies = {
   id: Scalars['bigint']['output'];
   /** 公司logo */
   logo_url?: Maybe<Scalars['String']['output']>;
+  /** 价格系数模式：1.company公司统一修改价格系数 2.user每个用户单独定制价格系数 */
+  mode_for_price: Scalars['String']['output'];
   /** 公司名称 */
   name: Scalars['String']['output'];
   /** An array relationship */
@@ -2199,7 +2201,7 @@ export type Companies_Aggregate_FieldsCountArgs = {
 /** aggregate avg on columns */
 export type Companies_Avg_Fields = {
   __typename?: 'companies_avg_fields';
-  /** 公司配置的初始用户价格系数 */
+  /** 公司配置的初始用户价格/全局系数，取决于mode_for_price */
   default_for_price_factor?: Maybe<Scalars['Float']['output']>;
   id?: Maybe<Scalars['Float']['output']>;
 };
@@ -2229,6 +2231,7 @@ export type Companies_Bool_Exp = {
   hidden_product_ids?: InputMaybe<Bigint_Array_Comparison_Exp>;
   id?: InputMaybe<Bigint_Comparison_Exp>;
   logo_url?: InputMaybe<String_Comparison_Exp>;
+  mode_for_price?: InputMaybe<String_Comparison_Exp>;
   name?: InputMaybe<String_Comparison_Exp>;
   orders?: InputMaybe<Orders_Bool_Exp>;
   orders_aggregate?: InputMaybe<Orders_Aggregate_Bool_Exp>;
@@ -2254,7 +2257,7 @@ export enum Companies_Constraint {
 
 /** input type for incrementing numeric columns in table "companies" */
 export type Companies_Inc_Input = {
-  /** 公司配置的初始用户价格系数 */
+  /** 公司配置的初始用户价格/全局系数，取决于mode_for_price */
   default_for_price_factor?: InputMaybe<Scalars['numeric']['input']>;
   id?: InputMaybe<Scalars['bigint']['input']>;
 };
@@ -2272,9 +2275,9 @@ export type Companies_Insert_Input = {
   /** 联系我们 二维码 */
   contact_code?: InputMaybe<Scalars['String']['input']>;
   created_at?: InputMaybe<Scalars['timestamptz']['input']>;
-  /** 公司配置的初始用户能否查看价格 */
+  /** 公司配置的初始用户/未登录用户能否查看价格，取决于mode_for_price */
   default_for_can_view_price?: InputMaybe<Scalars['Boolean']['input']>;
-  /** 公司配置的初始用户价格系数 */
+  /** 公司配置的初始用户价格/全局系数，取决于mode_for_price */
   default_for_price_factor?: InputMaybe<Scalars['numeric']['input']>;
   /** 富文本，公司介绍 */
   description?: InputMaybe<Scalars['String']['input']>;
@@ -2287,6 +2290,8 @@ export type Companies_Insert_Input = {
   id?: InputMaybe<Scalars['bigint']['input']>;
   /** 公司logo */
   logo_url?: InputMaybe<Scalars['String']['input']>;
+  /** 价格系数模式：1.company公司统一修改价格系数 2.user每个用户单独定制价格系数 */
+  mode_for_price?: InputMaybe<Scalars['String']['input']>;
   /** 公司名称 */
   name?: InputMaybe<Scalars['String']['input']>;
   orders?: InputMaybe<Orders_Arr_Rel_Insert_Input>;
@@ -2312,7 +2317,7 @@ export type Companies_Max_Fields = {
   /** 联系我们 二维码 */
   contact_code?: Maybe<Scalars['String']['output']>;
   created_at?: Maybe<Scalars['timestamptz']['output']>;
-  /** 公司配置的初始用户价格系数 */
+  /** 公司配置的初始用户价格/全局系数，取决于mode_for_price */
   default_for_price_factor?: Maybe<Scalars['numeric']['output']>;
   /** 富文本，公司介绍 */
   description?: Maybe<Scalars['String']['output']>;
@@ -2325,6 +2330,8 @@ export type Companies_Max_Fields = {
   id?: Maybe<Scalars['bigint']['output']>;
   /** 公司logo */
   logo_url?: Maybe<Scalars['String']['output']>;
+  /** 价格系数模式：1.company公司统一修改价格系数 2.user每个用户单独定制价格系数 */
+  mode_for_price?: Maybe<Scalars['String']['output']>;
   /** 公司名称 */
   name?: Maybe<Scalars['String']['output']>;
   /** 资源库文件url，一般是pdf文档 */
@@ -2346,7 +2353,7 @@ export type Companies_Min_Fields = {
   /** 联系我们 二维码 */
   contact_code?: Maybe<Scalars['String']['output']>;
   created_at?: Maybe<Scalars['timestamptz']['output']>;
-  /** 公司配置的初始用户价格系数 */
+  /** 公司配置的初始用户价格/全局系数，取决于mode_for_price */
   default_for_price_factor?: Maybe<Scalars['numeric']['output']>;
   /** 富文本，公司介绍 */
   description?: Maybe<Scalars['String']['output']>;
@@ -2359,6 +2366,8 @@ export type Companies_Min_Fields = {
   id?: Maybe<Scalars['bigint']['output']>;
   /** 公司logo */
   logo_url?: Maybe<Scalars['String']['output']>;
+  /** 价格系数模式：1.company公司统一修改价格系数 2.user每个用户单独定制价格系数 */
+  mode_for_price?: Maybe<Scalars['String']['output']>;
   /** 公司名称 */
   name?: Maybe<Scalars['String']['output']>;
   /** 资源库文件url，一般是pdf文档 */
@@ -2411,6 +2420,7 @@ export type Companies_Order_By = {
   hidden_product_ids?: InputMaybe<Order_By>;
   id?: InputMaybe<Order_By>;
   logo_url?: InputMaybe<Order_By>;
+  mode_for_price?: InputMaybe<Order_By>;
   name?: InputMaybe<Order_By>;
   orders_aggregate?: InputMaybe<Orders_Aggregate_Order_By>;
   packages_aggregate?: InputMaybe<Packages_Aggregate_Order_By>;
@@ -2454,6 +2464,8 @@ export enum Companies_Select_Column {
   /** column name */
   LogoUrl = 'logo_url',
   /** column name */
+  ModeForPrice = 'mode_for_price',
+  /** column name */
   Name = 'name',
   /** column name */
   ResourceFileUrl = 'resource_file_url',
@@ -2474,9 +2486,9 @@ export type Companies_Set_Input = {
   /** 联系我们 二维码 */
   contact_code?: InputMaybe<Scalars['String']['input']>;
   created_at?: InputMaybe<Scalars['timestamptz']['input']>;
-  /** 公司配置的初始用户能否查看价格 */
+  /** 公司配置的初始用户/未登录用户能否查看价格，取决于mode_for_price */
   default_for_can_view_price?: InputMaybe<Scalars['Boolean']['input']>;
-  /** 公司配置的初始用户价格系数 */
+  /** 公司配置的初始用户价格/全局系数，取决于mode_for_price */
   default_for_price_factor?: InputMaybe<Scalars['numeric']['input']>;
   /** 富文本，公司介绍 */
   description?: InputMaybe<Scalars['String']['input']>;
@@ -2489,6 +2501,8 @@ export type Companies_Set_Input = {
   id?: InputMaybe<Scalars['bigint']['input']>;
   /** 公司logo */
   logo_url?: InputMaybe<Scalars['String']['input']>;
+  /** 价格系数模式：1.company公司统一修改价格系数 2.user每个用户单独定制价格系数 */
+  mode_for_price?: InputMaybe<Scalars['String']['input']>;
   /** 公司名称 */
   name?: InputMaybe<Scalars['String']['input']>;
   /** 资源库文件url，一般是pdf文档 */
@@ -2503,7 +2517,7 @@ export type Companies_Set_Input = {
 /** aggregate stddev on columns */
 export type Companies_Stddev_Fields = {
   __typename?: 'companies_stddev_fields';
-  /** 公司配置的初始用户价格系数 */
+  /** 公司配置的初始用户价格/全局系数，取决于mode_for_price */
   default_for_price_factor?: Maybe<Scalars['Float']['output']>;
   id?: Maybe<Scalars['Float']['output']>;
 };
@@ -2511,7 +2525,7 @@ export type Companies_Stddev_Fields = {
 /** aggregate stddev_pop on columns */
 export type Companies_Stddev_Pop_Fields = {
   __typename?: 'companies_stddev_pop_fields';
-  /** 公司配置的初始用户价格系数 */
+  /** 公司配置的初始用户价格/全局系数，取决于mode_for_price */
   default_for_price_factor?: Maybe<Scalars['Float']['output']>;
   id?: Maybe<Scalars['Float']['output']>;
 };
@@ -2519,7 +2533,7 @@ export type Companies_Stddev_Pop_Fields = {
 /** aggregate stddev_samp on columns */
 export type Companies_Stddev_Samp_Fields = {
   __typename?: 'companies_stddev_samp_fields';
-  /** 公司配置的初始用户价格系数 */
+  /** 公司配置的初始用户价格/全局系数，取决于mode_for_price */
   default_for_price_factor?: Maybe<Scalars['Float']['output']>;
   id?: Maybe<Scalars['Float']['output']>;
 };
@@ -2541,9 +2555,9 @@ export type Companies_Stream_Cursor_Value_Input = {
   /** 联系我们 二维码 */
   contact_code?: InputMaybe<Scalars['String']['input']>;
   created_at?: InputMaybe<Scalars['timestamptz']['input']>;
-  /** 公司配置的初始用户能否查看价格 */
+  /** 公司配置的初始用户/未登录用户能否查看价格，取决于mode_for_price */
   default_for_can_view_price?: InputMaybe<Scalars['Boolean']['input']>;
-  /** 公司配置的初始用户价格系数 */
+  /** 公司配置的初始用户价格/全局系数，取决于mode_for_price */
   default_for_price_factor?: InputMaybe<Scalars['numeric']['input']>;
   /** 富文本，公司介绍 */
   description?: InputMaybe<Scalars['String']['input']>;
@@ -2556,6 +2570,8 @@ export type Companies_Stream_Cursor_Value_Input = {
   id?: InputMaybe<Scalars['bigint']['input']>;
   /** 公司logo */
   logo_url?: InputMaybe<Scalars['String']['input']>;
+  /** 价格系数模式：1.company公司统一修改价格系数 2.user每个用户单独定制价格系数 */
+  mode_for_price?: InputMaybe<Scalars['String']['input']>;
   /** 公司名称 */
   name?: InputMaybe<Scalars['String']['input']>;
   /** 资源库文件url，一般是pdf文档 */
@@ -2570,7 +2586,7 @@ export type Companies_Stream_Cursor_Value_Input = {
 /** aggregate sum on columns */
 export type Companies_Sum_Fields = {
   __typename?: 'companies_sum_fields';
-  /** 公司配置的初始用户价格系数 */
+  /** 公司配置的初始用户价格/全局系数，取决于mode_for_price */
   default_for_price_factor?: Maybe<Scalars['numeric']['output']>;
   id?: Maybe<Scalars['bigint']['output']>;
 };
@@ -2602,6 +2618,8 @@ export enum Companies_Update_Column {
   /** column name */
   LogoUrl = 'logo_url',
   /** column name */
+  ModeForPrice = 'mode_for_price',
+  /** column name */
   Name = 'name',
   /** column name */
   ResourceFileUrl = 'resource_file_url',
@@ -2625,7 +2643,7 @@ export type Companies_Updates = {
 /** aggregate var_pop on columns */
 export type Companies_Var_Pop_Fields = {
   __typename?: 'companies_var_pop_fields';
-  /** 公司配置的初始用户价格系数 */
+  /** 公司配置的初始用户价格/全局系数，取决于mode_for_price */
   default_for_price_factor?: Maybe<Scalars['Float']['output']>;
   id?: Maybe<Scalars['Float']['output']>;
 };
@@ -2633,7 +2651,7 @@ export type Companies_Var_Pop_Fields = {
 /** aggregate var_samp on columns */
 export type Companies_Var_Samp_Fields = {
   __typename?: 'companies_var_samp_fields';
-  /** 公司配置的初始用户价格系数 */
+  /** 公司配置的初始用户价格/全局系数，取决于mode_for_price */
   default_for_price_factor?: Maybe<Scalars['Float']['output']>;
   id?: Maybe<Scalars['Float']['output']>;
 };
@@ -2641,7 +2659,7 @@ export type Companies_Var_Samp_Fields = {
 /** aggregate variance on columns */
 export type Companies_Variance_Fields = {
   __typename?: 'companies_variance_fields';
-  /** 公司配置的初始用户价格系数 */
+  /** 公司配置的初始用户价格/全局系数，取决于mode_for_price */
   default_for_price_factor?: Maybe<Scalars['Float']['output']>;
   id?: Maybe<Scalars['Float']['output']>;
 };
@@ -10622,7 +10640,7 @@ export type Users = {
   created_at: Scalars['timestamptz']['output'];
   id: Scalars['bigint']['output'];
   /** 手机号（唯一） */
-  mobile: Scalars['String']['output'];
+  mobile?: Maybe<Scalars['String']['output']>;
   /** 昵称 */
   nickname?: Maybe<Scalars['String']['output']>;
   /** An array relationship */
@@ -10631,9 +10649,11 @@ export type Users = {
   orders_aggregate: Orders_Aggregate;
   /** 密码，md5 32位小写 */
   password?: Maybe<Scalars['String']['output']>;
-  /** 用户角色 1.user（普通用户）2.admin（平台管理员） */
+  /** 用户角色 1.user（普通用户）2.admin（平台管理员）3.wx_guest_user（微信的匿名访客） */
   role: Scalars['String']['output'];
   updated_at: Scalars['timestamptz']['output'];
+  /** role= wx_guest_user时用户的小程序openid */
+  wx_mini_openid?: Maybe<Scalars['String']['output']>;
 };
 
 
@@ -10774,6 +10794,7 @@ export type Users_Bool_Exp = {
   password?: InputMaybe<String_Comparison_Exp>;
   role?: InputMaybe<String_Comparison_Exp>;
   updated_at?: InputMaybe<Timestamptz_Comparison_Exp>;
+  wx_mini_openid?: InputMaybe<String_Comparison_Exp>;
 };
 
 /** unique or primary key constraints on table "users" */
@@ -10781,7 +10802,9 @@ export enum Users_Constraint {
   /** unique or primary key constraint on columns "mobile" */
   UsersMobileKey = 'users_mobile_key',
   /** unique or primary key constraint on columns "id" */
-  UsersPkey = 'users_pkey'
+  UsersPkey = 'users_pkey',
+  /** unique or primary key constraint on columns "wx_mini_openid" */
+  UsersWxMiniOpenidKey = 'users_wx_mini_openid_key'
 }
 
 /** input type for incrementing numeric columns in table "users" */
@@ -10807,9 +10830,11 @@ export type Users_Insert_Input = {
   orders?: InputMaybe<Orders_Arr_Rel_Insert_Input>;
   /** 密码，md5 32位小写 */
   password?: InputMaybe<Scalars['String']['input']>;
-  /** 用户角色 1.user（普通用户）2.admin（平台管理员） */
+  /** 用户角色 1.user（普通用户）2.admin（平台管理员）3.wx_guest_user（微信的匿名访客） */
   role?: InputMaybe<Scalars['String']['input']>;
   updated_at?: InputMaybe<Scalars['timestamptz']['input']>;
+  /** role= wx_guest_user时用户的小程序openid */
+  wx_mini_openid?: InputMaybe<Scalars['String']['input']>;
 };
 
 /** aggregate max on columns */
@@ -10827,9 +10852,11 @@ export type Users_Max_Fields = {
   nickname?: Maybe<Scalars['String']['output']>;
   /** 密码，md5 32位小写 */
   password?: Maybe<Scalars['String']['output']>;
-  /** 用户角色 1.user（普通用户）2.admin（平台管理员） */
+  /** 用户角色 1.user（普通用户）2.admin（平台管理员）3.wx_guest_user（微信的匿名访客） */
   role?: Maybe<Scalars['String']['output']>;
   updated_at?: Maybe<Scalars['timestamptz']['output']>;
+  /** role= wx_guest_user时用户的小程序openid */
+  wx_mini_openid?: Maybe<Scalars['String']['output']>;
 };
 
 /** aggregate min on columns */
@@ -10847,9 +10874,11 @@ export type Users_Min_Fields = {
   nickname?: Maybe<Scalars['String']['output']>;
   /** 密码，md5 32位小写 */
   password?: Maybe<Scalars['String']['output']>;
-  /** 用户角色 1.user（普通用户）2.admin（平台管理员） */
+  /** 用户角色 1.user（普通用户）2.admin（平台管理员）3.wx_guest_user（微信的匿名访客） */
   role?: Maybe<Scalars['String']['output']>;
   updated_at?: Maybe<Scalars['timestamptz']['output']>;
+  /** role= wx_guest_user时用户的小程序openid */
+  wx_mini_openid?: Maybe<Scalars['String']['output']>;
 };
 
 /** response of any mutation on the table "users" */
@@ -10890,6 +10919,7 @@ export type Users_Order_By = {
   password?: InputMaybe<Order_By>;
   role?: InputMaybe<Order_By>;
   updated_at?: InputMaybe<Order_By>;
+  wx_mini_openid?: InputMaybe<Order_By>;
 };
 
 /** primary key columns input for table: users */
@@ -10916,7 +10946,9 @@ export enum Users_Select_Column {
   /** column name */
   Role = 'role',
   /** column name */
-  UpdatedAt = 'updated_at'
+  UpdatedAt = 'updated_at',
+  /** column name */
+  WxMiniOpenid = 'wx_mini_openid'
 }
 
 /** input type for updating data in table "users" */
@@ -10933,9 +10965,11 @@ export type Users_Set_Input = {
   nickname?: InputMaybe<Scalars['String']['input']>;
   /** 密码，md5 32位小写 */
   password?: InputMaybe<Scalars['String']['input']>;
-  /** 用户角色 1.user（普通用户）2.admin（平台管理员） */
+  /** 用户角色 1.user（普通用户）2.admin（平台管理员）3.wx_guest_user（微信的匿名访客） */
   role?: InputMaybe<Scalars['String']['input']>;
   updated_at?: InputMaybe<Scalars['timestamptz']['input']>;
+  /** role= wx_guest_user时用户的小程序openid */
+  wx_mini_openid?: InputMaybe<Scalars['String']['input']>;
 };
 
 /** aggregate stddev on columns */
@@ -10978,9 +11012,11 @@ export type Users_Stream_Cursor_Value_Input = {
   nickname?: InputMaybe<Scalars['String']['input']>;
   /** 密码，md5 32位小写 */
   password?: InputMaybe<Scalars['String']['input']>;
-  /** 用户角色 1.user（普通用户）2.admin（平台管理员） */
+  /** 用户角色 1.user（普通用户）2.admin（平台管理员）3.wx_guest_user（微信的匿名访客） */
   role?: InputMaybe<Scalars['String']['input']>;
   updated_at?: InputMaybe<Scalars['timestamptz']['input']>;
+  /** role= wx_guest_user时用户的小程序openid */
+  wx_mini_openid?: InputMaybe<Scalars['String']['input']>;
 };
 
 /** aggregate sum on columns */
@@ -11008,7 +11044,9 @@ export enum Users_Update_Column {
   /** column name */
   Role = 'role',
   /** column name */
-  UpdatedAt = 'updated_at'
+  UpdatedAt = 'updated_at',
+  /** column name */
+  WxMiniOpenid = 'wx_mini_openid'
 }
 
 export type Users_Updates = {

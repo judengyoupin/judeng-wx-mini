@@ -25,6 +25,102 @@ interface RoleCacheEntry {
 /** 缓存 key：companyId 为 0 表示「管理的公司」查询结果 */
 let roleCache: { userId: number; companyKey: number; entry: RoleCacheEntry } | null = null;
 
+/** company_users 行 + 嵌套公司策略（与 companies 表 mode_for_price / default_* 一致） */
+type CompanyUserPolicyRow = {
+  can_view_price: boolean;
+  price_factor: number | string;
+  company?: {
+    mode_for_price?: string | null;
+    default_for_price_factor?: number | string | null;
+    default_for_can_view_price?: boolean | null;
+  } | null;
+};
+
+/**
+ * mode=company 时用公司 default_for_price_factor；否则用 company_users.price_factor。
+ * company_users 嵌套 company 在部分权限下字段可能为空，此时用当前上下文的 companyInfo（syncCompanyInfo 已拉取）补齐。
+ */
+function resolveEffectivePriceFactor(row: CompanyUserPolicyRow): number {
+  const ci = companyInfo.value as {
+    mode_for_price?: string | null;
+    default_for_price_factor?: number | string | null;
+  } | null;
+  const mode = row.company?.mode_for_price ?? ci?.mode_for_price ?? null;
+  const companyFactor = Number(
+    row.company?.default_for_price_factor ?? ci?.default_for_price_factor ?? 1
+  );
+  const userFactor = Number(row.price_factor ?? 1);
+  if (mode === 'company' && companyFactor > 0) return companyFactor;
+  if (userFactor > 0) return userFactor;
+  return 1;
+}
+
+/**
+ * mode=company：users.role=wx_guest_user 用 default_for_can_view_price；其余正式成员一律可看价。
+ * mode=user：company_users.can_view_price；访客无行时由 fetchCompanyGuestPolicy（访客不可看价）。
+ */
+function resolveEffectiveCanViewPrice(
+  row: CompanyUserPolicyRow,
+  appUserRole: string | null | undefined
+): boolean {
+  const ci = companyInfo.value as {
+    mode_for_price?: string | null;
+    default_for_can_view_price?: boolean | null;
+  } | null;
+  const mode = row.company?.mode_for_price ?? ci?.mode_for_price ?? null;
+  const companyCan = Boolean(
+    row.company?.default_for_can_view_price ?? ci?.default_for_can_view_price ?? false
+  );
+  const userCan = Boolean(row.can_view_price);
+  if (mode === 'company') {
+    if (appUserRole === 'wx_guest_user') return companyCan;
+    return true;
+  }
+  return userCan;
+}
+
+/** wx_guest_user 且无 company_users 行：仅按公司表策略给默认可看价与系数 */
+async function fetchCompanyGuestPolicy(companyId: number): Promise<CompanyUserRoleResult | null> {
+  try {
+    const res = (await client.execute({
+      query: `
+        query GuestCompanyPolicy($id: bigint!) {
+          companies_by_pk(id: $id) {
+            mode_for_price
+            default_for_price_factor
+            default_for_can_view_price
+          }
+        }
+      `,
+      variables: { id: companyId },
+    })) as {
+      companies_by_pk?: {
+        mode_for_price?: string | null;
+        default_for_price_factor?: number | string | null;
+        default_for_can_view_price?: boolean | null;
+      } | null;
+    };
+    const c = res?.companies_by_pk;
+    if (!c) return null;
+    if (c.mode_for_price === 'company') {
+      const pf = Number(c.default_for_price_factor ?? 1);
+      return {
+        isAdmin: false,
+        canViewPrice: Boolean(c.default_for_can_view_price),
+        priceFactor: pf > 0 ? pf : 1,
+      };
+    }
+    return {
+      isAdmin: false,
+      canViewPrice: false,
+      priceFactor: 1,
+    };
+  } catch (e) {
+    console.error('fetchCompanyGuestPolicy', e);
+    return null;
+  }
+}
+
 /** 清除角色缓存，登录后调用以强制下次使用最新数据 */
 export function clearCompanyUserRoleCache(): void {
   roleCache = null;
@@ -181,6 +277,9 @@ export async function getCompanyUserRole(companyId?: number): Promise<CompanyUse
               id
               name
               logo_url
+              mode_for_price
+              default_for_price_factor
+              default_for_can_view_price
             }
           }
         }
@@ -191,8 +290,8 @@ export async function getCompanyUserRole(companyId?: number): Promise<CompanyUse
       const company = row.company;
       return {
         isAdmin: row.role === 'admin',
-        canViewPrice: row.can_view_price,
-        priceFactor: Number(row.price_factor),
+        canViewPrice: resolveEffectiveCanViewPrice(row, userInfo.value?.role ?? null),
+        priceFactor: resolveEffectivePriceFactor(row),
         managedCompany: company
           ? { id: company.id, name: company.name, logo_url: company.logo_url ?? null }
           : undefined,
@@ -218,6 +317,11 @@ export async function getCompanyUserRole(companyId?: number): Promise<CompanyUse
           role
           can_view_price
           price_factor
+          company {
+            mode_for_price
+            default_for_price_factor
+            default_for_can_view_price
+          }
         }
       }
     `;
@@ -227,14 +331,17 @@ export async function getCompanyUserRole(companyId?: number): Promise<CompanyUse
     });
 
     if (!result?.company_users || result.company_users.length === 0) {
+      if (userInfo.value?.role === 'wx_guest_user') {
+        return await fetchCompanyGuestPolicy(Number(targetCompanyId));
+      }
       return null;
     }
 
     const companyUser = result.company_users[0];
     return {
       isAdmin: companyUser.role === 'admin',
-      canViewPrice: companyUser.can_view_price,
-      priceFactor: Number(companyUser.price_factor),
+      canViewPrice: resolveEffectiveCanViewPrice(companyUser, userInfo.value?.role ?? null),
+      priceFactor: resolveEffectivePriceFactor(companyUser),
     };
   } catch (error) {
     console.error('获取公司用户角色失败:', error);
