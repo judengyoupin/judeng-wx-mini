@@ -253,14 +253,38 @@
       @click="showAboutModal = false"
     >
       <view class="modal-content about-modal" @click.stop>
-        <view class="modal-header">
+        <view class="about-modal-accent" />
+        <view class="modal-header about-modal-header">
           <text class="modal-title">关于我们</text>
-          <text class="modal-close" @click="showAboutModal = false">×</text>
+          <view class="modal-close-wrap" @click.stop="showAboutModal = false">
+            <text class="modal-close">×</text>
+          </view>
         </view>
-        <scroll-view scroll-y class="modal-body">
-          <text v-if="companyPublicInfo?.description" class="about-desc">{{
-            companyPublicInfo.description
-          }}</text>
+        <scroll-view
+          scroll-y
+          class="modal-body about-modal-body"
+          :show-scrollbar="false"
+        >
+          <view v-if="companyPublicInfo" class="about-brand">
+            <image
+              v-if="companyPublicInfo.logo_url"
+              class="about-logo"
+              :src="companyPublicInfo.logo_url"
+              mode="aspectFill"
+            />
+            <view v-else class="about-logo-placeholder">
+              <text class="about-logo-letter">{{
+                (companyPublicInfo.name || "公").charAt(0)
+              }}</text>
+            </view>
+            <text class="about-co-name">{{ companyPublicInfo.name }}</text>
+          </view>
+          <view
+            v-if="companyPublicInfo?.description"
+            class="about-text-card"
+          >
+            <text class="about-desc">{{ companyPublicInfo.description }}</text>
+          </view>
           <view v-else class="empty-tip">暂无介绍</view>
         </scroll-view>
       </view>
@@ -1154,60 +1178,145 @@ onShow(async () => {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(15, 23, 42, 0.48);
+  backdrop-filter: blur(4px);
   z-index: 1000;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 40rpx;
+  padding: 48rpx 40rpx;
+  box-sizing: border-box;
 }
 
 .modal-content {
   width: 100%;
-  max-width: 600rpx;
-  max-height: 80vh;
+  max-width: 620rpx;
   background: #fff;
-  border-radius: 24rpx;
+  border-radius: 28rpx;
   overflow: hidden;
+  box-shadow: 0 24rpx 64rpx rgba(15, 23, 42, 0.18);
+}
+
+.about-modal {
+  display: flex;
+  flex-direction: column;
+  max-height: 82vh;
+}
+
+.about-modal-accent {
+  height: 8rpx;
+  width: 100%;
+  background: linear-gradient(90deg, #4ecdc4 0%, #44a08d 100%);
+}
+
+.about-modal-header {
+  padding: 28rpx 32rpx 24rpx;
+  border-bottom: 1rpx solid #f1f5f9;
+  flex-shrink: 0;
 }
 
 .modal-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 28rpx 24rpx;
-  border-bottom: 1rpx solid #f0f0f0;
 }
 
 .modal-title {
-  font-size: 32rpx;
-  font-weight: 600;
-  color: #333;
+  font-size: 34rpx;
+  font-weight: 700;
+  color: #0f172a;
+  letter-spacing: 0.5rpx;
+}
+
+.modal-close-wrap {
+  width: 64rpx;
+  height: 64rpx;
+  border-radius: 50%;
+  background: #f1f5f9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .modal-close {
-  font-size: 44rpx;
-  color: #999;
-  padding: 0 8rpx;
+  font-size: 40rpx;
+  color: #64748b;
+  line-height: 1;
+  padding: 0;
 }
 
-.about-modal .modal-body {
-  padding: 24rpx;
-  max-height: 60vh;
+.about-modal-body {
+  padding: 28rpx 32rpx 36rpx;
+  box-sizing: border-box;
+  max-height: 68vh;
+}
+
+.about-brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 28rpx;
+  padding-bottom: 28rpx;
+  border-bottom: 1rpx solid #f1f5f9;
+}
+
+.about-logo {
+  width: 120rpx;
+  height: 120rpx;
+  border-radius: 24rpx;
+  background: #f8fafc;
+  border: 1rpx solid #e2e8f0;
+}
+
+.about-logo-placeholder {
+  width: 120rpx;
+  height: 120rpx;
+  border-radius: 24rpx;
+  background: linear-gradient(135deg, #e0f2fe 0%, #ccfbf1 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1rpx solid #e2e8f0;
+}
+
+.about-logo-letter {
+  font-size: 48rpx;
+  font-weight: 700;
+  color: #0d9488;
+}
+
+.about-co-name {
+  margin-top: 20rpx;
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #1e293b;
+  text-align: center;
+  line-height: 1.4;
+  padding: 0 16rpx;
+}
+
+.about-text-card {
+  background: #f8fafc;
+  border-radius: 20rpx;
+  padding: 28rpx 26rpx;
+  border: 1rpx solid #e2e8f0;
 }
 
 .about-desc {
+  display: block;
   font-size: 28rpx;
-  color: #666;
-  line-height: 1.6;
+  color: #334155;
+  line-height: 1.85;
   white-space: pre-wrap;
+  word-break: break-word;
+  text-align: left;
 }
 
 .empty-tip {
   font-size: 28rpx;
-  color: #999;
+  color: #94a3b8;
   text-align: center;
-  padding: 40rpx;
+  padding: 48rpx 24rpx;
 }
 
 .register-tip--top {

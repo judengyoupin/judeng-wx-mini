@@ -6,7 +6,7 @@
         <input :adjust-position="false" 
           class="search-input" 
           v-model="keyword" 
-          placeholder="搜索手机号或昵称"
+          placeholder="搜索手机号、昵称或 OpenID"
           confirm-type="search"
           @confirm="handleSearch"
         />
@@ -69,11 +69,11 @@
             mode="aspectFill"
           />
           <view v-else class="user-avatar-placeholder">
-            <text class="avatar-text">{{ (user.nickname || user.mobile || 'U').charAt(0).toUpperCase() }}</text>
+            <text class="avatar-text">{{ displayAvatarLetter(user) }}</text>
           </view>
           <view class="user-details">
             <view class="user-name-row">
-              <text class="user-name">{{ user.nickname || '未设置昵称' }}</text>
+              <text class="user-name">{{ displayUserName(user) }}</text>
               <view
                 class="user-role-badge"
                 :class="{
@@ -90,11 +90,21 @@
                 }}
               </view>
             </view>
-            <text class="user-mobile">{{ user.mobile || '—' }}</text>
+            <text class="user-mobile" :class="{ 'openid-text': user.role === 'wx_guest_user' && user.wx_mini_openid }">
+              {{ displayUserPhoneOrOpenid(user) }}
+            </text>
+            <text class="user-companies">{{ formatUserCompanies(user) }}</text>
           </view>
         </view>
         <view class="user-actions">
-          <view class="action-btn" @click="editUser(user)">编辑</view>
+          <view
+            v-if="user.role !== 'wx_guest_user'"
+            class="action-btn"
+            @click="editUser(user)"
+          >
+            编辑
+          </view>
+          <text v-else class="guest-no-edit" title="微信访客不支持修改角色">—</text>
         </view>
       </view>
 
@@ -137,11 +147,13 @@
                 mode="aspectFill"
               />
               <view v-else class="display-avatar-placeholder">
-                <text>{{ (editingUser?.nickname || editingUser?.mobile || 'U').charAt(0).toUpperCase() }}</text>
+                <text>{{ displayAvatarLetter(editingUser) }}</text>
               </view>
               <view class="display-info">
-                <text class="display-name">{{ editingUser?.nickname || '未设置昵称' }}</text>
-                <text class="display-mobile">{{ editingUser?.mobile }}</text>
+                <text class="display-name">{{ displayUserName(editingUser) }}</text>
+                <text class="display-mobile" :class="{ 'openid-text': editingUser?.role === 'wx_guest_user' }">
+                  {{ displayUserPhoneOrOpenid(editingUser) }}
+                </text>
               </view>
             </view>
           </view>
@@ -163,14 +175,8 @@
               >
                 管理员
               </view>
-              <view
-                class="role-option"
-                :class="{ active: selectedRoleIndex === 2 }"
-                @click="selectedRoleIndex = 2"
-              >
-                微信访客
-              </view>
             </view>
+            <text class="role-hint">微信访客为匿名登录生成，不可修改或在此指派。</text>
           </view>
         </view>
         <view class="modal-footer">
@@ -197,6 +203,37 @@ const keyword = ref('');
 const roleFilter = ref<'' | 'user' | 'admin' | 'wx_guest_user'>('');
 const totalCount = ref(0);
 
+function formatUserCompanies(user: { company_users?: { company?: { name?: string | null } | null }[] }) {
+  const names = (user.company_users ?? [])
+    .map((row) => (row.company?.name ?? '').trim())
+    .filter((n) => n.length > 0);
+  if (names.length === 0) return '未加入任何公司';
+  return `公司：${names.join('、')}`;
+}
+
+function displayUserName(user: { nickname?: string | null; role?: string | null } | null) {
+  if (!user) return '';
+  if (user.nickname) return user.nickname;
+  if (user.role === 'wx_guest_user') return '匿名访客';
+  return '未设置昵称';
+}
+
+function displayUserPhoneOrOpenid(user: {
+  mobile?: string | null;
+  role?: string | null;
+  wx_mini_openid?: string | null;
+} | null) {
+  if (!user) return '—';
+  if (user.mobile) return user.mobile;
+  if (user.role === 'wx_guest_user' && user.wx_mini_openid) return user.wx_mini_openid;
+  return '—';
+}
+
+function displayAvatarLetter(user: { nickname?: string | null; mobile?: string | null; wx_mini_openid?: string | null } | null) {
+  const s = user?.nickname || user?.mobile || user?.wx_mini_openid || 'U';
+  return String(s).charAt(0).toUpperCase();
+}
+
 // 当前筛选下的用户数量文案
 const countText = computed(() => {
   const n = totalCount.value;
@@ -209,7 +246,7 @@ const countText = computed(() => {
 // 弹窗相关
 const showEditModal = ref(false);
 const editingUser = ref<any>(null);
-const PLATFORM_ROLE_VALUES = ['user', 'admin', 'wx_guest_user'] as const;
+const PLATFORM_ROLE_VALUES = ['user', 'admin'] as const;
 const selectedRoleIndex = ref(0);
 
 // 加载用户列表
@@ -290,10 +327,12 @@ const onRefresh = () => {
 
 // 编辑用户
 const editUser = (user: any) => {
+  if (user.role === 'wx_guest_user') {
+    uni.showToast({ title: '微信访客不支持修改角色', icon: 'none' });
+    return;
+  }
   editingUser.value = user;
-  const r = user.role;
-  selectedRoleIndex.value =
-    r === 'admin' ? 1 : r === 'wx_guest_user' ? 2 : 0;
+  selectedRoleIndex.value = user.role === 'admin' ? 1 : 0;
   showEditModal.value = true;
 };
 
@@ -434,15 +473,16 @@ onShow(() => {
   margin-bottom: 20rpx;
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
 }
 
 .user-info {
   flex: 1;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 20rpx;
+  min-width: 0;
 }
 
 .user-avatar,
@@ -508,9 +548,31 @@ onShow(() => {
   color: #999999;
 }
 
+.openid-text {
+  font-size: 22rpx;
+  color: #64748b;
+  word-break: break-all;
+  font-family: ui-monospace, monospace;
+}
+
+.guest-no-edit {
+  font-size: 26rpx;
+  color: #cbd5e1;
+  padding: 12rpx 24rpx;
+}
+
+.user-companies {
+  font-size: 24rpx;
+  color: #64748b;
+  line-height: 1.4;
+  word-break: break-all;
+}
+
 .user-actions {
   display: flex;
   gap: 16rpx;
+  flex-shrink: 0;
+  align-self: center;
 }
 
 .action-btn {
@@ -665,6 +727,14 @@ onShow(() => {
   background: #667eea;
   color: #ffffff;
   font-weight: 500;
+}
+
+.role-hint {
+  display: block;
+  margin-top: 16rpx;
+  font-size: 22rpx;
+  color: #94a3b8;
+  line-height: 1.4;
 }
 
 .modal-footer {

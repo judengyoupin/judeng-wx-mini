@@ -2,122 +2,144 @@
   <view class="search-page">
     <PageNavBar :title="pageTitle" :show-back="true" @back="goBack" />
 
-    <!-- 搜索栏：进入页面自动聚焦 -->
-    <view class="search-bar">
-      <view class="search-input-box">
-        <text class="search-icon">🔍</text>
-        <input :adjust-position="false"
-          class="search-input"
-          v-model="keyword"
-          :placeholder="searchPlaceholder"
-          :focus="inputFocused"
-          confirm-type="search"
-          @confirm="onSearch"
-          @input="onInput"
-        />
-        <text v-if="keyword" class="clear-icon" @click="clearSearch">×</text>
+    <!-- 固定在导航下方：搜索 + 分类说明（仅下方列表滚动） -->
+    <view id="search-header-anchor" class="search-header-fixed">
+      <view class="search-bar">
+        <view class="search-input-box">
+          <image class="search-icon-img" src="/static/index/srch.png" mode="aspectFit" />
+          <input
+            :adjust-position="false"
+            class="search-input"
+            v-model="keyword"
+            :placeholder="searchPlaceholder"
+            :focus="inputFocused"
+            confirm-type="search"
+            @confirm="onSearch"
+            @input="onInput"
+          />
+          <text v-if="keyword" class="clear-icon" @click="clearSearch">×</text>
+        </view>
+      </view>
+
+      <view v-if="categoryName" class="category-desc-bar">
+        <view class="category-desc-line"></view>
+        <text class="category-desc-text">{{ categoryName }}</text>
       </view>
     </view>
 
-    <!-- 传入分类筛选时：展示当前分类名称说明（左侧蓝条 + 分类名） -->
-    <view v-if="categoryName" class="category-desc-bar">
-      <view class="category-desc-line"></view>
-      <text class="category-desc-text">{{ categoryName }}</text>
-    </view>
-
-    <!-- 骨架屏（首屏/搜索加载中且无数据时） -->
     <view
       v-if="loading && (searchType === 'product' ? products.length === 0 : packages.length === 0)"
       class="skeleton-area"
+      :style="listAreaStyle"
     >
       <SkeletonScreen :type="searchType === 'product' ? 'list-grid-2' : 'list-grid-3'" :count="6" />
     </view>
 
-    <!-- 商品列表 -->
-    <scroll-view
-      v-else-if="searchType === 'product'"
-      scroll-y
-      class="scroll-content"
-      @scrolltolower="loadMore"
-      refresher-enabled
-      :refresher-triggered="isRefreshing"
-      @refresherrefresh="onRefresh"
-    >
-      <view class="product-grid" v-if="products.length > 0">
-        <view
-          v-for="product in products"
-          :key="product.id"
-          class="product-card"
-          @click="goProductDetail(product)"
-        >
-          <view class="product-card-image-wrap">
-            <image class="product-card-image" :src="product.cover_image_url" mode="aspectFill" lazy-load />
-            <ProductImageBadges :tags="product.tags" :out-of-stock="isProductOutOfStock(product)" />
-          </view>
-          <view class="product-card-info">
-            <view class="product-card-name">{{ product.name }}</view>
-          </view>
-        </view>
-      </view>
-      <view v-else class="empty-state">
-        <text class="empty-text">暂无商品</text>
-      </view>
-      <view v-if="loading && products.length > 0" class="loading-more">
-        <view class="loading-spinner"></view>
-        <text>加载中...</text>
-      </view>
-      <view v-else-if="products.length > 0 && !hasMore" class="no-more">
-        <text>没有更多了</text>
-      </view>
-    </scroll-view>
-
-    <!-- 套餐列表 -->
     <scroll-view
       v-else
       scroll-y
-      class="scroll-content"
-      @scrolltolower="loadMore"
+      class="list-scroll"
+      :style="listAreaStyle"
+      :lower-threshold="100"
+      :enable-back-to-top="true"
       refresher-enabled
-      :refresher-triggered="isRefreshing"
-      @refresherrefresh="onRefresh"
+      :refresher-triggered="refresherTriggered"
+      refresher-default-style="black"
+      @scrolltolower="onScrollToLower"
+      @refresherrefresh="onRefresherRefresh"
     >
-      <view class="package-list" v-if="packages.length > 0">
-        <view
-          v-for="pkg in packages"
-          :key="pkg.id"
-          class="package-item"
-          @click="goPackageDetail(pkg.id)"
-        >
-          <view class="package-image-wrap">
-            <image
-              class="package-image"
-              :src="pkg.cover_image_url || '/static/default.png'"
-              mode="aspectFill"
-              lazy-load
-            />
-            <ProductImageBadges :tags="pkg.tags" :out-of-stock="false" />
+      <!-- 商品 -->
+      <view v-if="searchType === 'product'" class="list-inner">
+        <view class="product-grid" v-if="products.length > 0">
+          <view
+            v-for="product in products"
+            :key="product.id"
+            class="product-card"
+            @click="goProductDetail(product)"
+          >
+            <view class="product-card-image-wrap">
+              <image class="product-card-image" :src="product.cover_image_url" mode="aspectFill" lazy-load />
+              <ProductImageBadges :tags="product.tags" :out-of-stock="isProductOutOfStock(product)" />
+            </view>
+            <view class="product-card-info">
+              <view class="product-card-name">{{ product.name }}</view>
+            </view>
           </view>
-          <view class="package-info">
-            <view class="package-name">{{ pkg.name }}</view>
+        </view>
+        <view v-else class="empty-state">
+          <text class="empty-text">暂无商品</text>
+        </view>
+        <view v-if="products.length > 0" class="list-footer">
+          <view v-if="loading" class="footer-state footer-loading">
+            <view class="footer-dots" aria-hidden="true">
+              <view class="footer-dot" />
+              <view class="footer-dot" />
+              <view class="footer-dot" />
+            </view>
+            <text class="footer-text-muted">正在加载</text>
+          </view>
+          <view v-else-if="!hasMore" class="footer-state footer-done">
+            <view class="footer-rule" />
+            <text class="footer-muted">已显示全部</text>
+            <view class="footer-rule" />
+          </view>
+          <view v-else class="footer-state footer-hint">
+            <text class="footer-text-muted">上拉加载更多</text>
           </view>
         </view>
       </view>
-      <view v-else class="empty-state">
-        <text class="empty-text">暂无套餐</text>
-      </view>
-      <view v-if="loading && packages.length > 0" class="loading-more">
-        <view class="loading-spinner"></view>
-        <text>加载中...</text>
-      </view>
-      <view v-else-if="packages.length > 0 && !hasMore" class="no-more">
-        <text>没有更多了</text>
+
+      <!-- 套餐 -->
+      <view v-else class="list-inner">
+        <view class="package-list" v-if="packages.length > 0">
+          <view
+            v-for="pkg in packages"
+            :key="pkg.id"
+            class="package-item"
+            @click="goPackageDetail(pkg.id)"
+          >
+            <view class="package-image-wrap">
+              <image
+                class="package-image"
+                :src="pkg.cover_image_url || '/static/default.png'"
+                mode="aspectFill"
+                lazy-load
+              />
+              <ProductImageBadges :tags="pkg.tags" :out-of-stock="false" />
+            </view>
+            <view class="package-info">
+              <view class="package-name">{{ pkg.name }}</view>
+            </view>
+          </view>
+        </view>
+        <view v-else class="empty-state">
+          <text class="empty-text">暂无套餐</text>
+        </view>
+        <view v-if="packages.length > 0" class="list-footer">
+          <view v-if="loading" class="footer-state footer-loading">
+            <view class="footer-dots" aria-hidden="true">
+              <view class="footer-dot" />
+              <view class="footer-dot" />
+              <view class="footer-dot" />
+            </view>
+            <text class="footer-text-muted">正在加载</text>
+          </view>
+          <view v-else-if="!hasMore" class="footer-state footer-done">
+            <view class="footer-rule" />
+            <text class="footer-muted">已显示全部</text>
+            <view class="footer-rule" />
+          </view>
+          <view v-else class="footer-state footer-hint">
+            <text class="footer-text-muted">上拉加载更多</text>
+          </view>
+        </view>
       </view>
     </scroll-view>
   </view>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, watch, nextTick } from 'vue';
 import { whenAppReady } from '@/utils/appReady';
 import { onLoad, onReady, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app';
 import { getProductList } from '@/api/product/index';
@@ -136,10 +158,36 @@ const categoryName = ref('');
 const products = ref<any[]>([]);
 const packages = ref<any[]>([]);
 const loading = ref(false);
-const isRefreshing = ref(false);
 const hasMore = ref(true);
 const page = ref(1);
 const pageSize = 12;
+
+const listScrollHeightPx = ref(480);
+const refresherTriggered = ref(false);
+
+const listAreaStyle = computed(() => ({
+  height: `${listScrollHeightPx.value}px`,
+}));
+
+function updateListScrollHeight() {
+  nextTick(() => {
+    const query = uni.createSelectorQuery();
+    query.select('#search-header-anchor').boundingClientRect();
+    query.exec((res: any) => {
+      const rect = res?.[0];
+      const sys = uni.getSystemInfoSync();
+      const winH = sys.windowHeight ?? sys.screenHeight ?? 667;
+      const insetBottom = sys.safeAreaInsets?.bottom ?? 0;
+      if (rect && typeof rect.bottom === 'number') {
+        listScrollHeightPx.value = Math.max(200, Math.floor(winH - rect.bottom - insetBottom));
+      } else {
+        const sh = sys.statusBarHeight ?? 20;
+        const headerGuess = uni.upx2px(categoryName.value ? 280 : 200);
+        listScrollHeightPx.value = Math.max(200, Math.floor(winH - sh - 44 - headerGuess - insetBottom));
+      }
+    });
+  });
+}
 
 const pageTitle = computed(() => {
   if (searchType.value === 'package') return '搜索套餐';
@@ -162,11 +210,9 @@ const loadData = async (refresh = false) => {
     hasMore.value = true;
   }
 
-  // 使用当前用户所属公司 ID，getProductList/getPackageList 内部会按该公司 hidden_*_ids 过滤
   const companyId = userInfo.value?.manager?.company?.id || companyInfo.value?.id;
   if (!companyId) {
     loading.value = false;
-    isRefreshing.value = false;
     return;
   }
 
@@ -201,7 +247,6 @@ const loadData = async (refresh = false) => {
     uni.showToast({ title: '加载失败', icon: 'none' });
   } finally {
     loading.value = false;
-    isRefreshing.value = false;
   }
 };
 
@@ -222,14 +267,22 @@ const clearSearch = () => {
   loadData(true);
 };
 
-const onRefresh = () => {
-  isRefreshing.value = true;
-  loadData(true);
+const loadMore = () => {
+  if (hasMore.value && !loading.value) void loadData();
 };
 
-const loadMore = () => {
-  if (hasMore.value && !loading.value) loadData();
-};
+function onScrollToLower() {
+  loadMore();
+}
+
+async function onRefresherRefresh() {
+  refresherTriggered.value = true;
+  try {
+    await loadData(true);
+  } finally {
+    refresherTriggered.value = false;
+  }
+}
 
 const goProductDetail = (product: any) => {
   uni.navigateTo({ url: `/pages/product-detail/index?id=${product.id}` });
@@ -257,13 +310,27 @@ onLoad(async (options?) => {
   if (options?.categoryName) {
     categoryName.value = decodeURIComponent(options.categoryName);
   }
-  // 无关键词时也加载列表（商品/套餐列表，已排除当前公司隐藏项；商品可能带分类筛选）
+  updateListScrollHeight();
   loadData(true);
 });
 
 onReady(() => {
   inputFocused.value = true;
+  nextTick(() => {
+    updateListScrollHeight();
+    setTimeout(() => updateListScrollHeight(), 100);
+  });
 });
+
+watch(
+  () => categoryName.value,
+  () => {
+    nextTick(() => {
+      updateListScrollHeight();
+      setTimeout(() => updateListScrollHeight(), 100);
+    });
+  }
+);
 
 function getSharePath() {
   const cid = companyInfo.value?.id ?? uni.getStorageSync('companyId') ?? '';
@@ -310,14 +377,19 @@ onShareTimeline(() => {
   background: #f5f5f5;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.search-header-fixed {
+  flex-shrink: 0;
+  background: #f5f5f5;
 }
 
 .search-bar {
   background: #fff;
   padding: 20rpx 30rpx;
-  position: sticky;
-  top: 0;
-  z-index: 10;
+  border-bottom: 1rpx solid #eee;
 }
 
 .search-input-box {
@@ -329,9 +401,10 @@ onShareTimeline(() => {
   padding: 0 30rpx;
 }
 
-.search-icon {
-  font-size: 32rpx;
-  color: #999;
+.search-icon-img {
+  width: 32rpx;
+  height: 32rpx;
+  flex-shrink: 0;
   margin-right: 10rpx;
 }
 
@@ -346,7 +419,6 @@ onShareTimeline(() => {
   padding: 10rpx;
 }
 
-/* 分类筛选说明：左侧蓝色竖条 + 分类名称 */
 .category-desc-bar {
   display: flex;
   align-items: center;
@@ -371,14 +443,20 @@ onShareTimeline(() => {
 }
 
 .skeleton-area {
-  flex: 1;
-  min-height: 400rpx;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 16rpx;
   overflow: hidden;
 }
 
-.scroll-content {
-  flex: 1;
-  overflow: hidden;
+.list-scroll {
+  width: 100%;
+  box-sizing: border-box;
+  background: #f5f5f5;
+}
+
+.list-inner {
+  padding-bottom: calc(24rpx + env(safe-area-inset-bottom, 0px));
 }
 
 .product-grid {
@@ -424,7 +502,6 @@ onShareTimeline(() => {
   overflow: hidden;
 }
 
-/* 套餐列表：与套餐页一致，每行 3 个 */
 .package-list {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -479,27 +556,80 @@ onShareTimeline(() => {
   font-size: 28rpx;
 }
 
-.loading-more,
-.no-more {
-  padding: 30rpx 0;
-  text-align: center;
-  color: #999;
+.list-footer {
+  min-height: 88rpx;
+}
+
+.footer-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 28rpx 24rpx 16rpx;
+  gap: 14rpx;
+}
+
+.footer-loading .footer-text-muted {
   font-size: 24rpx;
+  color: #9ca3af;
 }
 
-.loading-spinner {
-  display: inline-block;
-  width: 30rpx;
-  height: 30rpx;
-  border: 3rpx solid #e0e0e0;
-  border-top-color: #667eea;
+.footer-dots {
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+}
+
+.footer-dot {
+  width: 10rpx;
+  height: 10rpx;
   border-radius: 50%;
-  animation: spin 1s linear infinite;
-  margin-right: 10rpx;
-  vertical-align: middle;
+  background: #0d9488;
+  opacity: 0.35;
+  animation: search-dot-pulse 1s ease-in-out infinite;
 }
 
-@keyframes spin {
-  to { transform: rotate(360deg); }
+.footer-dot:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+.footer-dot:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+@keyframes search-dot-pulse {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.15);
+  }
+}
+
+.footer-hint .footer-text-muted {
+  font-size: 24rpx;
+  color: #9ca3af;
+}
+
+.footer-done {
+  flex-direction: row;
+  gap: 20rpx;
+  padding: 32rpx 16rpx 8rpx;
+}
+
+.footer-rule {
+  flex: 1;
+  height: 1rpx;
+  background: linear-gradient(90deg, transparent, #e5e7eb 20%, #e5e7eb 80%, transparent);
+  max-width: 120rpx;
+}
+
+.footer-muted {
+  font-size: 22rpx;
+  color: #c4c4c4;
+  flex-shrink: 0;
 }
 </style>

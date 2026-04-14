@@ -52,19 +52,22 @@
           <view class="company-details">
             <view class="company-name">{{ company.name }}</view>
             <view class="company-meta">
-              <text class="admin-count">
-                管理员: {{ company.company_users?.length || 0 }}人
+              <text class="member-summary">
+                成员共 {{ companyUserAgg(company, 'company_users_total') }} 人（管理员 {{ companyUserAgg(company, 'company_users_admin') }}、普通用户 {{ companyUserAgg(company, 'company_users_regular') }}）
               </text>
             </view>
-            <view class="company-admins">
-              <text 
-                v-for="(admin, index) in company.company_users" 
+            <view v-if="(company.company_users?.length || 0) > 0" class="company-admins">
+              <text class="admin-line">管理员：</text>
+              <text
+                v-for="(admin, index) in company.company_users"
                 :key="admin.id"
                 class="admin-tag"
               >
-                {{ admin.user?.nickname || admin.user?.mobile }}
-                <text v-if="index < company.company_users.length - 1">、</text>
+                {{ admin.user?.nickname || admin.user?.mobile }}<text v-if="index < (company.company_users?.length || 0) - 1">、</text>
               </text>
+            </view>
+            <view v-else class="company-admins company-admins-empty">
+              <text>管理员：暂无</text>
             </view>
           </view>
         </view>
@@ -205,6 +208,13 @@ import { ref, onMounted, watch } from 'vue';
 import { onPullDownRefresh, onShow } from '@dcloudio/uni-app';
 import { getCompanyList, authorizeCompanyAdmin, searchUserByMobileForPlatform, createUserByMobile } from '@/subPackages/admin/api/platform';
 import { syncCompanyInfo } from '@/api/company/index';
+
+function companyUserAgg(
+  company: any,
+  key: 'company_users_total' | 'company_users_admin' | 'company_users_regular'
+) {
+  return company?.[key]?.aggregate?.count ?? 0;
+}
 
 const companies = ref<any[]>([]);
 const loading = ref(false);
@@ -635,9 +645,23 @@ onPullDownRefresh(() => {
   margin-bottom: 8rpx;
 }
 
+.member-summary {
+  line-height: 1.5;
+  color: #64748b;
+}
+
 .company-admins {
   font-size: 24rpx;
   color: #666666;
+  line-height: 1.5;
+}
+
+.admin-line {
+  margin-right: 4rpx;
+}
+
+.company-admins-empty {
+  color: #999999;
 }
 
 .admin-tag {

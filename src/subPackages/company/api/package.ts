@@ -1,5 +1,21 @@
 import client from '@/config-lib/hasura-graphql-client/hasura-graphql-client';
 
+function shouldFilterPackageByCategory(categoryId?: number): categoryId is number {
+  return categoryId != null && Number.isFinite(Number(categoryId));
+}
+
+/** 套餐挂在子分类时，按父级筛选需匹配分类自身或上级链含所选 id */
+const PACKAGE_CATEGORY_SUBTREE_WHERE = `{
+  category: {
+    _or: [
+      { id: { _eq: $categoryId } },
+      { category: { id: { _eq: $categoryId } } },
+      { category: { category: { id: { _eq: $categoryId } } } },
+      { category: { category: { category: { id: { _eq: $categoryId } } } } }
+    ]
+  }
+}`;
+
 export interface PackageInput {
   name: string;
   cover_image_url: string;
@@ -58,34 +74,56 @@ const PACKAGE_LIST_FIELDS = `
  */
 export async function getPackageListWithCompanyHidden(params: {
   companyId: number;
+  categoryId?: number;
   limit?: number;
   offset?: number;
 }) {
   const limit = params.limit ?? 20;
   const offset = params.offset ?? 0;
+  const whereAnd = [
+    '{ company_companies: { _eq: $companyId } }',
+    ...(shouldFilterPackageByCategory(params.categoryId) ? [PACKAGE_CATEGORY_SUBTREE_WHERE] : []),
+  ];
+  const catDecl = shouldFilterPackageByCategory(params.categoryId) ? ', $categoryId: bigint!' : '';
   const query = `
-    query GetPackageListWithCompany($companyId: bigint!, $limit: Int!, $offset: Int!) {
+    query GetPackageListWithCompany($companyId: bigint!, $limit: Int!, $offset: Int!${catDecl}) {
       company: companies_by_pk(id: $companyId) { hidden_package_ids }
       packages(
-        where: { company_companies: { _eq: $companyId } }
+        where: {
+          _and: [
+            ${whereAnd.join(',\n            ')}
+          ]
+        }
         limit: $limit
         offset: $offset
         order_by: [{ sort_order: asc }, { created_at: desc }]
       ) {
         ${PACKAGE_LIST_FIELDS}
       }
-      packages_aggregate(where: { company_companies: { _eq: $companyId } }) {
+      packages_aggregate(
+        where: {
+          _and: [
+            ${whereAnd.join(',\n            ')}
+          ]
+        }
+      ) {
         aggregate { count }
       }
     }
   `;
+  const variables: Record<string, unknown> = {
+    companyId: params.companyId,
+    limit,
+    offset,
+  };
+  if (shouldFilterPackageByCategory(params.categoryId)) variables.categoryId = params.categoryId;
   const result = await client.execute<{
     company: { hidden_package_ids: (string | number)[] | null } | null;
     packages: any[];
     packages_aggregate: { aggregate: { count: number } };
   }>({
     query,
-    variables: { companyId: params.companyId, limit, offset },
+    variables,
   });
   const hidden = result?.company?.hidden_package_ids;
   const hiddenPackageIds = Array.isArray(hidden) ? hidden.map((id) => Number(id)) : [];
@@ -132,39 +170,57 @@ const PACKAGE_LIST_FIELDS_WITH_COMPANY = `
 export async function getPackageListMultiCompany(params: {
   companyIds: number[];
   hiddenForCompanyId: number;
+  categoryId?: number;
   limit?: number;
   offset?: number;
 }) {
   const limit = params.limit ?? 20;
   const offset = params.offset ?? 0;
+  const whereAnd = [
+    '{ company_companies: { _in: $companyIds } }',
+    ...(shouldFilterPackageByCategory(params.categoryId) ? [PACKAGE_CATEGORY_SUBTREE_WHERE] : []),
+  ];
+  const catDecl = shouldFilterPackageByCategory(params.categoryId) ? ', $categoryId: bigint!' : '';
   const query = `
-    query GetPackageListMulti($companyIds: [bigint!]!, $hiddenForCompanyId: bigint!, $limit: Int!, $offset: Int!) {
+    query GetPackageListMulti($companyIds: [bigint!]!, $hiddenForCompanyId: bigint!, $limit: Int!, $offset: Int!${catDecl}) {
       company: companies_by_pk(id: $hiddenForCompanyId) { hidden_package_ids }
       packages(
-        where: { company_companies: { _in: $companyIds } }
+        where: {
+          _and: [
+            ${whereAnd.join(',\n            ')}
+          ]
+        }
         limit: $limit
         offset: $offset
         order_by: [{ sort_order: asc }, { created_at: desc }]
       ) {
         ${PACKAGE_LIST_FIELDS_WITH_COMPANY}
       }
-      packages_aggregate(where: { company_companies: { _in: $companyIds } }) {
+      packages_aggregate(
+        where: {
+          _and: [
+            ${whereAnd.join(',\n            ')}
+          ]
+        }
+      ) {
         aggregate { count }
       }
     }
   `;
+  const variables: Record<string, unknown> = {
+    companyIds: params.companyIds,
+    hiddenForCompanyId: params.hiddenForCompanyId,
+    limit,
+    offset,
+  };
+  if (shouldFilterPackageByCategory(params.categoryId)) variables.categoryId = params.categoryId;
   const result = await client.execute<{
     company: { hidden_package_ids: (string | number)[] | null } | null;
     packages: any[];
     packages_aggregate: { aggregate: { count: number } };
   }>({
     query,
-    variables: {
-      companyIds: params.companyIds,
-      hiddenForCompanyId: params.hiddenForCompanyId,
-      limit,
-      offset,
-    },
+    variables,
   });
   const hidden = result?.company?.hidden_package_ids;
   const hiddenPackageIds = Array.isArray(hidden) ? hidden.map((id) => Number(id)) : [];
@@ -180,19 +236,44 @@ export async function getPackageListMultiCompany(params: {
 }
 
 /**
- * 获取套餐列表（可选按公司筛选）
+ * 获取套餐列表（可选按公司、分类筛选）
  */
 export async function getPackageList(params: {
   companyId?: number;
+  categoryId?: number;
   limit?: number;
   offset?: number;
 }) {
-  const hasCompany = params.companyId != null;
-  const whereStr = hasCompany ? 'where: { company_companies: { _eq: $companyId } }, ' : '';
+  const conditions: string[] = [];
+  if (params.companyId != null) {
+    conditions.push('{ company_companies: { _eq: $companyId } }');
+  }
+  if (shouldFilterPackageByCategory(params.categoryId)) {
+    conditions.push(PACKAGE_CATEGORY_SUBTREE_WHERE);
+  }
+  const whereClause =
+    conditions.length > 0
+      ? `where: { _and: [ ${conditions.join(', ')} ] }, `
+      : '';
+
+  const varDecl: string[] = ['$limit: Int', '$offset: Int'];
+  const variables: Record<string, unknown> = {
+    limit: params.limit || 20,
+    offset: params.offset || 0,
+  };
+  if (params.companyId != null) {
+    varDecl.push('$companyId: bigint!');
+    variables.companyId = params.companyId;
+  }
+  if (shouldFilterPackageByCategory(params.categoryId)) {
+    varDecl.push('$categoryId: bigint!');
+    variables.categoryId = params.categoryId;
+  }
+
   const query = `
-    query GetPackageList($limit: Int, $offset: Int${hasCompany ? ', $companyId: bigint!' : ''}) {
+    query GetPackageList(${varDecl.join(', ')}) {
       packages(
-        ${whereStr}limit: $limit
+        ${whereClause}limit: $limit
         offset: $offset
         order_by: [{ sort_order: asc }, { created_at: desc }]
       ) {
@@ -231,7 +312,7 @@ export async function getPackageList(params: {
         }
       }
       packages_aggregate(
-        ${whereStr.replace(', ', '')}
+        ${whereClause.replace(/,\s*$/, '')}
       ) {
         aggregate {
           count
@@ -239,14 +320,6 @@ export async function getPackageList(params: {
       }
     }
   `;
-
-  const variables: any = {
-    limit: params.limit || 20,
-    offset: params.offset || 0,
-  };
-  if (hasCompany) {
-    variables.companyId = params.companyId;
-  }
 
   const result = await client.execute({
     query,

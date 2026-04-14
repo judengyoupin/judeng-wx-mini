@@ -28,7 +28,9 @@
         <view class="product-name-row">
           <text class="product-name-label">产品名称：</text>
           <view class="product-name-trail">
-            <text class="product-name">{{ productDetail.name }}</text>
+            <view class="product-name-wrap">
+              <text class="product-name">{{ productDetail.name }}</text>
+            </view>
             <view v-if="productTags.length > 0" class="product-tags-inline">
               <text v-for="(tag, i) in productTags" :key="i" class="product-tag-inline">{{ tag }}</text>
             </view>
@@ -659,13 +661,11 @@ onShareTimeline(() => {
 .product-name-row {
   display: flex;
   flex-direction: row;
-  flex-wrap: nowrap;
-  align-items: center;
+  flex-wrap: wrap;
+  align-items: flex-start;
   margin-bottom: 16rpx;
   line-height: 1.45;
   width: 100%;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
 }
 
 .product-name-label {
@@ -678,34 +678,41 @@ onShareTimeline(() => {
 .product-name-trail {
   display: flex;
   flex-direction: row;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
   align-items: center;
   gap: 12rpx;
   flex: 1;
   min-width: 0;
 }
 
+.product-name-wrap {
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: 100%;
+}
+
 .product-name {
-  flex-shrink: 0;
   font-size: 32rpx;
   font-weight: bold;
   color: #000000;
+  word-break: break-word;
+  white-space: normal;
 }
 
 .product-tags-inline {
   display: flex;
   flex-direction: row;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
   align-items: center;
   gap: 8rpx;
-  flex-shrink: 0;
 }
 
+/* 与 .section-title（商品介绍）同色 #0d9488 */
 .product-tag-inline {
   font-size: 38rpx;
   font-weight: 600;
-  color: #22c55e;
-  background: #f0fdf4;
+  color: #0d9488;
+  background: #f0fdfa;
   padding: 4rpx 16rpx;
   border-radius: 24rpx;
   white-space: nowrap;

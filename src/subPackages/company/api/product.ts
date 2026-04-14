@@ -59,24 +59,46 @@ const PRODUCT_LIST_FIELDS = `
   }
 `;
 
+/** 列表按分类筛选：商品挂在子分类上，需匹配「自身或上级链」含所选 id（与后台树形选择一致） */
+function shouldFilterByCategory(categoryId?: number): categoryId is number {
+  return categoryId != null && Number.isFinite(Number(categoryId));
+}
+
+const PRODUCT_CATEGORY_SUBTREE_WHERE = `{
+  category: {
+    _or: [
+      { id: { _eq: $categoryId } },
+      { category: { id: { _eq: $categoryId } } },
+      { category: { category: { id: { _eq: $categoryId } } } },
+      { category: { category: { category: { id: { _eq: $categoryId } } } } }
+    ]
+  }
+}`;
+
 /**
  * 一次请求获取公司 hidden_product_ids + 商品列表（合并请求，减少往返）
  */
 export async function getProductListWithCompanyHidden(params: {
   companyId: number;
+  categoryId?: number;
   limit?: number;
   offset?: number;
 }) {
   const limit = params.limit ?? 20;
   const offset = params.offset ?? 0;
+  const whereAnd = [
+    '{ company_companies: { _eq: $companyId } }',
+    '{ is_deleted: { _eq: false } }',
+    ...(shouldFilterByCategory(params.categoryId) ? [PRODUCT_CATEGORY_SUBTREE_WHERE] : []),
+  ];
+  const catDecl = shouldFilterByCategory(params.categoryId) ? ', $categoryId: bigint!' : '';
   const query = `
-    query GetProductListWithCompany($companyId: bigint!, $limit: Int!, $offset: Int!) {
+    query GetProductListWithCompany($companyId: bigint!, $limit: Int!, $offset: Int!${catDecl}) {
       company: companies_by_pk(id: $companyId) { hidden_product_ids }
       products(
         where: {
           _and: [
-            { company_companies: { _eq: $companyId } },
-            { is_deleted: { _eq: false } }
+            ${whereAnd.join(',\n            ')}
           ]
         }
         limit: $limit
@@ -88,8 +110,7 @@ export async function getProductListWithCompanyHidden(params: {
       products_aggregate(
         where: {
           _and: [
-            { company_companies: { _eq: $companyId } },
-            { is_deleted: { _eq: false } }
+            ${whereAnd.join(',\n            ')}
           ]
         }
       ) {
@@ -97,13 +118,19 @@ export async function getProductListWithCompanyHidden(params: {
       }
     }
   `;
+  const variables: Record<string, unknown> = {
+    companyId: params.companyId,
+    limit,
+    offset,
+  };
+  if (shouldFilterByCategory(params.categoryId)) variables.categoryId = params.categoryId;
   const result = await client.execute<{
     company: { hidden_product_ids: (string | number)[] | null } | null;
     products: any[];
     products_aggregate: { aggregate: { count: number } };
   }>({
     query,
-    variables: { companyId: params.companyId, limit, offset },
+    variables,
   });
   const hidden = result?.company?.hidden_product_ids;
   const hiddenProductIds = Array.isArray(hidden) ? hidden.map((id) => Number(id)) : [];
@@ -151,19 +178,25 @@ const PRODUCT_LIST_FIELDS_WITH_COMPANY = `
 export async function getProductListMultiCompany(params: {
   companyIds: number[];
   hiddenForCompanyId: number;
+  categoryId?: number;
   limit?: number;
   offset?: number;
 }) {
   const limit = params.limit ?? 20;
   const offset = params.offset ?? 0;
+  const whereAnd = [
+    '{ company_companies: { _in: $companyIds } }',
+    '{ is_deleted: { _eq: false } }',
+    ...(shouldFilterByCategory(params.categoryId) ? [PRODUCT_CATEGORY_SUBTREE_WHERE] : []),
+  ];
+  const catDecl = shouldFilterByCategory(params.categoryId) ? ', $categoryId: bigint!' : '';
   const query = `
-    query GetProductListMulti($companyIds: [bigint!]!, $hiddenForCompanyId: bigint!, $limit: Int!, $offset: Int!) {
+    query GetProductListMulti($companyIds: [bigint!]!, $hiddenForCompanyId: bigint!, $limit: Int!, $offset: Int!${catDecl}) {
       company: companies_by_pk(id: $hiddenForCompanyId) { hidden_product_ids }
       products(
         where: {
           _and: [
-            { company_companies: { _in: $companyIds } },
-            { is_deleted: { _eq: false } }
+            ${whereAnd.join(',\n            ')}
           ]
         }
         limit: $limit
@@ -175,8 +208,7 @@ export async function getProductListMultiCompany(params: {
       products_aggregate(
         where: {
           _and: [
-            { company_companies: { _in: $companyIds } },
-            { is_deleted: { _eq: false } }
+            ${whereAnd.join(',\n            ')}
           ]
         }
       ) {
@@ -184,18 +216,20 @@ export async function getProductListMultiCompany(params: {
       }
     }
   `;
+  const variables: Record<string, unknown> = {
+    companyIds: params.companyIds,
+    hiddenForCompanyId: params.hiddenForCompanyId,
+    limit,
+    offset,
+  };
+  if (shouldFilterByCategory(params.categoryId)) variables.categoryId = params.categoryId;
   const result = await client.execute<{
     company: { hidden_product_ids: (string | number)[] | null } | null;
     products: any[];
     products_aggregate: { aggregate: { count: number } };
   }>({
     query,
-    variables: {
-      companyIds: params.companyIds,
-      hiddenForCompanyId: params.hiddenForCompanyId,
-      limit,
-      offset,
-    },
+    variables,
   });
   const hidden = result?.company?.hidden_product_ids;
   const hiddenProductIds = Array.isArray(hidden) ? hidden.map((id) => Number(id)) : [];
@@ -225,12 +259,12 @@ export async function getProductList(params: {
     '{ is_deleted: { _eq: false } }',
   ];
 
-  if (params.categoryId) {
-    whereConditions.push('{ category_categories: { _eq: $categoryId } }');
+  if (shouldFilterByCategory(params.categoryId)) {
+    whereConditions.push(PRODUCT_CATEGORY_SUBTREE_WHERE);
   }
 
   // 根据是否有 categoryId 动态构建查询
-  const query = params.categoryId
+  const query = shouldFilterByCategory(params.categoryId)
     ? `
       query GetProductList(
         $companyId: bigint!
@@ -369,7 +403,7 @@ export async function getProductList(params: {
     offset: params.offset || 0,
   };
 
-  if (params.categoryId) {
+  if (shouldFilterByCategory(params.categoryId)) {
     variables.categoryId = params.categoryId;
   }
 

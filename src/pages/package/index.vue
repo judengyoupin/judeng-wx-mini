@@ -1,93 +1,129 @@
 <template>
   <view class="package-page">
-    <!-- 统一导航栏（含状态栏高度） -->
     <PageNavBar :title="companyInfo?.name || '套餐'" />
 
-    <!-- 搜索框：当前页按名称/介绍筛选，不跳转 -->
-    <view class="search-bar">
-      <view class="search-input-box">
-        <image class="search-icon" src="/static/index/srch.png" mode="aspectFit" />
-        <input :adjust-position="false"
-          class="search-input"
-          v-model="searchKeyword"
-          placeholder="请输入套餐名称"
-          confirm-type="search"
-          @confirm="onSearchConfirm"
-        />
-        <text v-if="searchKeyword" class="clear-icon" @click="searchKeyword = ''">×</text>
+    <!-- 固定在导航下方的搜索 + 分类（仅下方列表区域滚动） -->
+    <view id="pkg-header-anchor" class="package-header-fixed">
+      <view class="search-bar">
+        <view class="search-input-box">
+          <image class="search-icon" src="/static/index/srch.png" mode="aspectFit" />
+          <input
+            :adjust-position="false"
+            class="search-input"
+            v-model="searchKeyword"
+            placeholder="请输入套餐名称"
+            confirm-type="search"
+            @confirm="onSearchConfirm"
+          />
+          <text v-if="searchKeyword" class="clear-icon" @click="searchKeyword = ''">×</text>
+        </view>
+      </view>
+
+      <view class="category-filter">
+        <scroll-view scroll-x class="category-scroll" :show-scrollbar="false">
+          <view class="category-list">
+            <view
+              class="category-item"
+              :class="{ active: selectedCategoryId === null }"
+              @click="selectCategory(null)"
+            >
+              <text>全部</text>
+            </view>
+            <view
+              v-for="category in categories"
+              :key="category.id"
+              class="category-item"
+              :class="{ active: selectedCategoryId === category.id }"
+              @click="selectCategory(category.id)"
+            >
+              <text>{{ category.name }}</text>
+            </view>
+          </view>
+        </scroll-view>
       </view>
     </view>
 
-    <!-- 分类筛选 -->
-    <view class="category-filter">
-      <scroll-view scroll-x class="category-scroll">
-        <view class="category-list">
-          <view
-            class="category-item"
-            :class="{ active: selectedCategoryId === null }"
-            @click="selectCategory(null)"
-          >
-            <text>全部</text>
-          </view>
-          <view
-            v-for="category in categories"
-            :key="category.id"
-            class="category-item"
-            :class="{ active: selectedCategoryId === category.id }"
-            @click="selectCategory(category.id)"
-          >
-            <text>{{ category.name }}</text>
-          </view>
-        </view>
-      </scroll-view>
-    </view>
-
-    <!-- 骨架屏（首屏加载） -->
-    <view v-if="loading && packages.length === 0" class="skeleton-area">
+    <!-- 首屏骨架：高度与列表区一致 -->
+    <view
+      v-if="loading && packages.length === 0"
+      class="skeleton-area"
+      :style="listAreaStyle"
+    >
       <SkeletonScreen type="list-grid-3" :count="6" />
     </view>
 
-    <!-- 套餐列表：每行 3 个，按关键词在当前页筛选 -->
-    <view v-else class="package-list">
-      <view
-        v-for="pkg in filteredPackages"
-        :key="pkg.id"
-        class="package-item"
-        @click="goToPackageDetail(pkg.id)"
-      >
-        <view class="package-image-wrap">
-          <image
-            class="package-image"
-            :src="pkg.cover_image_url || '/static/default.png'"
-            mode="aspectFill"
-          />
-          <ProductImageBadges :tags="pkg.tags" :out-of-stock="false" />
+    <scroll-view
+      v-else
+      scroll-y
+      class="package-list-scroll"
+      :style="listAreaStyle"
+      :lower-threshold="100"
+      :enable-back-to-top="true"
+      refresher-enabled
+      :refresher-triggered="refresherTriggered"
+      refresher-default-style="black"
+      @scrolltolower="onScrollToLower"
+      @refresherrefresh="onRefresherRefresh"
+    >
+      <view class="package-list">
+        <view
+          v-for="pkg in filteredPackages"
+          :key="pkg.id"
+          class="package-item"
+          @click="goToPackageDetail(pkg.id)"
+        >
+          <view class="package-image-wrap">
+            <image
+              class="package-image"
+              :src="pkg.cover_image_url || '/static/default.png'"
+              mode="aspectFill"
+            />
+            <ProductImageBadges :tags="pkg.tags" :out-of-stock="false" />
+          </view>
+          <view class="package-info">
+            <view class="package-name">{{ pkg.name }}</view>
+          </view>
         </view>
-        <view class="package-info">
-          <view class="package-name">{{ pkg.name }}</view>
+
+        <view v-if="filteredPackages.length === 0" class="empty-state full-row">
+          <text class="empty-text">{{ searchKeyword ? '未找到匹配的套餐' : '暂无套餐' }}</text>
+        </view>
+
+        <!-- 列表底部状态 -->
+        <view
+          v-if="packages.length > 0 && (loading || !searchKeyword)"
+          class="list-footer full-row"
+        >
+          <view v-if="loading" class="footer-state footer-loading">
+            <view class="footer-dots" aria-hidden="true">
+              <view class="footer-dot" />
+              <view class="footer-dot" />
+              <view class="footer-dot" />
+            </view>
+            <text class="footer-text">正在加载</text>
+          </view>
+          <view
+            v-else-if="hasMore && !searchKeyword"
+            class="footer-state footer-hint"
+            @click="loadMore"
+          >
+            <text class="footer-text">上拉或点击继续加载</text>
+          </view>
+          <view v-else-if="!hasMore && !searchKeyword" class="footer-state footer-done">
+            <view class="footer-rule" />
+            <text class="footer-muted">已显示全部套餐</text>
+            <view class="footer-rule" />
+          </view>
         </view>
       </view>
-
-      <!-- 空状态（跨整行） -->
-      <view v-if="filteredPackages.length === 0" class="empty-state full-row">
-        <text class="empty-text">{{ searchKeyword ? '未找到匹配的套餐' : '暂无套餐' }}</text>
-      </view>
-
-      <!-- 加载更多（跨整行） -->
-      <view v-if="loading && packages.length > 0" class="load-more full-row">
-        <text>加载中...</text>
-      </view>
-      <view v-else-if="hasMore && !searchKeyword" class="load-more full-row" @click="loadMore">
-        <text>加载更多</text>
-      </view>
-    </view>
+    </scroll-view>
   </view>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, nextTick } from 'vue';
 import { whenAppReady } from '@/utils/appReady';
-import { onShow, onPullDownRefresh, onReachBottom, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app';
+import { onShow, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app';
 import { getPackageList } from '@/api/package/index';
 import { getCategoryTree } from '@/api/category/index';
 import { companyInfo } from '@/store/userStore';
@@ -105,7 +141,33 @@ const selectedCategoryId = ref<number | null>(null);
 const loadingCategories = ref(false);
 const searchKeyword = ref('');
 
-// 当前页按关键词筛选套餐（名称、介绍）
+const listScrollHeightPx = ref(480);
+const refresherTriggered = ref(false);
+
+const listAreaStyle = computed(() => ({
+  height: `${listScrollHeightPx.value}px`,
+}));
+
+function updateListScrollHeight() {
+  nextTick(() => {
+    const query = uni.createSelectorQuery();
+    query.select('#pkg-header-anchor').boundingClientRect();
+    query.exec((res: any) => {
+      const rect = res?.[0];
+      const sys = uni.getSystemInfoSync();
+      const winH = sys.windowHeight ?? sys.screenHeight ?? 667;
+      const insetBottom = sys.safeAreaInsets?.bottom ?? 0;
+      if (rect && typeof rect.bottom === 'number') {
+        listScrollHeightPx.value = Math.max(200, Math.floor(winH - rect.bottom - insetBottom));
+      } else {
+        const sh = sys.statusBarHeight ?? 20;
+        const headerGuess = uni.upx2px(220);
+        listScrollHeightPx.value = Math.max(200, Math.floor(winH - sh - 44 - headerGuess - insetBottom));
+      }
+    });
+  });
+}
+
 const filteredPackages = computed(() => {
   const kw = (searchKeyword.value || '').trim().toLowerCase();
   if (!kw) return packages.value;
@@ -117,7 +179,7 @@ const filteredPackages = computed(() => {
 });
 
 const onSearchConfirm = () => {
-  // 筛选由 computed 完成，无需额外逻辑
+  // 筛选由 computed 完成
 };
 
 const PACKAGE_PAGE_CACHE_TTL = 5 * 60 * 1000;
@@ -129,13 +191,18 @@ const packagePageCache = ref<{
   timestamp: number;
 } | null>(null);
 
-// 加载分类列表（套餐分类），成功时更新缓存
 const loadCategories = async (useCache = true) => {
   const companyId = companyInfo.value?.id;
   if (!companyId) return;
 
   const cache = packagePageCache.value;
-  if (useCache && cache && cache.companyId === companyId && Date.now() - cache.timestamp < PACKAGE_PAGE_CACHE_TTL && cache.categories.length > 0) {
+  if (
+    useCache &&
+    cache &&
+    cache.companyId === companyId &&
+    Date.now() - cache.timestamp < PACKAGE_PAGE_CACHE_TTL &&
+    cache.categories.length > 0
+  ) {
     categories.value = cache.categories;
     return;
   }
@@ -153,13 +220,11 @@ const loadCategories = async (useCache = true) => {
   }
 };
 
-// 选择分类（必走接口，不用缓存）
 const selectCategory = (categoryId: number | null) => {
   selectedCategoryId.value = categoryId;
   loadPackages(true, false);
 };
 
-// 加载套餐列表，reset 时可选使用/写入 5 分钟缓存
 const loadPackages = async (reset = false, useCache = true) => {
   const companyId = companyInfo.value?.id;
   if (!companyId) {
@@ -174,14 +239,18 @@ const loadPackages = async (reset = false, useCache = true) => {
 
   const cid = selectedCategoryId.value ?? null;
   const cache = packagePageCache.value;
-  const cacheValid = useCache && reset && cache && cache.companyId === companyId && cache.categoryId === cid
-    && Date.now() - cache.timestamp < PACKAGE_PAGE_CACHE_TTL;
+  const cacheValid =
+    useCache &&
+    reset &&
+    cache &&
+    cache.companyId === companyId &&
+    cache.categoryId === cid &&
+    Date.now() - cache.timestamp < PACKAGE_PAGE_CACHE_TTL;
 
   if (cacheValid && cache) {
     packages.value = cache.packages;
     hasMore.value = cache.packages.length >= pageSize;
     if (cache.packages.length >= pageSize) page.value = 2;
-    if (typeof uni !== 'undefined' && uni.stopPullDownRefresh) uni.stopPullDownRefresh();
     return;
   }
 
@@ -220,18 +289,29 @@ const loadPackages = async (reset = false, useCache = true) => {
     uni.showToast({ title: error.message || '加载失败', icon: 'none' });
   } finally {
     loading.value = false;
-    if (typeof uni !== 'undefined' && uni.stopPullDownRefresh) uni.stopPullDownRefresh();
   }
 };
 
-// 加载更多
 const loadMore = () => {
   if (!loading.value && hasMore.value) {
-    loadPackages();
+    void loadPackages();
   }
 };
 
-// 跳转到套餐详情
+function onScrollToLower() {
+  loadMore();
+}
+
+async function onRefresherRefresh() {
+  refresherTriggered.value = true;
+  try {
+    await loadCategories(false);
+    await loadPackages(true, false);
+  } finally {
+    refresherTriggered.value = false;
+  }
+}
+
 const goToPackageDetail = (packageId: number) => {
   uni.navigateTo({
     url: `/pages/package-detail/index?id=${packageId}`,
@@ -241,19 +321,14 @@ const goToPackageDetail = (packageId: number) => {
 onShow(async () => {
   await whenAppReady();
   if (!companyInfo.value?.id) return;
-  // 优先用 5 分钟缓存，减少重复请求
+  updateListScrollHeight();
   loadCategories(true).then(() => {
     loadPackages(true, true);
+    nextTick(() => {
+      updateListScrollHeight();
+      setTimeout(() => updateListScrollHeight(), 100);
+    });
   });
-});
-
-onPullDownRefresh(() => {
-  loadCategories(false);
-  loadPackages(true, false);
-});
-
-onReachBottom(() => {
-  loadMore();
 });
 
 onShareAppMessage(() => {
@@ -277,14 +352,23 @@ onShareTimeline(() => {
 
 <style scoped>
 .package-page {
-  min-height: 100vh;
+  height: 100vh;
+  background: #f5f5f5;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.package-header-fixed {
+  flex-shrink: 0;
   background: #f5f5f5;
 }
 
 .search-bar {
   padding: 20rpx 30rpx;
   background: #fff;
-  border-bottom: 1rpx solid #e0e0e0;
+  border-bottom: 1rpx solid #e8e8e8;
 }
 
 .search-input-box {
@@ -314,33 +398,21 @@ onShareTimeline(() => {
 }
 
 .skeleton-area {
+  width: 100%;
+  box-sizing: border-box;
   padding: 24rpx;
-  min-height: 400rpx;
+  overflow: hidden;
 }
 
-.loading-container {
-  padding: 100rpx 0;
-  text-align: center;
-  color: #999999;
-  font-size: 28rpx;
-}
-
-.loading-spinner {
-  width: 40rpx;
-  height: 40rpx;
-  border: 4rpx solid #e0e0e0;
-  border-top-color: #667eea;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-  margin: 0 auto 20rpx;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
+.package-list-scroll {
+  width: 100%;
+  box-sizing: border-box;
+  background: #f5f5f5;
 }
 
 .package-list {
   padding: 24rpx;
+  padding-bottom: calc(24rpx + env(safe-area-inset-bottom, 0px));
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 24rpx;
@@ -350,7 +422,6 @@ onShareTimeline(() => {
   grid-column: 1 / -1;
 }
 
-/* 套餐卡片：白底圆角、轻阴影，参考图示 */
 .package-item {
   background: #fff;
   border-radius: 20rpx;
@@ -389,7 +460,7 @@ onShareTimeline(() => {
 }
 
 .empty-state {
-  padding: 200rpx 0;
+  padding: 120rpx 0;
   text-align: center;
 }
 
@@ -398,16 +469,92 @@ onShareTimeline(() => {
   color: #999999;
 }
 
-.load-more {
-  padding: 40rpx 0;
-  text-align: center;
-  color: #667eea;
-  font-size: 28rpx;
+/* 列表底部：加载 / 提示 / 结束 */
+.list-footer {
+  min-height: 100rpx;
+}
+
+.footer-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 36rpx 24rpx 8rpx;
+  gap: 16rpx;
+}
+
+.footer-loading .footer-text {
+  font-size: 24rpx;
+  color: #9ca3af;
+ letter-spacing: 0.02em;
+}
+
+.footer-dots {
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+}
+
+.footer-dot {
+  width: 10rpx;
+  height: 10rpx;
+  border-radius: 50%;
+  background: #0d9488;
+  opacity: 0.35;
+  animation: pkg-dot-pulse 1s ease-in-out infinite;
+}
+
+.footer-dot:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+.footer-dot:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+@keyframes pkg-dot-pulse {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.15);
+  }
+}
+
+.footer-hint {
+  padding: 28rpx 24rpx;
+}
+
+.footer-hint .footer-text {
+  font-size: 24rpx;
+  color: #6b7280;
+}
+
+.footer-done {
+  flex-direction: row;
+  gap: 20rpx;
+  padding: 32rpx 16rpx 16rpx;
+}
+
+.footer-rule {
+  flex: 1;
+  height: 1rpx;
+  background: linear-gradient(90deg, transparent, #e5e7eb 20%, #e5e7eb 80%, transparent);
+  max-width: 120rpx;
+}
+
+.footer-muted {
+  font-size: 22rpx;
+  color: #c4c4c4;
+  flex-shrink: 0;
 }
 
 .category-filter {
   background: #ffffff;
-  border-bottom: 1rpx solid #e0e0e0;
+  border-bottom: 1rpx solid #e8e8e8;
 }
 
 .category-scroll {

@@ -118,6 +118,35 @@ import PageNavBar from '@/components/PageNavBar.vue';
 import ProductImageBadges from '@/components/ProductImageBadges.vue';
 import { safeNavigateBack } from '@/utils/navigation';
 
+/** 分享/扫码进入时 categoryName 可能为百分号编码或已解码；+ 在 query 中常表示空格 */
+function decodeIncomingCategoryName(raw: unknown): string {
+  if (raw == null) return '';
+  let s = Array.isArray(raw) ? String(raw[0]) : String(raw);
+  s = s.trim();
+  if (!s) return '';
+  try {
+    const normalized = s.replace(/\+/g, '%20');
+    if (/%[0-9A-Fa-f]{2}/.test(normalized)) {
+      return decodeURIComponent(normalized);
+    }
+    return s;
+  } catch {
+    return s.replace(/\+/g, ' ');
+  }
+}
+
+/** 小程序分享 path/query 勿用 URLSearchParams拼中文，部分环境会乱码；应用 encodeURIComponent */
+function buildCategoryFilterShareQuery(): string {
+  const cid = companyInfo.value?.id ?? uni.getStorageSync('companyId') ?? '';
+  const parts: string[] = [];
+  if (cid !== '' && cid != null) parts.push(`companyId=${encodeURIComponent(String(cid))}`);
+  if (parentId.value != null) parts.push(`categoryId=${String(parentId.value)}`);
+  if (pageTitle.value && pageTitle.value !== '分类筛选') {
+    parts.push(`categoryName=${encodeURIComponent(pageTitle.value)}`);
+  }
+  return parts.join('&');
+}
+
 const parentId = ref<number | null>(null);
 const pageTitle = ref('分类筛选');
 const subCategories = ref<any[]>([]);
@@ -188,18 +217,19 @@ const loadSubCategories = async () => {
 
   try {
     const res = await getCategoryChildren(parentId.value, companyInfo.value?.id ?? undefined);
-    if (res.code === 0 && res.data) {
-      subCategories.value = res.data;
+    if (res.code === 0) {
+      subCategories.value = Array.isArray(res.data) ? res.data : [];
       const routeStyle = res.parentCategory?.route_ui_style;
       parentRouteUiStyle.value = routeStyle === 'products' ? 'products' : 'categories';
       // route_ui_style=products 时始终展示商品；否则有子分类则展示子分类，无则展示商品
       const showSubs = parentRouteUiStyle.value !== 'products' && subCategories.value.length > 0;
       if (showSubs) {
-        currentCategoryId.value = subCategories.value[0].id;
+        // 子分类网格页不请求商品，避免误用第一个子分类 id
+        currentCategoryId.value = null;
       } else {
         currentCategoryId.value = parentId.value;
+        loadProducts(true);
       }
-      loadProducts(true);
     }
   } catch (error) {
     console.error('加载子分类失败', error);
@@ -208,7 +238,7 @@ const loadSubCategories = async () => {
   }
 };
 
-// 加载商品
+// 加载商品（仅当前分类直接挂载的商品，不包含子分类下的商品）
 const loadProducts = async (refresh = false) => {
   if (loading.value) return;
   if (!currentCategoryId.value) return;
@@ -221,8 +251,9 @@ const loadProducts = async (refresh = false) => {
   }
 
   try {
+    const companyId = userInfo.value?.manager?.company?.id || companyInfo.value?.id;
     const res = await getProductList({
-      companyId: userInfo.value?.manager?.company?.id,
+      companyId,
       categoryId: currentCategoryId.value,
       limit: pageSize,
       offset: (page.value - 1) * pageSize,
@@ -295,30 +326,21 @@ onLoad(async (options?) => {
   if (options?.categoryId) {
     parentId.value = Number(options.categoryId);
   }
-  if (options?.categoryName) {
-    pageTitle.value = decodeURIComponent(options.categoryName);
+  const name = decodeIncomingCategoryName(options?.categoryName);
+  if (name) {
+    pageTitle.value = name;
   }
 
   loadSubCategories();
 });
 
 function getSharePath() {
-  const cid = companyInfo.value?.id ?? uni.getStorageSync('companyId') ?? '';
-  const params = new URLSearchParams();
-  if (cid) params.set('companyId', String(cid));
-  if (parentId.value != null) params.set('categoryId', String(parentId.value));
-  if (pageTitle.value && pageTitle.value !== '分类筛选') params.set('categoryName', pageTitle.value);
-  const q = params.toString();
+  const q = buildCategoryFilterShareQuery();
   return q ? `/pages/category-filter/index?${q}` : '/pages/category-filter/index';
 }
 
 function getShareQuery() {
-  const cid = companyInfo.value?.id ?? uni.getStorageSync('companyId') ?? '';
-  const params = new URLSearchParams();
-  if (cid) params.set('companyId', String(cid));
-  if (parentId.value != null) params.set('categoryId', String(parentId.value));
-  if (pageTitle.value && pageTitle.value !== '分类筛选') params.set('categoryName', pageTitle.value);
-  return params.toString();
+  return buildCategoryFilterShareQuery();
 }
 
 onShareAppMessage(() => {
@@ -346,6 +368,7 @@ onShareTimeline(() => {
 
 .content-container {
   flex: 1;
+  min-height: 0;
   overflow: hidden;
   background: #f5f5f5;
 }
@@ -384,6 +407,7 @@ onShareTimeline(() => {
 
 .main-content {
   height: 100%;
+  min-height: 0;
   background: #f5f5f5;
   padding: 16rpx;
   box-sizing: border-box;

@@ -41,7 +41,7 @@
           <text v-else class="amount amount-hidden">--</text>
         </view>
         <view class="order-amount-row order-amount-row--actual">
-          <text class="amount-label">实收</text>
+          <text class="amount-label">{{ isAdminView ? '实收' : '实付金额' }}</text>
           <text v-if="canViewPrice || isAdminView" class="amount">¥{{ order.actual_amount != null ? formatOrderMoney(order.actual_amount) : '--' }}</text>
           <text v-else class="amount amount-hidden">--</text>
           <text

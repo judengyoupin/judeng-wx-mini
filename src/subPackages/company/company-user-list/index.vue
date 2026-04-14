@@ -32,13 +32,6 @@
         >
           管理员
         </view>
-        <view
-          class="filter-tab"
-          :class="{ active: roleFilter === 'wx_guest_user' }"
-          @click="setRoleFilter('wx_guest_user')"
-        >
-          微信访客
-        </view>
       </view>
       <view class="filter-row level-filter-row">
         <text class="level-filter-label">等级：</text>
@@ -94,7 +87,6 @@
               <text class="user-role" :class="{ 'role-admin': user.role === 'admin' }">
                 {{ user.role === 'admin' ? '管理员' : '用户' }}
               </text>
-              <text v-if="user.user?.role === 'wx_guest_user'" class="user-platform-guest">微信访客</text>
               <text class="user-level">等级 {{ user.level || 'A' }}</text>
             </view>
             <view class="user-permissions">
@@ -327,7 +319,7 @@ const isRefreshing = ref(false);
 /** 列表页搜索：昵称或手机号 */
 const listSearchKeyword = ref('');
 /** 角色筛选 */
-const roleFilter = ref<'' | 'user' | 'admin' | 'wx_guest_user'>('');
+const roleFilter = ref<'' | 'user' | 'admin'>('');
 /** 等级筛选：空为全部，否则 A/B/C/D/E/F */
 const levelFilter = ref<'' | CompanyUserLevel>('');
 const totalCount = ref(0);
@@ -340,7 +332,6 @@ const countText = computed(() => {
   const parts: string[] = [];
   if (roleFilter.value === 'user') parts.push('普通用户');
   if (roleFilter.value === 'admin') parts.push('管理员');
-  if (roleFilter.value === 'wx_guest_user') parts.push('微信访客');
   if (levelFilter.value) parts.push(`等级${levelFilter.value}`);
   if (parts.length === 0) return `共 ${n} 人`;
   return `${parts.join('、')} 共 ${n} 人`;
@@ -494,7 +485,7 @@ function loadMore() {
 }
 
 // 角色筛选
-const setRoleFilter = (role: '' | 'user' | 'admin' | 'wx_guest_user') => {
+const setRoleFilter = (role: '' | 'user' | 'admin') => {
   roleFilter.value = role;
   loadUsers(true);
 };
@@ -997,13 +988,6 @@ onPullDownRefresh(() => {
 .role-admin {
   background: #e6f7ff;
   color: #1890ff;
-}
-
-.user-platform-guest {
-  padding: 4rpx 12rpx;
-  background: #fef3c7;
-  color: #b45309;
-  border-radius: 4rpx;
 }
 
 .user-permissions {

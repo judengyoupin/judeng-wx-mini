@@ -15,7 +15,8 @@
 				"navigationBarTitleText": "套餐",
 				"navigationBarBackgroundColor": "#ffffff",
 				"navigationBarTextStyle": "black",
-				"navigationStyle": "custom"
+				"navigationStyle": "custom",
+				"disableScroll": true
 			}
 		},
 		{
@@ -32,15 +33,6 @@
 			"path": "pages/mine/index",
 			"style": {
 				"navigationBarTitleText": "我的",
-				"navigationStyle": "custom"
-			}
-		},
-		{
-			"path": "pages/product/index",
-			"style": {
-				"navigationBarTitleText": "商品",
-				"navigationBarBackgroundColor": "#ffffff",
-				"navigationBarTextStyle": "black",
 				"navigationStyle": "custom"
 			}
 		},
@@ -68,7 +60,8 @@
 				"navigationBarTitleText": "搜索",
 				"navigationBarBackgroundColor": "#ffffff",
 				"navigationBarTextStyle": "black",
-				"navigationStyle": "custom"
+				"navigationStyle": "custom",
+				"disableScroll": true
 			}
 		},
 		{

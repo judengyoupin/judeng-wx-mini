@@ -8,15 +8,7 @@
       <text class="need-login-text">正在初始化…</text>
     </view>
 
-    <!-- 访客：需完成手机号授权（已登记手机号） -->
-    <view v-else-if="!isMember" class="need-login">
-      <text class="need-login-text">查看订单需为正式用户，请在「我的」完成手机号授权（须已向管理员登记）。</text>
-      <button class="login-btn" type="button" @click="goToMine">去「我的」</button>
-      <button class="login-btn login-btn--secondary" type="button" @click="goToPasswordLogin">
-        管理员密码登录
-      </button>
-    </view>
-
+    <!-- 已登录（含微信访客 wx_guest_user）：可查看本人订单；正式用户可结合公司权限看价 -->
     <template v-else>
       <!-- 订单状态 + 支付状态筛选 -->
       <view class="header-bar">
@@ -149,7 +141,7 @@
                 <text v-else class="total-price total-price-hidden">--</text>
               </view>
               <view class="order-total-row">
-                <text class="total-label">实收:</text>
+                <text class="total-label">实付金额:</text>
                 <text v-if="orderCanViewPrice(order)" class="total-price">¥{{ order.actual_amount != null ? formatMoney(order.actual_amount) : '--' }}</text>
                 <text v-else class="total-price total-price-hidden">--</text>
               </view>
@@ -176,11 +168,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, computed } from 'vue';
+import { ref, watch } from 'vue';
 import { whenAppReady } from '@/utils/appReady';
 import { onLoad, onShow, onPullDownRefresh, onReachBottom } from '@dcloudio/uni-app';
 import { userInfo, companyInfo } from '@/store/userStore';
-import { isRegisteredMember } from '@/utils/memberSession';
 import { getMyOrderList } from '@/api/order/index';
 import { getCompanyUserRoleCached } from '@/utils/auth';
 import { safeNavigateBack } from '@/utils/navigation';
@@ -198,8 +189,8 @@ const paymentStatusFilter = ref('');
 const page = ref(1);
 const pageSize = 20;
 const hasMore = ref(true);
-
-const isMember = computed(() => isRegisteredMember(userInfo.value?.role));
+/** 全量刷新并发时只采纳最后一次结果，避免先返回的旧列表覆盖新数据 */
+let listRefreshSerial = 0;
 
 function parsePositiveCompanyId(raw: unknown): number | null {
   if (raw == null || raw === '') return null;
@@ -302,7 +293,10 @@ function formatTime(time: string) {
 }
 
 async function loadOrders(reset = false) {
-  if (loading.value || (!hasMore.value && !reset)) return;
+  // 全量刷新（onShow / 筛选 / 下拉）必须与进行中的分页请求解耦，否则 loading为 true 时会直接 return，刚下单进来看不到新单
+  if (!reset) {
+    if (loading.value || !hasMore.value) return;
+  }
 
   const userId = userInfo.value?.id;
   if (!userId) {
@@ -315,6 +309,8 @@ async function loadOrders(reset = false) {
     hasMore.value = true;
     canViewPriceByCompanyId.value = {};
   }
+
+  const refreshToken = reset ? ++listRefreshSerial : 0;
 
   loading.value = true;
   if (reset) isRefreshing.value = true;
@@ -331,6 +327,7 @@ async function loadOrders(reset = false) {
 
     const chunk = result.orders || [];
     if (reset) {
+      if (refreshToken !== listRefreshSerial) return;
       orders.value = [...chunk];
     } else {
       orders.value = [...orders.value, ...chunk];
@@ -338,6 +335,7 @@ async function loadOrders(reset = false) {
 
     await hydrateCanViewPriceMapForCompanies(extractCompanyIdsFromOrders(chunk));
 
+    if (reset && refreshToken !== listRefreshSerial) return;
     if (result.total <= orders.value.length) {
       hasMore.value = false;
     } else {
@@ -357,14 +355,6 @@ async function loadOrders(reset = false) {
 
 function goBack() {
   safeNavigateBack();
-}
-
-function goToMine() {
-  uni.switchTab({ url: '/pages/mine/index' });
-}
-
-function goToPasswordLogin() {
-  uni.navigateTo({ url: '/pages/login/index' });
 }
 
 function goToOrderDetail(orderId: number) {
@@ -395,7 +385,7 @@ watch(paymentStatusFilter, () => {
 
 onShow(async () => {
   await whenAppReady();
-  if (isMember.value && userInfo.value?.id) {
+  if (userInfo.value?.id) {
     await loadOrders(true);
   } else {
     canViewPriceByCompanyId.value = {};

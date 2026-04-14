@@ -94,6 +94,21 @@ export async function getCompanyList(params: {
             nickname
           }
         }
+        company_users_total: company_users_aggregate {
+          aggregate {
+            count
+          }
+        }
+        company_users_admin: company_users_aggregate(where: { role: { _eq: "admin" } }) {
+          aggregate {
+            count
+          }
+        }
+        company_users_regular: company_users_aggregate(where: { role: { _eq: "user" } }) {
+          aggregate {
+            count
+          }
+        }
       }
       companies_aggregate(where: $where) {
         aggregate {

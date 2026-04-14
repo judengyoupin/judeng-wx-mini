@@ -21,7 +21,8 @@ export async function getUserList(params: {
   if (hasKeyword) {
     conditions.push(`_or: [
               { mobile: { _ilike: $keyword } },
-              { nickname: { _ilike: $keyword } }
+              { nickname: { _ilike: $keyword } },
+              { wx_mini_openid: { _ilike: $keyword } }
             ]`);
   }
   if (role) {
@@ -52,6 +53,13 @@ export async function getUserList(params: {
         avatar_url
         role
         created_at
+        wx_mini_openid
+        company_users(order_by: { company: { name: asc } }) {
+          company {
+            id
+            name
+          }
+        }
       }
       users_aggregate${aggregateArgs ? `(${aggregateArgs})` : ''} {
         aggregate {
@@ -82,7 +90,8 @@ export async function getUserList(params: {
 /**
  * 更新用户角色
  */
-export async function updateUserRole(userId: number, role: 'user' | 'admin' | 'wx_guest_user') {
+/** 仅可设为普通用户或平台管理员；微信访客不可通过后台指派 */
+export async function updateUserRole(userId: number, role: 'user' | 'admin') {
   const mutation = `
     mutation UpdateUserRole($userId: bigint!, $role: String!) {
       update_users_by_pk(

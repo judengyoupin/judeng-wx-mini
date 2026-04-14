@@ -76,6 +76,11 @@
       <button v-if="!isViewOnly" class="add-btn" @click="goToAddCategory">+ 添加</button>
       <text v-else class="view-only-tip">仅查看，不可操作</text>
     </view>
+    <view class="route-style-hint">
+      <text class="route-style-hint-text">
+        展示模式：紫色标签为「展示产品」（小程序直接列出本分类商品）；灰色为「继续展示分类」（先进子分类）。
+      </text>
+    </view>
 
     <!-- 分类树：仅此区域可滚动 -->
     <scroll-view scroll-y class="category-list-scroll" refresher-enabled :refresher-triggered="refreshing" @refresherrefresh="loadCategories">
@@ -117,6 +122,12 @@
                 {{ getTypeText(item.node.type) }}
               </text>
               <text class="row-level">L{{ item.node.level }}</text>
+              <text
+                class="row-route-style"
+                :class="item.node.route_ui_style === 'products' ? 'route-products' : 'route-categories'"
+              >
+                {{ item.node.route_ui_style === 'products' ? '展示产品' : '继续展示分类' }}
+              </text>
               <text v-if="isFromDefaultCompany(item.node)" class="row-tag-system">系统配置</text>
               <text class="row-counts">{{ getCategoryCounts(item.node) }}</text>
             </view>
@@ -235,10 +246,17 @@ const visibilityFlatList = computed(() => {
 function getCategoryCounts(node: any): string {
   const childCount = node.categories?.length ?? 0;
   const productCount = node.products_aggregate?.aggregate?.count ?? 0;
+  const productListed = node.products_listed_aggregate?.aggregate?.count ?? productCount;
   const packageCount = node.packages_aggregate?.aggregate?.count ?? 0;
   const parts: string[] = [];
   if (childCount > 0) parts.push(`${childCount} 个子分类`);
-  if (node.type === 'product' && productCount > 0) parts.push(`${productCount} 个商品`);
+  if (node.type === 'product' && productCount > 0) {
+    if (productListed < productCount) {
+      parts.push(`${productCount} 个商品（${productListed} 已上架）`);
+    } else {
+      parts.push(`${productCount} 个商品`);
+    }
+  }
   if (node.type === 'package' && packageCount > 0) parts.push(`${packageCount} 个套餐`);
   if (node.type !== 'product' && node.type !== 'package') {
     if (productCount > 0) parts.push(`${productCount} 个商品`);
@@ -619,10 +637,43 @@ onPullDownRefresh(() => {
   margin-bottom: 8rpx;
 }
 
+.route-style-hint {
+  padding: 0 24rpx 12rpx;
+  background: #fff;
+  border-bottom: 1rpx solid rgba(0, 0, 0, 0.06);
+}
+
+.route-style-hint-text {
+  font-size: 22rpx;
+  color: #888;
+  line-height: 1.45;
+}
+
 .row-meta {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 12rpx;
+}
+
+.row-route-style {
+  font-size: 20rpx;
+  padding: 4rpx 10rpx;
+  border-radius: 6rpx;
+  font-weight: 500;
+  border: 1rpx solid transparent;
+}
+
+.row-route-style.route-products {
+  background: #f3e8ff;
+  color: #6b21a8;
+  border-color: #ddd6fe;
+}
+
+.row-route-style.route-categories {
+  background: #f4f4f5;
+  color: #52525b;
+  border-color: #e4e4e7;
 }
 
 .row-type {

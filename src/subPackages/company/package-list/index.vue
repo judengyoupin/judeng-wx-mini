@@ -7,21 +7,21 @@
           <view 
             class="tab-item" 
             :class="{ active: currentTab === 'all' }"
-            @click="currentTab = 'all'; loadPackages(true)"
+            @click="currentTab = 'all'"
           >
             全部
           </view>
           <view 
             class="tab-item" 
             :class="{ active: currentTab === 'shelved' }"
-            @click="currentTab = 'shelved'; loadPackages(true)"
+            @click="currentTab = 'shelved'"
           >
             已上架
           </view>
           <view 
             class="tab-item" 
             :class="{ active: currentTab === 'unshelved' }"
-            @click="currentTab = 'unshelved'; loadPackages(true)"
+            @click="currentTab = 'unshelved'"
           >
             已下架
           </view>
@@ -78,6 +78,13 @@
           已隐藏
         </view>
       </view>
+      <view class="category-filter-row">
+        <text class="category-filter-label">分类</text>
+        <view class="category-picker-display" @click="showCategoryFilter = true">
+          <text class="category-picker-text">{{ filterCategoryLabel }}</text>
+          <text class="category-picker-arrow">▼</text>
+        </view>
+      </view>
       <view class="search-row">
         <input :adjust-position="false"
           class="search-input"
@@ -98,67 +105,55 @@
       @refresherrefresh="loadPackages(true)"
     >
     <view class="package-list">
-      <template v-for="section in groupedSections" :key="section.categoryName">
-        <view 
-          class="section-header"
-          :class="{ collapsed: isSectionCollapsed(section.categoryName) }"
-          @click="toggleSection(section.categoryName)"
-        >
-          <text class="section-expand-icon">{{ isSectionCollapsed(section.categoryName) ? '▶' : '▼' }}</text>
-          <text class="section-title-text">{{ section.categoryName }}</text>
-          <text class="section-count">（{{ section.items.length }}）</text>
-        </view>
-        <view v-show="!isSectionCollapsed(section.categoryName)" class="section-body">
-          <view 
-            v-for="pkg in section.items" 
-            :key="pkg.id"
-            class="package-item"
-          >
-          <view class="package-item-main" @click="onPackageClick(pkg)">
-            <image 
-              class="package-image" 
-              :src="pkg.cover_image_url" 
-              mode="aspectFill"
-            ></image>
-            <view class="package-info">
-              <view class="package-name">{{ pkg.name }}</view>
-              <view class="package-meta">
-                <text class="sku-count">{{ pkg.package_product_skus?.length || 0 }}个商品</text>
-                <text class="status" :class="{ 'status-shelved': pkg.is_shelved }">
-                  {{ pkg.is_shelved ? '已下架' : '已上架' }}
-                </text>
-                <text v-if="isFromDefaultCompany(pkg)" class="tag-system">系统配置</text>
-              </view>
-              <view v-if="pkg.description" class="package-desc">
-                {{ pkg.description }}
-              </view>
+      <view 
+        v-for="pkg in filteredPackages" 
+        :key="pkg.id"
+        class="package-item"
+      >
+        <view class="package-item-main" @click="onPackageClick(pkg)">
+          <image 
+            class="package-image" 
+            :src="pkg.cover_image_url" 
+            mode="aspectFill"
+          ></image>
+          <view class="package-info">
+            <view class="package-name">{{ pkg.name }}</view>
+            <text v-if="getCategoryPath(pkg.category) !== '未分类'" class="package-cat-path">{{ getCategoryPath(pkg.category) }}</text>
+            <view class="package-meta">
+              <text class="sku-count">{{ pkg.package_product_skus?.length || 0 }}个商品</text>
+              <text class="status" :class="{ 'status-shelved': pkg.is_shelved }">
+                {{ pkg.is_shelved ? '已下架' : '已上架' }}
+              </text>
+              <text v-if="isFromDefaultCompany(pkg)" class="tag-system">系统配置</text>
             </view>
-            <view v-if="!isViewOnly" class="package-actions">
-              <template v-if="isFromDefaultCompany(pkg)">
-                <view v-if="isPackageHidden(pkg)" class="action-btn unhide" @click.stop="handleUnhidePackage(pkg)">取消隐藏</view>
-                <view v-else class="action-btn hide" @click.stop="handleHidePackage(pkg)">隐藏</view>
-              </template>
-              <template v-else>
-                <view class="action-btn" @click.stop="toggleShelve(pkg)">
-                  {{ pkg.is_shelved ? '上架' : '下架' }}
-                </view>
-                <view class="action-btn delete" @click.stop="handleDelete(pkg)">删除</view>
-              </template>
+            <view v-if="pkg.description" class="package-desc">
+              {{ pkg.description }}
             </view>
           </view>
-          <view class="item-entry-row">
-            <template v-if="!isViewOnly && !isFromDefaultCompany(pkg)">
-              <text class="entry-link" @click.stop="goToEditPackage(pkg.id)">编辑</text>
-              <text class="entry-divider">|</text>
+          <view v-if="!isViewOnly" class="package-actions">
+            <template v-if="isFromDefaultCompany(pkg)">
+              <view v-if="isPackageHidden(pkg)" class="action-btn unhide" @click.stop="handleUnhidePackage(pkg)">取消隐藏</view>
+              <view v-else class="action-btn hide" @click.stop="handleHidePackage(pkg)">隐藏</view>
             </template>
-            <text class="entry-link" @click.stop="goToPreviewPackage(pkg.id)">预览</text>
+            <template v-else>
+              <view class="action-btn" @click.stop="toggleShelve(pkg)">
+                {{ pkg.is_shelved ? '上架' : '下架' }}
+              </view>
+              <view class="action-btn delete" @click.stop="handleDelete(pkg)">删除</view>
+            </template>
           </view>
         </view>
+        <view class="item-entry-row">
+          <template v-if="!isViewOnly && !isFromDefaultCompany(pkg)">
+            <text class="entry-link" @click.stop="goToEditPackage(pkg.id)">编辑</text>
+            <text class="entry-divider">|</text>
+          </template>
+          <text class="entry-link" @click.stop="goToPreviewPackage(pkg.id)">预览</text>
         </view>
-      </template>
+      </view>
 
       <!-- 搜索无结果 -->
-      <view v-if="packages.length > 0 && groupedSections.length === 0 && !loading" class="empty-state">
+      <view v-if="packages.length > 0 && filteredPackages.length === 0 && !loading" class="empty-state">
         <text class="empty-text">未找到匹配「{{ searchKeyword }}」的套餐</text>
       </view>
       <!-- 空状态 -->
@@ -173,16 +168,30 @@
       </view>
     </view>
     </scroll-view>
+
+    <CategoryPicker
+      :show="showCategoryFilter"
+      :selected-category-id="filterCategoryId"
+      category-type="package"
+      :allow-clear="true"
+      clear-option-text="全部分类"
+      :hide-scope-bar="true"
+      :list-scope="selectedScope"
+      :company-id-override="categoryFilterCompanyId"
+      @update:show="showCategoryFilter = $event"
+      @select="onCategoryFilterSelect"
+    />
   </view>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { onLoad, onPullDownRefresh, onReachBottom, onShow } from '@dcloudio/uni-app';
 import { companyInfo } from '@/store/userStore';
 import { getPackageList, getPackageListWithCompanyHidden, getPackageListMultiCompany, deletePackage, updatePackage } from '@/subPackages/company/api/package';
 import { getDefaultCompanyIdCached } from '@/api/config/index';
 import { getCompanyDetailCached, updateCompany } from '@/subPackages/company/api/platform';
+import CategoryPicker from '@/components/CategoryPicker.vue';
 import { exportPackagesToExcel } from '../utils/exportExcel';
 
 const packages = ref<any[]>([]);
@@ -195,13 +204,16 @@ const selectedScope = ref<'all' | 'mine' | 'headquarters'>('all');
 const defaultCompanyId = ref<number | null>(null);
 const hiddenPackageIds = ref<number[]>([]);
 const searchKeyword = ref('');
-const collapsedSections = ref<Set<string>>(new Set());
+const showCategoryFilter = ref(false);
+const filterCategoryId = ref<number | null>(null);
+const filterCategoryLabel = ref('全部分类');
 const visibilityFilter = ref<'all' | 'visible' | 'hidden'>('all');
 const refreshing = ref(false);
 
 // 超级管理员从公司管理点进来时传入的 companyId（核查只读）
 const viewCompanyId = ref<number | null>(null);
 const effectiveCompanyId = () => viewCompanyId.value ?? companyInfo.value?.id ?? null;
+const categoryFilterCompanyId = computed(() => effectiveCompanyId());
 /** 核查入口只读：不显示添加/编辑/删除/上架下架，仅可预览 */
 const isViewOnly = computed(() => !!viewCompanyId.value);
 
@@ -217,7 +229,25 @@ function isPackageHidden(pkg: any): boolean {
 
 function selectScope(scope: 'all' | 'mine' | 'headquarters') {
   selectedScope.value = scope;
+  filterCategoryId.value = null;
+  filterCategoryLabel.value = '全部分类';
   loadPackages(true);
+}
+
+function onCategoryFilterSelect(payload: any | null) {
+  if (!payload) {
+    filterCategoryId.value = null;
+    filterCategoryLabel.value = '全部分类';
+  } else {
+    const n = Number(payload.id);
+    filterCategoryId.value = Number.isFinite(n) ? n : null;
+    filterCategoryLabel.value = payload.pathLabel || payload.name || '全部分类';
+  }
+  loadPackages(true);
+}
+
+function activeCategoryFilterId(): number | undefined {
+  return filterCategoryId.value == null ? undefined : filterCategoryId.value;
 }
 
 function onPackageClick(pkg: any) {
@@ -262,35 +292,6 @@ const filteredPackages = computed(() => {
   });
 });
 
-// 按完整目录路径分区展示：{ categoryName, items }（基于过滤后的列表）
-const groupedSections = computed(() => {
-  const map = new Map<string, any[]>();
-  const noCategoryKey = '未分类';
-  for (const p of filteredPackages.value) {
-    const path = getCategoryPath(p.category);
-    const key = path || noCategoryKey;
-    if (!map.has(key)) map.set(key, []);
-    map.get(key)!.push(p);
-  }
-  const sections: { categoryName: string; items: any[] }[] = [];
-  map.forEach((items, categoryName) => {
-    sections.push({ categoryName, items });
-  });
-  sections.sort((a, b) => (a.categoryName === noCategoryKey ? 1 : b.categoryName === noCategoryKey ? -1 : a.categoryName.localeCompare(b.categoryName)));
-  return sections;
-});
-
-function isSectionCollapsed(categoryName: string): boolean {
-  return collapsedSections.value.has(categoryName);
-}
-
-function toggleSection(categoryName: string) {
-  const next = new Set(collapsedSections.value);
-  if (next.has(categoryName)) next.delete(categoryName);
-  else next.add(categoryName);
-  collapsedSections.value = next;
-}
-
 // 加载套餐列表（全部 = 当前公司 + 系统配置公司；只看自己公司 = 仅当前公司）
 const loadPackages = async (reset = false) => {
   if (loading.value || (!hasMore.value && !reset)) {
@@ -303,6 +304,8 @@ const loadPackages = async (reset = false) => {
     return;
   }
 
+  const catFilterId = activeCategoryFilterId();
+
   if (reset) {
     page.value = 1;
     hasMore.value = true;
@@ -310,6 +313,7 @@ const loadPackages = async (reset = false) => {
     if (selectedScope.value === 'mine') {
       const merged = await getPackageListWithCompanyHidden({
         companyId: myId,
+        categoryId: catFilterId,
         limit: pageSize,
         offset: 0,
       });
@@ -337,6 +341,7 @@ const loadPackages = async (reset = false) => {
     if (selectedScope.value === 'headquarters' && defaultCompanyId.value && defaultCompanyId.value !== myId) {
       const result = await getPackageList({
         companyId: defaultCompanyId.value,
+        categoryId: catFilterId,
         limit: pageSize,
         offset: (page.value - 1) * pageSize,
       });
@@ -351,6 +356,7 @@ const loadPackages = async (reset = false) => {
       const multi = await getPackageListMultiCompany({
         companyIds: [myId, defaultCompanyId.value],
         hiddenForCompanyId: myId,
+        categoryId: catFilterId,
         limit: pageSize,
         offset: (page.value - 1) * pageSize,
       });
@@ -365,6 +371,7 @@ const loadPackages = async (reset = false) => {
     } else {
       const result = await getPackageList({
         companyId: myId,
+        categoryId: catFilterId,
         limit: pageSize,
         offset: (page.value - 1) * pageSize,
       });
@@ -520,6 +527,10 @@ const goToPreviewPackage = (packageId: number) => {
   });
 };
 
+watch(currentTab, () => {
+  loadPackages(true);
+});
+
 onLoad((options?: { companyId?: string }) => {
   if (options?.companyId) {
     viewCompanyId.value = Number(options.companyId);
@@ -622,6 +633,7 @@ onReachBottom(() => {
   display: flex;
   gap: 8rpx;
   flex-wrap: wrap;
+  margin-top: 0;
 }
 
 .scope-tab {
@@ -636,6 +648,59 @@ onReachBottom(() => {
   background: #e8ebf7;
   color: #667eea;
   font-weight: 500;
+}
+
+.category-filter-row {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  margin-top: 4rpx;
+}
+
+.category-filter-label {
+  font-size: 24rpx;
+  color: #666;
+  flex-shrink: 0;
+}
+
+.category-filter-row .category-picker-display {
+  flex: 1;
+  min-width: 0;
+}
+
+.category-picker-display {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 56rpx;
+  padding: 0 20rpx;
+  background: #f5f5f5;
+  border-radius: 28rpx;
+}
+
+.category-picker-text {
+  font-size: 26rpx;
+  color: #333;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  min-width: 0;
+}
+
+.category-picker-arrow {
+  font-size: 22rpx;
+  color: #999;
+  margin-left: 12rpx;
+  flex-shrink: 0;
+}
+
+.package-cat-path {
+  display: block;
+  font-size: 22rpx;
+  color: #888;
+  margin-top: 4rpx;
+  line-height: 1.35;
 }
 
 .search-row {

@@ -7,8 +7,8 @@
         <text class="modal-close" @click="handleClose">×</text>
       </view>
       
-      <!-- 筛选选项 -->
-      <view class="filter-bar">
+      <!-- 筛选选项（列表页等场景由外层切换范围时隐藏，避免重复） -->
+      <view v-if="!hideScopeBar" class="filter-bar">
         <view class="filter-item" :class="{ active: selectedScope === 'all' }" @click="selectScope('all')">
           <text class="filter-text">全部</text>
         </view>
@@ -20,14 +20,14 @@
         </view>
       </view>
 
-      <!-- 不选择分类（可选） -->
+      <!-- 不选分类 / 全部分类（文案可由 clearOptionText 配置） -->
       <view
         v-if="allowClear"
         class="clear-category-row"
         :class="{ active: selectedCategoryId == null }"
         @click="handleClearCategory"
       >
-        <text class="clear-category-text">不选择分类</text>
+        <text class="clear-category-text">{{ clearOptionText }}</text>
       </view>
       
       <!-- 分类树 -->
@@ -172,6 +172,14 @@ interface Props {
   categoryType?: 'product' | 'package' | null;
   /** 为 true 时显示「不选择分类」选项，选择后 emit select(null) */
   allowClear?: boolean;
+  /** allowClear 时首行文案，默认「不选择分类」；列表筛选可设为「全部分类」 */
+  clearOptionText?: string;
+  /** 为 true 时隐藏顶部「全部/只看当前公司/只看总部」，由外层页面切换 listScope */
+  hideScopeBar?: boolean;
+  /** 与 hideScopeBar 配合：外层列表当前的「全部 / 只看自己 / 只看总部」 */
+  listScope?: 'all' | 'mine' | 'headquarters' | null;
+  /** 核查入口等：指定公司 id，覆盖当前登录公司（mine/合并树时用） */
+  companyIdOverride?: number | null;
 }
 
 interface Emits {
@@ -179,7 +187,12 @@ interface Emits {
   (e: 'select', category: any): void;
 }
 
-const props = defineProps<Props>();
+const props = withDefaults(defineProps<Props>(), {
+  clearOptionText: '不选择分类',
+  hideScopeBar: false,
+  listScope: null,
+  companyIdOverride: null,
+});
 const emit = defineEmits<Emits>();
 
 const categories = ref<any[]>([]);
@@ -189,6 +202,17 @@ const defaultCompanyId = ref<number | null>(null);
 
 // 显示的分类（按筛选条件加载的数据）
 const displayCategories = computed(() => categories.value);
+
+function effectiveListScope(): 'all' | 'mine' | 'headquarters' {
+  if (props.hideScopeBar && props.listScope != null) {
+    return props.listScope;
+  }
+  return selectedScope.value;
+}
+
+function effectiveCompanyIdForTree(): number | null {
+  return props.companyIdOverride ?? companyInfo.value?.id ?? null;
+}
 
 function addExpandState(cats: any[], useChildren = false): any[] {
   if (!Array.isArray(cats)) return [];
@@ -206,12 +230,13 @@ function addExpandState(cats: any[], useChildren = false): any[] {
 
 // 加载分类树
 const loadCategories = async () => {
-  const myId = companyInfo.value?.id;
-  if (!myId && selectedScope.value !== 'headquarters') {
+  const scope = effectiveListScope();
+  const myId = effectiveCompanyIdForTree();
+  if (!myId && scope !== 'headquarters') {
     categories.value = [];
     return;
   }
-  if (selectedScope.value === 'headquarters') {
+  if (scope === 'headquarters') {
     const defaultId = await getDefaultCompanyIdCached();
     if (!defaultId) {
       categories.value = [];
@@ -225,10 +250,10 @@ const loadCategories = async () => {
   loading.value = true;
   try {
     const categoryType = props.categoryType ?? undefined;
-    if (selectedScope.value === 'mine' && myId) {
+    if (scope === 'mine' && myId) {
       const result = await getAdminCategoryTree(myId, categoryType);
       categories.value = addExpandState(Array.isArray(result) ? result : []);
-    } else if (selectedScope.value === 'headquarters' && defaultCompanyId.value) {
+    } else if (scope === 'headquarters' && defaultCompanyId.value) {
       const result = await getAdminCategoryTree(defaultCompanyId.value, categoryType);
       categories.value = addExpandState(Array.isArray(result) ? result : []);
     } else {
@@ -276,7 +301,9 @@ const hasSubChildren = (subCategory: any) => {
 // 切换第二层展开/收起（用于显示第三层）；若无子节点则按需拉取（保证第三层能展示）
 const toggleSubExpand = async (subCategory: any) => {
   subCategory.expanded = !subCategory.expanded;
-  const companyId = selectedScope.value === 'headquarters' ? defaultCompanyId.value : companyInfo.value?.id;
+  const scope = effectiveListScope();
+  const baseId = effectiveCompanyIdForTree();
+  const companyId = scope === 'headquarters' ? defaultCompanyId.value : baseId;
   if (subCategory.expanded && (!subCategory.categories || subCategory.categories.length === 0) && companyId) {
     try {
       const categoryType = props.categoryType ?? undefined;
@@ -331,12 +358,15 @@ const handleClose = () => {
   emit('update:show', false);
 };
 
-// 监听 show 变化，打开时加载分类
-watch(() => props.show, (newVal) => {
-  if (newVal) {
-    loadCategories();
-  }
-});
+// 打开时加载；外层 listScope / 核查公司变化时在已打开状态下重新拉树
+watch(
+  () => [props.show, props.listScope, props.companyIdOverride, props.hideScopeBar] as const,
+  ([show]) => {
+    if (show) {
+      loadCategories();
+    }
+  },
+);
 </script>
 
 <style scoped>

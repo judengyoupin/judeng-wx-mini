@@ -22,6 +22,7 @@ export async function getCategoryTree(companyId: number, type?: 'product' | 'pac
   const typeCondition = type ? ', type: { _eq: $type }' : '';
   const aggFields = `
         products_aggregate(where: { is_deleted: { _eq: false } }) { aggregate { count } }
+        products_listed_aggregate: products_aggregate(where: { _and: [{ is_deleted: { _eq: false } }, { is_shelved: { _eq: false } }] }) { aggregate { count } }
         packages_aggregate { aggregate { count } }
   `;
   const query = `
@@ -107,6 +108,7 @@ export async function getCategoryTreeMultiCompany(params: {
   const typeCondition = params.type ? ', type: { _eq: $type }' : '';
   const aggFields = `
         products_aggregate(where: { is_deleted: { _eq: false } }) { aggregate { count } }
+        products_listed_aggregate: products_aggregate(where: { _and: [{ is_deleted: { _eq: false } }, { is_shelved: { _eq: false } }] }) { aggregate { count } }
         packages_aggregate { aggregate { count } }
   `;
   const query = `

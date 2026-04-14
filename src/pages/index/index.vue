@@ -411,24 +411,7 @@ export default defineComponent({
       const categoryId = category.id;
       const categoryName = category.name || '';
 
-      // 按 route_ui_style 决定：展示商品 → 商品列表；继续展示分类 → 分类筛选页（该页会加载子分类或本分类商品）
-      const showProducts = category.skip === true || category.ui_style === "products" || category.route_ui_style === "products";
-      if (showProducts) {
-        const url = `/pages/product/index?categoryId=${categoryId}&categoryName=${encodeURIComponent(categoryName)}`;
-        uni.navigateTo({
-          url,
-          fail: (err) => {
-            uni.showToast({
-              title: '页面跳转失败: ' + (err?.errMsg || '未知错误'),
-              icon: 'none',
-              duration: 3000,
-            });
-          },
-        });
-        return;
-      }
-
-      // route_ui_style 为 categories（或未设置）：跳转分类筛选页，由该页根据是否有子分类展示子分类或本分类商品
+      // 统一进分类筛选页：根据后台 route_ui_style 展示子分类网格或本分类商品（与「展示商品 / 继续展示分类」一致），避免再跳转到独立的 product列表页
       const url = `/pages/category-filter/index?categoryId=${categoryId}&categoryName=${encodeURIComponent(categoryName)}`;
       uni.navigateTo({
         url,
