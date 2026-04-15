@@ -9,6 +9,16 @@
       <text>加载中...</text>
     </view>
 
+    <view v-else-if="missingProductId" class="load-fail-container">
+      <text class="load-fail-text">无法识别商品链接，请重新扫码或从首页进入</text>
+      <button class="load-fail-btn" @click="goHome">去首页</button>
+    </view>
+
+    <view v-else-if="productLoadFailed" class="load-fail-container">
+      <text class="load-fail-text">商品不存在、已下架或暂无权限查看</text>
+      <button class="load-fail-btn" @click="goHome">去首页</button>
+    </view>
+
     <!-- 商品详情 -->
     <scroll-view v-else-if="productDetail" scroll-y class="scroll-content">
       <!-- 顶部仅展示封面图：原始比例、高度自适应 -->
@@ -149,7 +159,12 @@
     </scroll-view>
 
     <!-- 底部操作栏（封装组件：首页、购物车、主按钮） -->
-    <DetailFooterBar :cart-count="cartCount" @home="goHome" @cart="goCart">
+    <DetailFooterBar
+      v-if="productDetail && !missingProductId && !productLoadFailed"
+      :cart-count="cartCount"
+      @home="goHome"
+      @cart="goCart"
+    >
       <button
         class="product-detail-footer-btn"
         :class="{ 'product-detail-footer-btn--disabled': !userInfo?.id ? true : (selectedSkuIds.length === 0 || !canAddToCart) }"
@@ -169,7 +184,7 @@ import { addToCart, getCartList, updateCartQuantity, toggleCartSelected } from '
 import { userInfo, companyInfo } from '@/store/userStore';
 import { getCompanyUserRoleCached } from '@/utils/auth';
 import { safeNavigateBack } from '@/utils/navigation';
-import { parseMiniProgramScene, parsePositiveIntParam } from '@/utils/sceneParams';
+import { mergeMiniProgramEntryQuery, parsePositiveIntParam } from '@/utils/sceneParams';
 import { whenAppReady } from '@/utils/appReady';
 import PageNavBar from '@/components/PageNavBar.vue';
 import SkeletonScreen from '@/components/SkeletonScreen.vue';
@@ -178,6 +193,10 @@ import DetailFooterBar from '@/components/DetailFooterBar.vue';
 const productId = ref<number | null>(null);
 const productDetail = ref<any>(null);
 const loading = ref(false);
+/** 无有效商品 id（常见于扫码参数未传入） */
+const missingProductId = ref(false);
+/** 接口无数据或请求失败（避免 v-if 全部不命中导致整页空白） */
+const productLoadFailed = ref(false);
 const selectedSkuIds = ref<number[]>([]);
 const cartCount = ref(0);
 
@@ -312,14 +331,24 @@ const loadProductDetail = async () => {
   if (!productId.value) return;
 
   loading.value = true;
+  productLoadFailed.value = false;
 
   try {
     const detail = await getProductDetail(productId.value);
+    if (!detail) {
+      productDetail.value = null;
+      productLoadFailed.value = true;
+      uni.showToast({
+        title: '商品不存在或已下架',
+        icon: 'none',
+      });
+      return;
+    }
     productDetail.value = detail;
-    
-    // 检查权限
     await checkPermissions();
   } catch (error: any) {
+    productDetail.value = null;
+    productLoadFailed.value = true;
     uni.showToast({
       title: error.message || '加载失败',
       icon: 'none',
@@ -449,15 +478,19 @@ const formatPrice = (price: number) => {
 onLoad((options?: Record<string, string | undefined>) => {
   void (async () => {
     await whenAppReady();
-    let id: number | null = null;
-    if (options?.scene) {
-      const params = parseMiniProgramScene(options.scene);
-      if (params?.has('id')) id = parsePositiveIntParam(params.get('id'));
+    const merged = mergeMiniProgramEntryQuery(options);
+    const id = parsePositiveIntParam(merged.id);
+    const sceneCompanyId = parsePositiveIntParam(merged.companyId);
+    if (sceneCompanyId != null) {
+      try {
+        uni.setStorageSync('companyId', String(sceneCompanyId));
+      } catch (_) {}
     }
-    if (id == null && options?.id) id = parsePositiveIntParam(options.id);
     if (id != null) {
       productId.value = id;
       await loadProductDetail();
+    } else {
+      missingProductId.value = true;
     }
     await loadCartCount();
   })();
@@ -518,6 +551,28 @@ onShareTimeline(() => {
   text-align: center;
   color: #666666;
   font-size: 28rpx;
+}
+
+.load-fail-container {
+  padding: 120rpx 48rpx 200rpx;
+  text-align: center;
+  color: #666666;
+  font-size: 28rpx;
+}
+
+.load-fail-text {
+  display: block;
+  line-height: 1.6;
+  margin-bottom: 40rpx;
+}
+
+.load-fail-btn {
+  font-size: 28rpx;
+  padding: 16rpx 48rpx;
+  background: #0d9488;
+  color: #ffffff;
+  border-radius: 8rpx;
+  border: none;
 }
 
 .loading-spinner {

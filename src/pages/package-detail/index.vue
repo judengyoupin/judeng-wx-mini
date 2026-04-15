@@ -9,8 +9,18 @@
       <text>加载中...</text>
     </view>
 
+    <view v-else-if="missingPackageId" class="load-fail-container">
+      <text class="load-fail-text">无法识别套餐链接，请重新扫码或从首页进入</text>
+      <button class="load-fail-btn" @click="goHome">去首页</button>
+    </view>
+
+    <view v-else-if="packageLoadFailed" class="load-fail-container">
+      <text class="load-fail-text">套餐不存在、已下架或暂无权限查看</text>
+      <button class="load-fail-btn" @click="goHome">去首页</button>
+    </view>
+
     <!-- 套餐详情 -->
-    <scroll-view v-else scroll-y class="scroll-content">
+    <scroll-view v-else-if="packageDetail" scroll-y class="scroll-content">
       <!-- 套餐封面：与商品详情一致，宽度铺满、高度随比例；点击预览大图 -->
       <view class="cover-section">
         <image
@@ -69,7 +79,12 @@
     </scroll-view>
 
     <!-- 底部操作栏（与产品详情页一致：首页、购物车、加入购物车） -->
-    <DetailFooterBar :cart-count="cartCount" @home="goHome" @cart="goCart">
+    <DetailFooterBar
+      v-if="packageDetail && !missingPackageId && !packageLoadFailed"
+      :cart-count="cartCount"
+      @home="goHome"
+      @cart="goCart"
+    >
       <button class="package-detail-footer-btn" @click="handleAddToCart">加入购物车</button>
     </DetailFooterBar>
   </view>
@@ -83,7 +98,7 @@ import { addToCart, getCartList } from '@/api/cart/index';
 import { userInfo, companyInfo } from '@/store/userStore';
 import { getCompanyUserRoleCached } from '@/utils/auth';
 import { safeNavigateBack } from '@/utils/navigation';
-import { parseMiniProgramScene, parsePositiveIntParam } from '@/utils/sceneParams';
+import { mergeMiniProgramEntryQuery, parsePositiveIntParam } from '@/utils/sceneParams';
 import { whenAppReady } from '@/utils/appReady';
 import PageNavBar from '@/components/PageNavBar.vue';
 import DetailFooterBar from '@/components/DetailFooterBar.vue';
@@ -92,6 +107,8 @@ import SkeletonScreen from '@/components/SkeletonScreen.vue';
 const packageId = ref<number | null>(null);
 const packageDetail = ref<any>(null);
 const loading = ref(false);
+const missingPackageId = ref(false);
+const packageLoadFailed = ref(false);
 const priceFactor = ref(1); // 价格系数，默认为1
 const canViewPrice = ref(false);
 const canAddToCart = ref(false);
@@ -146,14 +163,26 @@ const loadPackageDetail = async () => {
   if (!packageId.value) return;
 
   loading.value = true;
+  packageLoadFailed.value = false;
 
   try {
     // 先加载价格系数
     await loadPriceFactor();
-    
+
     const detail = await getPackageDetail(packageId.value);
+    if (!detail) {
+      packageDetail.value = null;
+      packageLoadFailed.value = true;
+      uni.showToast({
+        title: '套餐不存在或已下架',
+        icon: 'none',
+      });
+      return;
+    }
     packageDetail.value = detail;
   } catch (error: any) {
+    packageDetail.value = null;
+    packageLoadFailed.value = true;
     uni.showToast({
       title: error.message || '加载失败',
       icon: 'none',
@@ -277,15 +306,19 @@ const previewCover = () => {
 onLoad((options?: Record<string, string | undefined>) => {
   void (async () => {
     await whenAppReady();
-    let id: number | null = null;
-    if (options?.scene) {
-      const params = parseMiniProgramScene(options.scene);
-      if (params?.has('id')) id = parsePositiveIntParam(params.get('id'));
+    const merged = mergeMiniProgramEntryQuery(options);
+    const id = parsePositiveIntParam(merged.id);
+    const sceneCompanyId = parsePositiveIntParam(merged.companyId);
+    if (sceneCompanyId != null) {
+      try {
+        uni.setStorageSync('companyId', String(sceneCompanyId));
+      } catch (_) {}
     }
-    if (id == null && options?.id) id = parsePositiveIntParam(options.id);
     if (id != null) {
       packageId.value = id;
       await loadPackageDetail();
+    } else {
+      missingPackageId.value = true;
     }
     await loadCartCount();
   })();
@@ -345,6 +378,28 @@ onShareTimeline(() => {
   text-align: center;
   color: #999999;
   font-size: 28rpx;
+}
+
+.load-fail-container {
+  padding: 120rpx 48rpx 200rpx;
+  text-align: center;
+  color: #666666;
+  font-size: 28rpx;
+}
+
+.load-fail-text {
+  display: block;
+  line-height: 1.6;
+  margin-bottom: 40rpx;
+}
+
+.load-fail-btn {
+  font-size: 28rpx;
+  padding: 16rpx 48rpx;
+  background: #667eea;
+  color: #ffffff;
+  border-radius: 8rpx;
+  border: none;
 }
 
 .loading-spinner {

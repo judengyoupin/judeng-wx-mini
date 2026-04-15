@@ -153,6 +153,7 @@ import { getPinia } from "@/store/piniaInstance";
 import { useUserStore } from "@/store/user";
 import { getHomePageCacheValid, setHomePageCache, userInfo, companyInfo } from "@/store/userStore";
 import { whenAppReady } from "@/utils/appReady";
+import { mergeMiniProgramEntryQuery, parsePositiveIntParam } from "@/utils/sceneParams";
 import { onShow, onShareAppMessage, onShareTimeline } from "@dcloudio/uni-app";
 import type { BannerArray } from "@/types/companies";
 
@@ -205,6 +206,16 @@ export default defineComponent({
             if (!Number.isNaN(n)) companyId = n;
           }
         } catch (_) {}
+      }
+      if (companyId == null) {
+        const merged = mergeMiniProgramEntryQuery();
+        const fromEntry = parsePositiveIntParam(merged.companyId);
+        if (fromEntry != null) {
+          companyId = fromEntry;
+          try {
+            uni.setStorageSync('companyId', String(fromEntry));
+          } catch (_) {}
+        }
       }
       if (!companyId) {
         categoryList.value = [];

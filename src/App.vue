@@ -16,7 +16,7 @@ import {
   refreshManagedCompanyAfterLogin,
 } from "@/utils/auth";
 import { setAppReady } from "@/utils/appReady";
-import { parseMiniProgramScene } from "@/utils/sceneParams";
+import { mergeMiniProgramEntryQuery, parsePositiveIntParam } from "@/utils/sceneParams";
 import { isRegisteredMember } from "@/utils/memberSession";
 import { getUserJoinedCompanies } from "@/utils/company";
 
@@ -33,26 +33,14 @@ function readValidCompanyIdFromStorage(): number | null {
 }
 
 /**
- * 从启动/入口参数解析 companyId（query 或小程序码自带的 query.scene）
- * 注意：App.onLaunch 顶层的 options.scene 是微信「场景值」整数（如 1047），不是小程序码的自定义 scene 字符串。
- * 自定义 scene 在 options.query.scene 中（与页面 onLoad 的 options.scene 一致）。
+ * 从启动/入口参数解析 companyId（直传 companyId、小程序码 scene、普通二维码 q 内 URL 参数）
+ * 注意：App.onLaunch 顶层的 options.scene 是微信「场景值」整数（如 1047），不是自定义 scene 字符串。
+ * 自定义 scene 在 options.query.scene 中；并与 launch/enter 的 query 合并，避免首次扫码页面未带上 scene。
  */
 function extractCompanyIdFromEntryOptions(options: Record<string, unknown> | null | undefined): number | null {
-  if (!options) return null;
-  const q = options.query as Record<string, string | undefined> | undefined;
-  if (q?.companyId != null && q.companyId !== "") {
-    const n = Number(q.companyId);
-    if (Number.isInteger(n) && n > 0) return n;
-  }
-  const sceneFromQuery = q?.scene;
-  if (sceneFromQuery != null && sceneFromQuery !== "") {
-    const params = parseMiniProgramScene(sceneFromQuery);
-    if (params?.has("companyId")) {
-      const n = Number(params.get("companyId"));
-      if (Number.isInteger(n) && n > 0) return n;
-    }
-  }
-  return null;
+  const q = options?.query as Record<string, string | undefined> | undefined;
+  const merged = mergeMiniProgramEntryQuery(q);
+  return parsePositiveIntParam(merged.companyId);
 }
 
 /** 系统默认公司（配置 / 兜底） */

@@ -25,8 +25,8 @@ function resolveUserIdAfterAuth(user: { id?: number }): number | null {
 
 /**
  * 手机号/密码登录成功并已 setUserContext 后调用：
- * - 平台管理员：优先写入其作为「公司管理员」的公司；否则保留本地 companyId 并同步
- * - 普通用户：若账号已加入公司则切到列表首条；若尚未加入任何公司则保留当前本地公司（访客态进入的店铺）
+ * - 平台管理员：优先写入其作为「公司管理员」的公司；否则同普通成员规则处理已加入列表
+ * - 普通用户：若本地 companyId 已在已加入列表中则保留（访客正在看的公司优先）；否则切到列表首条；未加入任何公司则保留本地；无本地且无公司则报错
  */
 export async function syncCompanyContextAfterAuthLogin(user: {
   id?: number;
@@ -48,7 +48,9 @@ export async function syncCompanyContextAfterAuthLogin(user: {
     // users.role=admin 也可能仅以普通成员挂在某公司（company_users.role=user）
     const joinedAsAdminUser = await getUserJoinedCompanies(authUserId);
     if (joinedAsAdminUser.length > 0) {
-      const targetId = joinedAsAdminUser[0].id;
+      const local = readStoredCompanyId();
+      const idSet = new Set(joinedAsAdminUser.map((j) => j.id));
+      const targetId = local != null && idSet.has(local) ? local : joinedAsAdminUser[0].id;
       uni.setStorageSync('companyId', String(targetId));
       await syncCompanyInfo(targetId, true);
       return;
@@ -62,7 +64,9 @@ export async function syncCompanyContextAfterAuthLogin(user: {
 
   const joined = await getUserJoinedCompanies(authUserId);
   if (joined.length > 0) {
-    const targetId = joined[0].id;
+    const local = readStoredCompanyId();
+    const idSet = new Set(joined.map((j) => j.id));
+    const targetId = local != null && idSet.has(local) ? local : joined[0].id;
     uni.setStorageSync('companyId', String(targetId));
     await syncCompanyInfo(targetId, true);
     return;
