@@ -11,9 +11,14 @@ import {
   ensureUserInfoCached,
 } from "@/store/userStore";
 import { ensureWxSilentAuth } from "@/utils/wxSilentAuth";
-import { getCompanyUserRoleCached, clearCompanyUserRoleCache } from "@/utils/auth";
+import {
+  getCompanyUserRoleCached,
+  refreshManagedCompanyAfterLogin,
+} from "@/utils/auth";
 import { setAppReady } from "@/utils/appReady";
 import { parseMiniProgramScene } from "@/utils/sceneParams";
+import { isRegisteredMember } from "@/utils/memberSession";
+import { getUserJoinedCompanies } from "@/utils/company";
 
 /** 本地已持久化的公司 ID（有效正整数才算「有本地公司」） */
 function readValidCompanyIdFromStorage(): number | null {
@@ -50,32 +55,75 @@ function extractCompanyIdFromEntryOptions(options: Record<string, unknown> | nul
   return null;
 }
 
-/**
- * 解析当前应使用的公司 ID，优先级：
- * 1. 本地 storage（用户在「切换公司」等写入的）
- * 2. 若本地没有：入口链接上的 companyId（分享 / 外链场景）
- * 3. 若仍没有：系统配置的默认公司（最低优先级）
- */
-async function resolveInitialCompanyId(launchOptions: Record<string, unknown> | null | undefined): Promise<number | null> {
-  const fromLocal = readValidCompanyIdFromStorage();
-  if (fromLocal != null) {
-    return fromLocal;
-  }
-
-  const fromLink = extractCompanyIdFromEntryOptions(launchOptions ?? undefined);
-  if (fromLink != null) {
-    uni.setStorageSync("companyId", String(fromLink));
-    console.log("无本地公司，使用启动入口链接中的 companyId:", fromLink);
-    return fromLink;
-  }
-
+/** 系统默认公司（配置 / 兜底） */
+async function resolveDefaultCompanyId(): Promise<number | null> {
   const defaultRaw = getDefaultCompanyIdFromStorage() ?? (await getDefaultCompanyIdCached());
   if (defaultRaw == null) return null;
   const defaultNum = Number(defaultRaw);
   if (!Number.isInteger(defaultNum) || defaultNum <= 0) return null;
   uni.setStorageSync("companyId", String(defaultNum));
-  console.log("无本地与链接公司，使用系统默认公司 ID:", defaultNum);
+  console.log("使用系统默认公司 ID:", defaultNum);
   return defaultNum;
+}
+
+/**
+ * 解析冷启动应使用的公司：
+ * - 微信访客：入口链接 companyId 优先于本地（任意扫码/分享进入对应公司）
+ * - 正式用户且已加入≥1家公司：仅用本地（含手动切换结果）；无本地时用账号关联公司；分享/扫码链接不自动改公司
+ * - 正式用户但未加入任何公司：与访客相同，分享/扫码可指定公司
+ */
+async function resolveInitialCompanyId(launchOptions: Record<string, unknown> | null | undefined): Promise<number | null> {
+  await ensureUserInfoCached(true);
+  const fromLink = extractCompanyIdFromEntryOptions(launchOptions ?? undefined);
+  const fromLocal = readValidCompanyIdFromStorage();
+  const member = isRegisteredMember(userInfo.value?.role);
+
+  if (!member) {
+    if (fromLink != null) {
+      uni.setStorageSync("companyId", String(fromLink));
+      console.log("访客：使用启动入口链接中的 companyId:", fromLink);
+      return fromLink;
+    }
+    if (fromLocal != null) return fromLocal;
+    return resolveDefaultCompanyId();
+  }
+
+  if (fromLocal != null) {
+    return fromLocal;
+  }
+
+  const joined = await getUserJoinedCompanies();
+
+  if (joined.length > 0) {
+    if (userInfo.value?.role === "admin") {
+      const managedId = await refreshManagedCompanyAfterLogin();
+      if (managedId != null) {
+        console.log("管理员：无本地公司，使用管理的公司 ID:", managedId);
+        return managedId;
+      }
+    }
+    const id = joined[0].id;
+    uni.setStorageSync("companyId", String(id));
+    console.log("正式用户：无本地公司，使用账号关联公司:", id);
+    return id;
+  }
+
+  if (userInfo.value?.role === "admin") {
+    const managedId = await refreshManagedCompanyAfterLogin();
+    if (managedId != null) {
+      console.log("管理员：无本地与成员公司，使用管理的公司 ID:", managedId);
+      return managedId;
+    }
+  }
+
+  // 已登录但未加入任何公司：仍可按分享/扫码链接进入对应公司（与访客一致）
+  if (fromLink != null) {
+    uni.setStorageSync("companyId", String(fromLink));
+    console.log("正式用户（无成员公司）：使用启动入口链接中的 companyId:", fromLink);
+    return fromLink;
+  }
+
+  return resolveDefaultCompanyId();
 }
 
 /** 全局请求就绪后再允许页面请求：onLaunch 内完成公司 ID、公司信息、用户信息等后再 setAppReady，页面请求前 await whenAppReady() */
@@ -117,20 +165,36 @@ onLaunch(async (options) => {
 });
 
 /**
- * 非冷启动入口（如从分享卡进入）：仅当本地尚无公司时，才用本次进入链接里的 companyId（不覆盖用户已选公司）
+ * 非冷启动入口（如从分享卡进入）：
+ * - 访客：若链接带 companyId 则切换过去
+ * - 正式用户且已加入公司：不因分享/扫码自动改公司
+ * - 正式用户但未加入任何公司：仍可按链接切换公司
  */
 onShow(() => {
   void (async () => {
     try {
       await ensureWxSilentAuth();
-      if (readValidCompanyIdFromStorage() != null) {
-        return;
-      }
       const enterOptions = (uni as any).getEnterOptionsSync?.() as Record<string, unknown> | undefined;
       const fromLink = extractCompanyIdFromEntryOptions(enterOptions);
       if (fromLink == null) return;
+
+      await ensureUserInfoCached(true);
+      if (userInfo.value?.role === "admin") {
+        return;
+      }
+      if (isRegisteredMember(userInfo.value?.role)) {
+        const joined = await getUserJoinedCompanies();
+        if (joined.length > 0) {
+          return;
+        }
+      }
+
+      if (readValidCompanyIdFromStorage() === fromLink) {
+        return;
+      }
+
       uni.setStorageSync("companyId", String(fromLink));
-      console.log("本地无公司，使用本次进入链接中的 companyId:", fromLink);
+      console.log("onShow（访客或无成员公司）：使用本次进入链接中的 companyId:", fromLink);
       void applyCompanyAndRefreshUserRole(fromLink);
     } catch (e) {
       console.error("onShow 解析入口公司失败:", e);

@@ -13,10 +13,20 @@ function readStoredCompanyId(): number | null {
   }
 }
 
+function resolveUserIdAfterAuth(user: { id?: number }): number | null {
+  const a = user?.id != null ? Number(user.id) : NaN;
+  if (Number.isInteger(a) && a > 0) return a;
+  try {
+    const b = Number(uni.getStorageSync('userId'));
+    if (Number.isInteger(b) && b > 0) return b;
+  } catch (_) {}
+  return null;
+}
+
 /**
  * 手机号/密码登录成功并已 setUserContext 后调用：
  * - 平台管理员：优先写入其作为「公司管理员」的公司；否则保留本地 companyId 并同步
- * - 普通用户：本地 companyId 若在已加入列表中则沿用，否则切换到已加入列表中的公司（首条）
+ * - 普通用户：若账号已加入公司则切到列表首条；若尚未加入任何公司则保留当前本地公司（访客态进入的店铺）
  */
 export async function syncCompanyContextAfterAuthLogin(user: {
   id?: number;
@@ -24,10 +34,23 @@ export async function syncCompanyContextAfterAuthLogin(user: {
 }): Promise<void> {
   clearCompanyUserRoleCache();
 
+  const authUserId = resolveUserIdAfterAuth(user);
+  if (authUserId == null) {
+    throw new Error('登录状态异常，请重试');
+  }
+
   if (user.role === 'admin') {
     const managedId = await refreshManagedCompanyAfterLogin();
     if (managedId != null) {
       await syncCompanyInfo(managedId, true);
+      return;
+    }
+    // users.role=admin 也可能仅以普通成员挂在某公司（company_users.role=user）
+    const joinedAsAdminUser = await getUserJoinedCompanies(authUserId);
+    if (joinedAsAdminUser.length > 0) {
+      const targetId = joinedAsAdminUser[0].id;
+      uni.setStorageSync('companyId', String(targetId));
+      await syncCompanyInfo(targetId, true);
       return;
     }
     const local = readStoredCompanyId();
@@ -37,18 +60,19 @@ export async function syncCompanyContextAfterAuthLogin(user: {
     return;
   }
 
-  const joined = await getUserJoinedCompanies();
-  if (joined.length === 0) {
-    throw new Error('您的账号尚未加入任何公司，请联系管理员添加后再登录。');
+  const joined = await getUserJoinedCompanies(authUserId);
+  if (joined.length > 0) {
+    const targetId = joined[0].id;
+    uni.setStorageSync('companyId', String(targetId));
+    await syncCompanyInfo(targetId, true);
+    return;
   }
 
   const local = readStoredCompanyId();
-  const idSet = new Set(joined.map((j) => j.id));
-  const targetId = local != null && idSet.has(local) ? local : joined[0].id;
-
-  if (local == null || !idSet.has(local)) {
-    uni.setStorageSync('companyId', String(targetId));
+  if (local != null) {
+    await syncCompanyInfo(local, true);
+    return;
   }
 
-  await syncCompanyInfo(targetId, true);
+  throw new Error('您的账号尚未加入任何公司，请联系管理员添加后再登录。');
 }

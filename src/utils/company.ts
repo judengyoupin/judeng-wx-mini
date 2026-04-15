@@ -13,11 +13,28 @@ export interface UserJoinedCompany {
   logo_url: string | null;
 }
 
+function resolveUserIdForCompanyQuery(forUserId?: number): number | null {
+  const fromArg = forUserId != null ? Number(forUserId) : NaN;
+  if (Number.isInteger(fromArg) && fromArg > 0) return fromArg;
+  const fromStore = userInfo.value?.id != null ? Number(userInfo.value.id) : NaN;
+  if (Number.isInteger(fromStore) && fromStore > 0) return fromStore;
+  try {
+    const raw = uni.getStorageSync('userId');
+    if (raw === '' || raw == null) return null;
+    const n = Number(raw);
+    return Number.isInteger(n) && n > 0 ? n : null;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * 获取当前用户已加入的公司列表（id、name、logo），用于「切换公司」入口
+ * @param forUserId 登录刚完成时可传入，避免与 Pinia 合并时序导致读不到 id
  */
-export async function getUserJoinedCompanies(): Promise<UserJoinedCompany[]> {
-  if (!userInfo.value?.id) {
+export async function getUserJoinedCompanies(forUserId?: number): Promise<UserJoinedCompany[]> {
+  const userId = resolveUserIdForCompanyQuery(forUserId);
+  if (userId == null) {
     return [];
   }
 
@@ -39,7 +56,7 @@ export async function getUserJoinedCompanies(): Promise<UserJoinedCompany[]> {
 
     const result = await client.execute({
       query,
-      variables: { userId: Number(userInfo.value.id) },
+      variables: { userId },
     });
 
     if (!result?.company_users) return [];

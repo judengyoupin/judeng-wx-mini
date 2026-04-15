@@ -90,12 +90,17 @@ export const useUserStore = defineStore('user', () => {
   }
 
   function setUserContext(info: any) {
-    userInfo.value = info.user ?? {}
+    const fromUser = info.user && typeof info.user === 'object' ? info.user : {}
+    // 登录接口顶层必有 userId；合并进 user 供 company_users 等查询使用（避免仅写了 user 却缺 id）
+    userInfo.value = {
+      ...fromUser,
+      id: fromUser.id ?? info.userId,
+    }
     user_token.value = info.token ?? ''
     userInfoCacheTs = Date.now()
     try {
       if (info.token) uni.setStorageSync('token', info.token)
-      if (info.userId) uni.setStorageSync('userId', info.userId)
+      if (info.userId != null && info.userId !== '') uni.setStorageSync('userId', String(info.userId))
     } catch (e) {
       console.error('持久化 token/userId 失败', e)
     }
