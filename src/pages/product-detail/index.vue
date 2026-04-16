@@ -180,11 +180,13 @@
 import { ref, computed } from 'vue';
 import { onLoad, onShow, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app';
 import { getProductDetail } from '@/api/product/index';
+import { syncCompanyInfo } from '@/api/company/index';
 import { addToCart, getCartList, updateCartQuantity, toggleCartSelected } from '@/api/cart/index';
-import { userInfo, companyInfo } from '@/store/userStore';
+import { userInfo, companyInfo, user_token } from '@/store/userStore';
 import { getCompanyUserRoleCached } from '@/utils/auth';
 import { safeNavigateBack } from '@/utils/navigation';
 import { mergeMiniProgramEntryQuery, parsePositiveIntParam } from '@/utils/sceneParams';
+import { shouldAllowAutoSwitchCompanyFromEntry } from '@/utils/entryCompanyPolicy';
 import { whenAppReady } from '@/utils/appReady';
 import PageNavBar from '@/components/PageNavBar.vue';
 import SkeletonScreen from '@/components/SkeletonScreen.vue';
@@ -481,10 +483,21 @@ onLoad((options?: Record<string, string | undefined>) => {
     const merged = mergeMiniProgramEntryQuery(options);
     const id = parsePositiveIntParam(merged.id);
     const sceneCompanyId = parsePositiveIntParam(merged.companyId);
-    if (sceneCompanyId != null) {
+    if (sceneCompanyId != null && (await shouldAllowAutoSwitchCompanyFromEntry())) {
       try {
         uni.setStorageSync('companyId', String(sceneCompanyId));
       } catch (_) {}
+      const cur = companyInfo.value?.id != null ? Number(companyInfo.value.id) : NaN;
+      if (!Number.isInteger(cur) || cur !== sceneCompanyId) {
+        try {
+          await syncCompanyInfo(sceneCompanyId, true);
+          if (user_token.value) {
+            await getCompanyUserRoleCached(undefined, true);
+          }
+        } catch (e) {
+          console.error('扫码商品：同步公司上下文失败', e);
+        }
+      }
     }
     if (id != null) {
       productId.value = id;

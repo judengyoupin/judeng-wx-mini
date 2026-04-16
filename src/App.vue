@@ -177,7 +177,14 @@ onShow(() => {
         }
       }
 
-      if (readValidCompanyIdFromStorage() === fromLink) {
+      const storageId = readValidCompanyIdFromStorage();
+      const storeIdRaw = companyInfo.value?.id;
+      const storeId =
+        storeIdRaw != null && storeIdRaw !== "" ? Number(storeIdRaw) : NaN;
+      const storeMatches =
+        Number.isInteger(storeId) && storeId > 0 && storeId === fromLink;
+      // 仅 storage 对齐不够：详情页可能先写了 storage，内存 companyInfo 仍是上一家公司
+      if (storageId === fromLink && storeMatches) {
         return;
       }
 

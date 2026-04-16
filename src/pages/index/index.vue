@@ -154,6 +154,7 @@ import { useUserStore } from "@/store/user";
 import { getHomePageCacheValid, setHomePageCache, userInfo, companyInfo } from "@/store/userStore";
 import { whenAppReady } from "@/utils/appReady";
 import { mergeMiniProgramEntryQuery, parsePositiveIntParam } from "@/utils/sceneParams";
+import { shouldAllowAutoSwitchCompanyFromEntry } from "@/utils/entryCompanyPolicy";
 import { onShow, onShareAppMessage, onShareTimeline } from "@dcloudio/uni-app";
 import type { BannerArray } from "@/types/companies";
 
@@ -207,7 +208,7 @@ export default defineComponent({
           }
         } catch (_) {}
       }
-      if (companyId == null) {
+      if (companyId == null && (await shouldAllowAutoSwitchCompanyFromEntry())) {
         const merged = mergeMiniProgramEntryQuery();
         const fromEntry = parsePositiveIntParam(merged.companyId);
         if (fromEntry != null) {
