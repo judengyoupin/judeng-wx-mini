@@ -1,6 +1,9 @@
 /**
  * 管理端分类 API（公司端分类管理、CategoryPicker 等）
  * 放在主包以便主包组件 CategoryPicker 可引用；分包页面也可从主包 require
+ *
+ * 分类树上的商品数必须与「当前可见公司范围」内商品一致：聚合需带 company_companies 条件。
+ * 深层嵌套里对 $companyIds 的 aggregate 在 Hasura 可能不生效，故采用「先拉树、再根级批量聚合」与 judengyoupin-backend 一致。
  */
 import client from '@/config-lib/hasura-graphql-client/hasura-graphql-client';
 
@@ -15,15 +18,165 @@ export interface CategoryInput {
   type: 'product' | 'package';
 }
 
+const TREE_CORE = `
+        id
+        name
+        icon_url
+        parent_categories
+        level
+        route_ui_style
+        sort_order
+        type
+`;
+
+type AggRow = {
+  id: number;
+  products_aggregate?: { aggregate?: { count?: number } | null } | null;
+  products_listed_aggregate?: { aggregate?: { count?: number } | null } | null;
+  packages_aggregate?: { aggregate?: { count?: number } | null } | null;
+};
+
+function collectCategoryIds(nodes: unknown[]): number[] {
+  const ids: number[] = [];
+  const walk = (n: unknown) => {
+    if (!n || typeof n !== 'object') return;
+    const o = n as { id?: unknown; categories?: unknown[] };
+    if (typeof o.id === 'number' && Number.isFinite(o.id)) ids.push(o.id);
+    if (Array.isArray(o.categories)) o.categories.forEach(walk);
+  };
+  nodes.forEach(walk);
+  return [...new Set(ids)];
+}
+
+function mergeAggregatesIntoTree(nodes: unknown[], map: Map<number, AggRow>): void {
+  const walk = (n: unknown) => {
+    if (!n || typeof n !== 'object') return;
+    const o = n as Record<string, unknown> & { id?: number; categories?: unknown[] };
+    if (typeof o.id === 'number') {
+      const row = map.get(o.id);
+      if (row) {
+        o.products_aggregate = row.products_aggregate;
+        o.products_listed_aggregate = row.products_listed_aggregate;
+        o.packages_aggregate = row.packages_aggregate;
+      }
+    }
+    if (Array.isArray(o.categories)) o.categories.forEach(walk);
+  };
+  nodes.forEach(walk);
+}
+
+async function fetchAndMergeAggregatesSingleCompany(
+  categories: unknown[],
+  companyId: number,
+): Promise<void> {
+  const ids = collectCategoryIds(categories);
+  if (ids.length === 0) return;
+  const aggQuery = `
+    query CategoryAggregatesSingle($companyId: bigint!, $categoryIds: [bigint!]!) {
+      categories(where: { id: { _in: $categoryIds } }) {
+        id
+        products_aggregate(
+          where: {
+            _and: [
+              { is_deleted: { _eq: false } }
+              { company_companies: { _eq: $companyId } }
+            ]
+          }
+        ) {
+          aggregate { count }
+        }
+        products_listed_aggregate: products_aggregate(
+          where: {
+            _and: [
+              { is_deleted: { _eq: false } }
+              { is_shelved: { _eq: false } }
+              { company_companies: { _eq: $companyId } }
+            ]
+          }
+        ) {
+          aggregate { count }
+        }
+        packages_aggregate(where: { company_companies: { _eq: $companyId } }) {
+          aggregate { count }
+        }
+      }
+    }
+  `;
+  const aggRes = await client.execute<{ categories?: AggRow[] }>({
+    query: aggQuery,
+    variables: { companyId, categoryIds: ids },
+  });
+  const rows = aggRes?.categories ?? [];
+  mergeAggregatesIntoTree(categories, new Map(rows.map((r) => [r.id, r])));
+}
+
+async function fetchAndMergeAggregatesMultiCompany(
+  categories: unknown[],
+  companyIds: number[],
+): Promise<void> {
+  const ids = collectCategoryIds(categories);
+  if (ids.length === 0) return;
+  const aggQuery = `
+    query CategoryAggregates($companyIds: [bigint!]!, $categoryIds: [bigint!]!) {
+      categories(where: { id: { _in: $categoryIds } }) {
+        id
+        products_aggregate(
+          where: {
+            _and: [
+              { is_deleted: { _eq: false } }
+              { company_companies: { _in: $companyIds } }
+            ]
+          }
+        ) {
+          aggregate { count }
+        }
+        products_listed_aggregate: products_aggregate(
+          where: {
+            _and: [
+              { is_deleted: { _eq: false } }
+              { is_shelved: { _eq: false } }
+              { company_companies: { _in: $companyIds } }
+            ]
+          }
+        ) {
+          aggregate { count }
+        }
+        packages_aggregate(where: { company_companies: { _in: $companyIds } }) {
+          aggregate { count }
+        }
+      }
+    }
+  `;
+  const aggRes = await client.execute<{ categories?: AggRow[] }>({
+    query: aggQuery,
+    variables: { companyIds, categoryIds: ids },
+  });
+  const rows = aggRes?.categories ?? [];
+  mergeAggregatesIntoTree(categories, new Map(rows.map((r) => [r.id, r])));
+}
+
 /**
  * 获取分类树（一次请求返回三层：根 → 二级 → 三级）
  */
 export async function getCategoryTree(companyId: number, type?: 'product' | 'package') {
   const typeCondition = type ? ', type: { _eq: $type }' : '';
-  const aggFields = `
-        products_aggregate(where: { is_deleted: { _eq: false } }) { aggregate { count } }
-        products_listed_aggregate: products_aggregate(where: { _and: [{ is_deleted: { _eq: false } }, { is_shelved: { _eq: false } }] }) { aggregate { count } }
-        packages_aggregate { aggregate { count } }
+  const nested = `
+        ${TREE_CORE}
+        company_companies
+        categories(
+          where: { is_deleted: { _eq: false }${typeCondition} }
+          order_by: { sort_order: asc }
+        ) {
+          ${TREE_CORE}
+          company_companies
+          categories(
+            where: { is_deleted: { _eq: false }${typeCondition} }
+            order_by: { sort_order: asc }
+          ) {
+            ${TREE_CORE}
+            company_companies
+          }
+        }
   `;
   const query = `
     query GetCategoryTree($companyId: bigint!${type ? ', $type: String!' : ''}) {
@@ -36,43 +189,7 @@ export async function getCategoryTree(companyId: number, type?: 'product' | 'pac
         }
         order_by: { sort_order: asc }
       ) {
-        id
-        name
-        icon_url
-        parent_categories
-        level
-        route_ui_style
-        sort_order
-        type
-        ${aggFields}
-        categories(
-          where: { is_deleted: { _eq: false }${typeCondition} }
-          order_by: { sort_order: asc }
-        ) {
-          id
-          name
-          icon_url
-          parent_categories
-          level
-          route_ui_style
-          sort_order
-          type
-          ${aggFields}
-          categories(
-            where: { is_deleted: { _eq: false }${typeCondition} }
-            order_by: { sort_order: asc }
-          ) {
-            id
-            name
-            icon_url
-            parent_categories
-            level
-            route_ui_style
-            sort_order
-            type
-            ${aggFields}
-          }
-        }
+        ${nested}
       }
     }
   `;
@@ -80,12 +197,14 @@ export async function getCategoryTree(companyId: number, type?: 'product' | 'pac
   const variables: { companyId: number; type?: string } = { companyId };
   if (type) variables.type = type;
 
-  const result = await client.execute({
+  const result = await client.execute<{ categories: unknown[] }>({
     query,
     variables,
   });
 
-  return result?.categories || [];
+  const categories = result?.categories || [];
+  await fetchAndMergeAggregatesSingleCompany(categories, companyId);
+  return categories;
 }
 
 /** 递归给节点打上 _companyId（用于多公司合并树） */
@@ -106,10 +225,23 @@ export async function getCategoryTreeMultiCompany(params: {
   type?: 'product' | 'package';
 }) {
   const typeCondition = params.type ? ', type: { _eq: $type }' : '';
-  const aggFields = `
-        products_aggregate(where: { is_deleted: { _eq: false } }) { aggregate { count } }
-        products_listed_aggregate: products_aggregate(where: { _and: [{ is_deleted: { _eq: false } }, { is_shelved: { _eq: false } }] }) { aggregate { count } }
-        packages_aggregate { aggregate { count } }
+  const nested = `
+        ${TREE_CORE}
+        company_companies
+        categories(
+          where: { is_deleted: { _eq: false }${typeCondition} }
+          order_by: { sort_order: asc }
+        ) {
+          ${TREE_CORE}
+          company_companies
+          categories(
+            where: { is_deleted: { _eq: false }${typeCondition} }
+            order_by: { sort_order: asc }
+          ) {
+            ${TREE_CORE}
+            company_companies
+          }
+        }
   `;
   const query = `
     query GetCategoryTreeMulti($companyIds: [bigint!]!, $hiddenForCompanyId: bigint!${params.type ? ', $type: String!' : ''}) {
@@ -123,46 +255,7 @@ export async function getCategoryTreeMultiCompany(params: {
         }
         order_by: { sort_order: asc }
       ) {
-        id
-        name
-        icon_url
-        parent_categories
-        level
-        route_ui_style
-        sort_order
-        type
-        company_companies
-        ${aggFields}
-        categories(
-          where: { is_deleted: { _eq: false }${typeCondition} }
-          order_by: { sort_order: asc }
-        ) {
-          id
-          name
-          icon_url
-          parent_categories
-          level
-          route_ui_style
-          sort_order
-          type
-          company_companies
-          ${aggFields}
-          categories(
-            where: { is_deleted: { _eq: false }${typeCondition} }
-            order_by: { sort_order: asc }
-          ) {
-            id
-            name
-            icon_url
-            parent_categories
-            level
-            route_ui_style
-            sort_order
-            type
-            company_companies
-            ${aggFields}
-          }
-        }
+        ${nested}
       }
     }
   `;
@@ -174,7 +267,7 @@ export async function getCategoryTreeMultiCompany(params: {
 
   const result = await client.execute<{
     company: { hidden_category_ids: (string | number)[] | null } | null;
-    categories: any[];
+    categories: unknown[];
   }>({
     query,
     variables,
@@ -182,10 +275,12 @@ export async function getCategoryTreeMultiCompany(params: {
 
   const hidden = result?.company?.hidden_category_ids;
   const hiddenCategoryIds = Array.isArray(hidden) ? hidden.map((id) => Number(id)) : [];
-  const categories = tagTreeWithCompanyId(result?.categories ?? []);
+  const categories = result?.categories ?? [];
+
+  await fetchAndMergeAggregatesMultiCompany(categories, params.companyIds);
 
   return {
-    categories,
+    categories: tagTreeWithCompanyId(categories as any[]),
     hiddenCategoryIds,
   };
 }
