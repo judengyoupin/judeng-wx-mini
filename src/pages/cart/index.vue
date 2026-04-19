@@ -48,8 +48,11 @@
           ></image>
 
           <view class="item-info">
-            <view class="item-name" @click="goToProductDetail(item.product_sku?.product?.id)">
-              {{ item.product_sku?.product?.name || '商品' }}
+            <view class="item-title-row">
+              <view class="item-name" @click="goToProductDetail(item.product_sku?.product?.id)">
+                {{ item.product_sku?.product?.name || '商品' }}
+              </view>
+              <view v-if="isOutOfStock(item)" class="stock-short-tag">缺货</view>
             </view>
             <view class="item-spec">{{ item.product_sku?.name || '规格' }}</view>
             <view class="item-price-row">
@@ -67,7 +70,7 @@
                 <view
                   class="quantity-btn"
                   @click.stop="increaseQuantity(index)"
-                  :class="{ disabled: item.quantity >= (item.product_sku?.stock || 0) }"
+                  :class="{ disabled: isOutOfStock(item) }"
                 >
                   +
                 </view>
@@ -247,12 +250,10 @@ const toggleManageMode = () => {
   }
 };
 
-// 是否缺货（库存不足或库存为 0）
-const isOutOfStock = (item: any) => {
-  const stock = Number(item.product_sku?.stock ?? 0);
-  const need = Number(item.quantity ?? 0);
-  return need > 0 && stock < need;
-};
+/** SKU 展示库存小于 1 视为无货；大于等于 1 一律视为有货（不与购物车数量比较） */
+function isOutOfStock(item: any): boolean {
+  return Number(item.product_sku?.stock ?? 0) < 1;
+}
 
 // 切换选中状态（勾选缺货商品时校验并提示）
 const toggleSelect = async (index: number) => {
@@ -316,14 +317,12 @@ const toggleSelectAll = async () => {
   }
 };
 
-// 增加数量
+// 增加数量：仅展示库存小于 1 时不可加；不再按「数量大于库存」拦截
 const increaseQuantity = async (index: number) => {
   const item = cartItems.value[index];
-  const stock = item.product_sku?.stock || 0;
-  
-  if (item.quantity >= stock) {
+  if (isOutOfStock(item)) {
     uni.showToast({
-      title: '库存不足',
+      title: '该规格暂无库存',
       icon: 'none',
     });
     return;
@@ -580,15 +579,36 @@ onPullDownRefresh(() => {
   display: flex;
   flex-direction: column;
   gap: 8rpx;
+  min-width: 0;
+}
+
+.item-title-row {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  min-width: 0;
 }
 
 .item-name {
+  flex: 1;
+  min-width: 0;
   font-size: 28rpx;
   font-weight: 500;
   color: #333333;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.stock-short-tag {
+  flex-shrink: 0;
+  padding: 4rpx 12rpx;
+  font-size: 22rpx;
+  font-weight: 500;
+  color: #c2410c;
+  background: #ffedd5;
+  border-radius: 8rpx;
+  line-height: 1.2;
 }
 
 .item-spec {

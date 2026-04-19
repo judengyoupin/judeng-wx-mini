@@ -5,7 +5,7 @@
     </view>
     <view v-else-if="!order" class="empty-state">
       <view class="empty-icon">📋</view>
-      <text class="empty-text">订单不存在或已失效</text>
+      <text class="empty-text">订单不存在、已删除或无权查看</text>
     </view>
     <scroll-view v-else scroll-y class="scroll-view-wrap">
       <view class="scroll-content">
@@ -175,7 +175,30 @@
             {{ actionLoading ? '处理中...' : '归档' }}
           </button>
         </template>
-        <button v-if="!isAdminView || !showAnyAdminAction" class="share-btn" open-type="share">分享订单</button>
+        <view v-if="!isAdminView" class="footer-user-btns">
+          <button
+            v-if="showDeleteOrder"
+            class="delete-order-btn"
+            :disabled="actionLoading"
+            @click="softDeleteOrder"
+          >
+            {{ actionLoading ? '处理中...' : '删除订单' }}
+          </button>
+          <button
+            class="share-btn"
+            :class="{ 'share-btn--with-delete': showDeleteOrder }"
+            open-type="share"
+          >
+            分享订单
+          </button>
+        </view>
+        <button
+          v-else-if="!showAnyAdminAction"
+          class="share-btn"
+          open-type="share"
+        >
+          分享订单
+        </button>
       </view>
     </scroll-view>
 
@@ -234,8 +257,16 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { onLoad, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app';
-import { getOrderDetailById, getOrderUserCompanyInfo, confirmOrder as apiConfirmOrder, approvePayment as apiApprovePayment, completeOrder as apiCompleteOrder, updateOrderActualAmount } from '@/api/order/index';
-import { companyInfo } from '@/store/userStore';
+import {
+  getOrderDetailById,
+  getOrderUserCompanyInfo,
+  softDeleteMyOrder,
+  confirmOrder as apiConfirmOrder,
+  approvePayment as apiApprovePayment,
+  completeOrder as apiCompleteOrder,
+  updateOrderActualAmount,
+} from '@/api/order/index';
+import { companyInfo, userInfo } from '@/store/userStore';
 import { getCompanyUserRoleCached, isCompanyAdmin } from '@/utils/auth';
 import SkeletonScreen from '@/components/SkeletonScreen.vue';
 
@@ -305,6 +336,16 @@ const showAnyAdminAction = computed(() => {
   );
 });
 
+/** 下单本人可见「删除订单」（软删除，仅隐藏自己的列表） */
+const showDeleteOrder = computed(() => {
+  const o = order.value;
+  if (!o || o.is_deleted || isAdminView.value) return false;
+  const uid = userInfo.value?.id;
+  if (uid == null) return false;
+  const ownerId = o.user?.id ?? o.user_users;
+  return Number(ownerId) === Number(uid);
+});
+
 /** 快捷拨打 */
 function callPhone(phone: string) {
   const num = String(phone || '').trim();
@@ -349,6 +390,32 @@ async function loadOrderUserPriceInfo() {
   }
 }
 
+async function softDeleteOrder() {
+  if (!orderId.value || actionLoading.value) return;
+  const uid = userInfo.value?.id;
+  if (uid == null) return;
+  uni.showModal({
+    title: '删除订单',
+    content: '删除后仅在您的订单列表中隐藏，不影响商家处理',
+    confirmColor: '#ee6666',
+    success: async (res) => {
+      if (!res.confirm) return;
+      actionLoading.value = true;
+      try {
+        await softDeleteMyOrder(orderId.value, Number(uid));
+        uni.showToast({ title: '已删除', icon: 'success' });
+        setTimeout(() => {
+          uni.navigateBack();
+        }, 400);
+      } catch (e: any) {
+        uni.showToast({ title: e?.message || '删除失败', icon: 'none' });
+      } finally {
+        actionLoading.value = false;
+      }
+    },
+  });
+}
+
 onMounted(async () => {
   if (!orderId.value) {
     loading.value = false;
@@ -357,7 +424,10 @@ onMounted(async () => {
   loading.value = true;
   try {
     const orderRes = await getOrderDetailById(orderId.value);
-    order.value = orderRes;
+    if (!orderRes) {
+      order.value = null;
+      return;
+    }
     const companyIdRaw = orderRes?.company?.id ?? orderRes?.company_companies;
     const companyId = companyIdRaw != null ? Number(companyIdRaw) : NaN;
     const roleInfo =
@@ -366,6 +436,11 @@ onMounted(async () => {
         : null;
     const admin = Number.isInteger(companyId) && companyId > 0 ? await isCompanyAdmin(companyId) : false;
     isAdminView.value = !!admin;
+    if (orderRes.is_deleted && !admin) {
+      order.value = null;
+      return;
+    }
+    order.value = orderRes;
     canViewPrice.value = admin || (roleInfo?.canViewPrice ?? false);
     if (isAdminView.value) {
       await loadOrderUserPriceInfo();
@@ -919,6 +994,36 @@ onShareTimeline(() => {
 
 .share-btn::after {
   border: none;
+}
+
+.footer-user-btns {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.delete-order-btn {
+  flex-shrink: 0;
+  min-width: 200rpx;
+  height: 92rpx;
+  line-height: 92rpx;
+  font-size: 30rpx;
+  font-weight: 500;
+  background: #fff;
+  color: #dc2626;
+  border: 2rpx solid #fecaca;
+  border-radius: 16rpx;
+}
+
+.delete-order-btn::after {
+  border: none;
+}
+
+.share-btn--with-delete {
+  flex: 1;
+  min-width: 0;
 }
 
 /* 管理员报价参考 */

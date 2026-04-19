@@ -3,7 +3,7 @@
     <!-- 导航栏：展示分类时为 [分类名称]-分类，展示商品时为 [分类名称]-商品，不显示公司名 -->
     <PageNavBar :title="navTitle" :show-back="true" @back="goBack" />
 
-    <!-- 搜索：展示分类时带关键词跳转搜索页；展示商品时在当前页按关键词筛选 -->
+    <!-- 搜索：确认后跳转全域商品搜索（不带当前分类条件） -->
     <view class="search-bar">
       <view class="search-input-box">
         <text class="search-icon">🔍</text>
@@ -65,9 +65,9 @@
           <text class="category-title">{{ currentCategory ? currentCategory.name : pageTitle }}</text>
         </view>
 
-        <view class="product-grid" v-if="displayProducts.length > 0">
+        <view class="product-grid" v-if="products.length > 0">
           <view
-            v-for="product in displayProducts"
+            v-for="product in products"
             :key="product.id"
             class="product-card"
             @click="goDetail(product)"
@@ -89,16 +89,16 @@
 
         <view v-else-if="!loading" class="empty-state">
           <view class="empty-icon-wrap">
-            <text class="empty-icon-emoji">{{ searchKeyword ? '🔍' : '📦' }}</text>
+            <text class="empty-icon-emoji">📦</text>
           </view>
-          <text class="empty-text">{{ searchKeyword ? '未找到匹配的商品' : '该分类暂无商品' }}</text>
+          <text class="empty-text">该分类暂无商品</text>
         </view>
 
         <view v-if="loading" class="loading-more">
           <view class="loading-spinner"></view>
           <text>加载中...</text>
         </view>
-        <view v-else-if="displayProducts.length > 0 && !hasMore" class="no-more">
+        <view v-else-if="products.length > 0 && !hasMore" class="no-more">
           <text>没有更多了</text>
         </view>
         <view class="footer-placeholder"></view>
@@ -172,27 +172,12 @@ const showSubCategories = computed(() => {
 
 const searchKeyword = ref('');
 
-// 展示分类时无商品列表；展示商品时按关键词在当前页筛选
-const displayProducts = computed(() => {
-  const kw = (searchKeyword.value || '').trim().toLowerCase();
-  if (!kw) return products.value;
-  return products.value.filter(
-    (p: any) =>
-      (p.name || '').toLowerCase().includes(kw) ||
-      (p.description || '').toLowerCase().includes(kw)
-  );
-});
-
-// 展示分类时：带关键词跳转搜索页；展示商品时：仅当前页筛选（由 displayProducts 完成）
+/** 跳转全域商品搜索，不带当前分类（与列表页分类条件无关） */
 const onSearchConfirm = () => {
-  if (showSubCategories.value) {
-    const kw = (searchKeyword.value || '').trim();
-    let url = `/pages/search/index?type=product`;
-    if (parentId.value != null) url += `&categoryId=${parentId.value}`;
-    if (pageTitle.value && pageTitle.value !== '分类筛选') url += `&categoryName=${encodeURIComponent(pageTitle.value)}`;
-    if (kw) url += `&keyword=${encodeURIComponent(kw)}`;
-    uni.navigateTo({ url });
-  }
+  const kw = (searchKeyword.value || '').trim();
+  let url = `/pages/search/index?type=product`;
+  if (kw) url += `&keyword=${encodeURIComponent(kw)}`;
+  uni.navigateTo({ url });
 };
 
 const clearSearchKeyword = () => {

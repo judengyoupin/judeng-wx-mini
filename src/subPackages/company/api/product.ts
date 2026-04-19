@@ -75,6 +75,13 @@ const PRODUCT_CATEGORY_SUBTREE_WHERE = `{
   }
 }`;
 
+/** 名称 / 描述模糊（与后台商品列表一致） */
+const PRODUCT_KEYWORD_WHERE = `{ _or: [ { name: { _ilike: $keywordPattern } }, { description: { _ilike: $keywordPattern } } ] }`;
+
+function shouldUseKeyword(keyword?: string): boolean {
+  return (keyword ?? '').trim().length > 0;
+}
+
 /**
  * 一次请求获取公司 hidden_product_ids + 商品列表（合并请求，减少往返）
  */
@@ -83,6 +90,8 @@ export async function getProductListWithCompanyHidden(params: {
   categoryId?: number;
   limit?: number;
   offset?: number;
+  /** 名称/描述模糊搜索，服务端过滤 */
+  keyword?: string;
 }) {
   const limit = params.limit ?? 20;
   const offset = params.offset ?? 0;
@@ -90,10 +99,12 @@ export async function getProductListWithCompanyHidden(params: {
     '{ company_companies: { _eq: $companyId } }',
     '{ is_deleted: { _eq: false } }',
     ...(shouldFilterByCategory(params.categoryId) ? [PRODUCT_CATEGORY_SUBTREE_WHERE] : []),
+    ...(shouldUseKeyword(params.keyword) ? [PRODUCT_KEYWORD_WHERE] : []),
   ];
   const catDecl = shouldFilterByCategory(params.categoryId) ? ', $categoryId: bigint!' : '';
+  const kwDecl = shouldUseKeyword(params.keyword) ? ', $keywordPattern: String!' : '';
   const query = `
-    query GetProductListWithCompany($companyId: bigint!, $limit: Int!, $offset: Int!${catDecl}) {
+    query GetProductListWithCompany($companyId: bigint!, $limit: Int!, $offset: Int!${catDecl}${kwDecl}) {
       company: companies_by_pk(id: $companyId) { hidden_product_ids }
       products(
         where: {
@@ -124,6 +135,9 @@ export async function getProductListWithCompanyHidden(params: {
     offset,
   };
   if (shouldFilterByCategory(params.categoryId)) variables.categoryId = params.categoryId;
+  if (shouldUseKeyword(params.keyword)) {
+    variables.keywordPattern = `%${String(params.keyword).trim()}%`;
+  }
   const result = await client.execute<{
     company: { hidden_product_ids: (string | number)[] | null } | null;
     products: any[];
@@ -181,6 +195,7 @@ export async function getProductListMultiCompany(params: {
   categoryId?: number;
   limit?: number;
   offset?: number;
+  keyword?: string;
 }) {
   const limit = params.limit ?? 20;
   const offset = params.offset ?? 0;
@@ -188,10 +203,12 @@ export async function getProductListMultiCompany(params: {
     '{ company_companies: { _in: $companyIds } }',
     '{ is_deleted: { _eq: false } }',
     ...(shouldFilterByCategory(params.categoryId) ? [PRODUCT_CATEGORY_SUBTREE_WHERE] : []),
+    ...(shouldUseKeyword(params.keyword) ? [PRODUCT_KEYWORD_WHERE] : []),
   ];
   const catDecl = shouldFilterByCategory(params.categoryId) ? ', $categoryId: bigint!' : '';
+  const kwDecl = shouldUseKeyword(params.keyword) ? ', $keywordPattern: String!' : '';
   const query = `
-    query GetProductListMulti($companyIds: [bigint!]!, $hiddenForCompanyId: bigint!, $limit: Int!, $offset: Int!${catDecl}) {
+    query GetProductListMulti($companyIds: [bigint!]!, $hiddenForCompanyId: bigint!, $limit: Int!, $offset: Int!${catDecl}${kwDecl}) {
       company: companies_by_pk(id: $hiddenForCompanyId) { hidden_product_ids }
       products(
         where: {
@@ -223,6 +240,9 @@ export async function getProductListMultiCompany(params: {
     offset,
   };
   if (shouldFilterByCategory(params.categoryId)) variables.categoryId = params.categoryId;
+  if (shouldUseKeyword(params.keyword)) {
+    variables.keywordPattern = `%${String(params.keyword).trim()}%`;
+  }
   const result = await client.execute<{
     company: { hidden_product_ids: (string | number)[] | null } | null;
     products: any[];
@@ -252,6 +272,7 @@ export async function getProductList(params: {
   categoryId?: number;
   limit?: number;
   offset?: number;
+  keyword?: string;
 }) {
   // 动态构建 where 条件
   const whereConditions: string[] = [
@@ -262,6 +283,11 @@ export async function getProductList(params: {
   if (shouldFilterByCategory(params.categoryId)) {
     whereConditions.push(PRODUCT_CATEGORY_SUBTREE_WHERE);
   }
+  if (shouldUseKeyword(params.keyword)) {
+    whereConditions.push(PRODUCT_KEYWORD_WHERE);
+  }
+
+  const kwDecl = shouldUseKeyword(params.keyword) ? ', $keywordPattern: String!' : '';
 
   // 根据是否有 categoryId 动态构建查询
   const query = shouldFilterByCategory(params.categoryId)
@@ -270,7 +296,7 @@ export async function getProductList(params: {
         $companyId: bigint!
         $categoryId: bigint!
         $limit: Int
-        $offset: Int
+        $offset: Int${kwDecl}
       ) {
         products(
           where: {
@@ -335,7 +361,7 @@ export async function getProductList(params: {
       query GetProductList(
         $companyId: bigint!
         $limit: Int
-        $offset: Int
+        $offset: Int${kwDecl}
       ) {
         products(
           where: {
@@ -405,6 +431,9 @@ export async function getProductList(params: {
 
   if (shouldFilterByCategory(params.categoryId)) {
     variables.categoryId = params.categoryId;
+  }
+  if (shouldUseKeyword(params.keyword)) {
+    variables.keywordPattern = `%${String(params.keyword).trim()}%`;
   }
 
   const result = await client.execute({

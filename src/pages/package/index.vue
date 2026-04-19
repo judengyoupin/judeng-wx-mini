@@ -3,7 +3,7 @@
     <PageNavBar :title="companyInfo?.name || '套餐'" />
 
     <!-- 固定在导航下方的搜索 + 分类（仅下方列表区域滚动） -->
-    <view id="pkg-header-anchor" class="package-header-fixed">
+    <view class="package-header-fixed">
       <view class="search-bar">
         <view class="search-input-box">
           <image class="search-icon" src="/static/index/srch.png" mode="aspectFit" />
@@ -43,21 +43,17 @@
       </view>
     </view>
 
-    <!-- 首屏骨架：高度与列表区一致 -->
-    <view
-      v-if="loading && packages.length === 0"
-      class="skeleton-area"
-      :style="listAreaStyle"
-    >
-      <SkeletonScreen type="list-grid-3" :count="6" />
-    </view>
+    <!-- 列表区：flex 占满导航+筛选栏下方剩余高度，避免固定 px 与 tabBar 区域错位产生底部灰条/遮挡 -->
+    <view class="package-list-region">
+      <view v-if="loading && packages.length === 0" class="skeleton-area">
+        <SkeletonScreen type="list-grid-3" :count="6" />
+      </view>
 
-    <scroll-view
-      v-else
-      scroll-y
-      class="package-list-scroll"
-      :style="listAreaStyle"
-      :lower-threshold="100"
+      <scroll-view
+        v-else
+        scroll-y
+        class="package-list-scroll"
+        :lower-threshold="100"
       :enable-back-to-top="true"
       refresher-enabled
       :refresher-triggered="refresherTriggered"
@@ -67,7 +63,7 @@
     >
       <view class="package-list">
         <view
-          v-for="pkg in filteredPackages"
+          v-for="pkg in packages"
           :key="pkg.id"
           class="package-item"
           @click="goToPackageDetail(pkg.id)"
@@ -85,15 +81,12 @@
           </view>
         </view>
 
-        <view v-if="filteredPackages.length === 0" class="empty-state full-row">
-          <text class="empty-text">{{ searchKeyword ? '未找到匹配的套餐' : '暂无套餐' }}</text>
+        <view v-if="packages.length === 0" class="empty-state full-row">
+          <text class="empty-text">暂无套餐</text>
         </view>
 
         <!-- 列表底部状态 -->
-        <view
-          v-if="packages.length > 0 && (loading || !searchKeyword)"
-          class="list-footer full-row"
-        >
+        <view v-if="packages.length > 0" class="list-footer full-row">
           <view v-if="loading" class="footer-state footer-loading">
             <view class="footer-dots" aria-hidden="true">
               <view class="footer-dot" />
@@ -103,13 +96,13 @@
             <text class="footer-text">正在加载</text>
           </view>
           <view
-            v-else-if="hasMore && !searchKeyword"
+            v-else-if="hasMore"
             class="footer-state footer-hint"
             @click="loadMore"
           >
             <text class="footer-text">上拉或点击继续加载</text>
           </view>
-          <view v-else-if="!hasMore && !searchKeyword" class="footer-state footer-done">
+          <view v-else-if="!hasMore" class="footer-state footer-done">
             <view class="footer-rule" />
             <text class="footer-muted">已显示全部套餐</text>
             <view class="footer-rule" />
@@ -117,11 +110,12 @@
         </view>
       </view>
     </scroll-view>
+    </view>
   </view>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, nextTick } from 'vue';
+import { ref } from 'vue';
 import { whenAppReady } from '@/utils/appReady';
 import { onShow, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app';
 import { getPackageList } from '@/api/package/index';
@@ -141,45 +135,14 @@ const selectedCategoryId = ref<number | null>(null);
 const loadingCategories = ref(false);
 const searchKeyword = ref('');
 
-const listScrollHeightPx = ref(480);
 const refresherTriggered = ref(false);
 
-const listAreaStyle = computed(() => ({
-  height: `${listScrollHeightPx.value}px`,
-}));
-
-function updateListScrollHeight() {
-  nextTick(() => {
-    const query = uni.createSelectorQuery();
-    query.select('#pkg-header-anchor').boundingClientRect();
-    query.exec((res: any) => {
-      const rect = res?.[0];
-      const sys = uni.getSystemInfoSync();
-      const winH = sys.windowHeight ?? sys.screenHeight ?? 667;
-      const insetBottom = sys.safeAreaInsets?.bottom ?? 0;
-      if (rect && typeof rect.bottom === 'number') {
-        listScrollHeightPx.value = Math.max(200, Math.floor(winH - rect.bottom - insetBottom));
-      } else {
-        const sh = sys.statusBarHeight ?? 20;
-        const headerGuess = uni.upx2px(220);
-        listScrollHeightPx.value = Math.max(200, Math.floor(winH - sh - 44 - headerGuess - insetBottom));
-      }
-    });
-  });
-}
-
-const filteredPackages = computed(() => {
-  const kw = (searchKeyword.value || '').trim().toLowerCase();
-  if (!kw) return packages.value;
-  return packages.value.filter(
-    (p: any) =>
-      (p.name || '').toLowerCase().includes(kw) ||
-      (p.description || '').toLowerCase().includes(kw)
-  );
-});
-
+/** 确认后进入全域套餐搜索页，不带当前分类条件（与横向分类筛选无关） */
 const onSearchConfirm = () => {
-  // 筛选由 computed 完成
+  const kw = (searchKeyword.value || '').trim();
+  let url = `/pages/search/index?type=package`;
+  if (kw) url += `&keyword=${encodeURIComponent(kw)}`;
+  uni.navigateTo({ url });
 };
 
 const PACKAGE_PAGE_CACHE_TTL = 5 * 60 * 1000;
@@ -321,13 +284,8 @@ const goToPackageDetail = (packageId: number) => {
 onShow(async () => {
   await whenAppReady();
   if (!companyInfo.value?.id) return;
-  updateListScrollHeight();
   loadCategories(true).then(() => {
     loadPackages(true, true);
-    nextTick(() => {
-      updateListScrollHeight();
-      setTimeout(() => updateListScrollHeight(), 100);
-    });
   });
 });
 
@@ -365,6 +323,15 @@ onShareTimeline(() => {
   background: #f5f5f5;
 }
 
+.package-list-region {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
 .search-bar {
   padding: 20rpx 30rpx;
   background: #fff;
@@ -398,13 +365,20 @@ onShareTimeline(() => {
 }
 
 .skeleton-area {
+  flex: 1;
+  min-height: 0;
+  height: 0;
   width: 100%;
   box-sizing: border-box;
   padding: 24rpx;
   overflow: hidden;
 }
 
+/* flex:1 + height:0：与购物车列表一致，scroll-view 在 tabBar 页获得稳定剩余高度，避免底部错位灰条 */
 .package-list-scroll {
+  flex: 1;
+  min-height: 0;
+  height: 0;
   width: 100%;
   box-sizing: border-box;
   background: #f5f5f5;

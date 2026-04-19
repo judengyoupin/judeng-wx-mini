@@ -33,7 +33,10 @@
               mode="aspectFill"
             />
             <view class="goods-info">
-              <view class="goods-name">{{ item.product_sku?.product?.name || '商品' }}</view>
+              <view class="goods-title-row">
+                <view class="goods-name">{{ item.product_sku?.product?.name || '商品' }}</view>
+                <view v-if="isStockInsufficient(item)" class="stock-short-tag">缺货</view>
+              </view>
               <view class="goods-spec">{{ item.product_sku?.name || '规格' }}</view>
               <view class="goods-row">
                 <text v-if="canViewPrice" class="goods-price">¥{{ formatPrice((item.product_sku?.price || 0) * priceFactor) }}</text>
@@ -134,6 +137,11 @@ function formatPrice(p: number) {
   return Number(p).toFixed(2);
 }
 
+/** 仅当 SKU 展示库存小于 1 时显示缺货；大于等于 1 视为有货（不与下单数量比较） */
+function isStockInsufficient(item: any): boolean {
+  return Number(item.product_sku?.stock ?? 0) < 1;
+}
+
 function goBack() {
   safeNavigateBack();
 }
@@ -208,22 +216,6 @@ async function submitOrder() {
   if (!userId || !companyId) {
     uni.showToast({ title: '请先登录并选择公司', icon: 'none' });
     return;
-  }
-
-  // 提交前校验库存，不足时提示并阻止提交
-  for (const item of orderItems.value) {
-    const stock = Number(item.product_sku?.stock ?? 0);
-    const need = Number(item.quantity ?? 0);
-    if (need > 0 && stock < need) {
-      const name = item.product_sku?.product?.name || item.product_sku?.name || '商品';
-      const spec = item.product_sku?.name ? `（${item.product_sku.name}）` : '';
-      uni.showToast({
-        title: `${name}${spec} 库存不足，当前库存 ${stock}`,
-        icon: 'none',
-        duration: 2500,
-      });
-      return;
-    }
   }
 
   submitting.value = true;
@@ -445,13 +437,33 @@ defineExpose({ onAddressSelected });
   justify-content: space-between;
 }
 
+.goods-title-row {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  min-width: 0;
+}
+
 .goods-name {
+  flex: 1;
+  min-width: 0;
   font-size: 28rpx;
   font-weight: 500;
   color: #333;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.stock-short-tag {
+  flex-shrink: 0;
+  padding: 4rpx 12rpx;
+  font-size: 22rpx;
+  font-weight: 500;
+  color: #c2410c;
+  background: #ffedd5;
+  border-radius: 8rpx;
+  line-height: 1.2;
 }
 
 .goods-spec {

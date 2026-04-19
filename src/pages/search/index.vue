@@ -32,7 +32,8 @@
       class="skeleton-area"
       :style="listAreaStyle"
     >
-      <SkeletonScreen :type="searchType === 'product' ? 'list-grid-2' : 'list-grid-3'" :count="6" />
+      <!-- 商品/套餐列表均为 3 列宫格 + 上图下文，与 .product-grid / .package-list 一致 -->
+      <SkeletonScreen type="list-grid-3" :count="6" custom-class="search-skel" />
     </view>
 
     <scroll-view
@@ -447,6 +448,15 @@ onShareTimeline(() => {
   box-sizing: border-box;
   padding: 16rpx;
   overflow: hidden;
+}
+
+/* 与 .product-grid / .package-list：3 列、gap 12rpx；去掉组件默认 24rpx 内边距避免与列表错位 */
+.skeleton-area :deep(.skeleton-wrap.search-skel) {
+  padding: 0;
+}
+
+.skeleton-area :deep(.skeleton-wrap.search-skel.list-grid-3) {
+  gap: 12rpx;
 }
 
 .list-scroll {

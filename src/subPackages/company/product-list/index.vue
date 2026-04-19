@@ -89,8 +89,10 @@
         <input :adjust-position="false"
           class="search-input"
           v-model="searchKeyword"
-          placeholder="搜索商品名称"
+          confirm-type="search"
+          placeholder="搜索商品名称（名称/描述）"
           placeholder-class="search-placeholder"
+          @confirm="onSearchConfirm"
         />
       </view>
     </view>
@@ -151,9 +153,13 @@
         </view>
       </view>
 
-      <!-- 搜索无结果 -->
-      <view v-if="products.length > 0 && filteredProducts.length === 0 && !loading" class="empty-state">
-        <text class="empty-text">未找到匹配「{{ searchKeyword }}」的商品</text>
+      <!-- 关键词无结果（已由服务端筛选） -->
+      <view v-if="products.length === 0 && listKeywordParam() && !loading" class="empty-state">
+        <text class="empty-text">未找到匹配「{{ searchKeyword.trim() }}」的商品</text>
+      </view>
+      <!-- 展示中/已隐藏 筛空 -->
+      <view v-else-if="products.length > 0 && filteredProducts.length === 0 && !loading" class="empty-state">
+        <text class="empty-text">当前展示条件下暂无可显示商品</text>
       </view>
       <!-- 空状态 -->
       <view v-else-if="products.length === 0 && !loading" class="empty-state">
@@ -282,16 +288,27 @@ const visibilityFilteredProducts = computed(() => {
   return list.filter((p: any) => isFromDefaultCompany(p) && isProductHidden(p));
 });
 
-// 再按关键词过滤（名称、描述）
-const filteredProducts = computed(() => {
-  const kw = (searchKeyword.value || '').trim().toLowerCase();
-  const list = visibilityFilteredProducts.value;
-  if (!kw) return list;
-  return list.filter((p: any) => {
-    const name = (p.name || '').toLowerCase();
-    const desc = (p.description || '').toLowerCase();
-    return name.includes(kw) || desc.includes(kw);
-  });
+/** 关键词由服务端 Hasura 过滤，此处仅做展示中/已隐藏 */
+const filteredProducts = computed(() => visibilityFilteredProducts.value);
+
+function listKeywordParam(): string | undefined {
+  const s = (searchKeyword.value || '').trim();
+  return s.length > 0 ? s : undefined;
+}
+
+let searchDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+function onSearchConfirm() {
+  if (searchDebounceTimer) {
+    clearTimeout(searchDebounceTimer);
+    searchDebounceTimer = null;
+  }
+  loadProducts(true);
+}
+watch(searchKeyword, () => {
+  if (searchDebounceTimer) clearTimeout(searchDebounceTimer);
+  searchDebounceTimer = setTimeout(() => {
+    loadProducts(true);
+  }, 400);
 });
 
 // 加载商品列表（支持「全部」= 当前公司 + 系统配置公司；「只看自己公司」= 仅当前公司）
@@ -307,6 +324,7 @@ const loadProducts = async (reset = false) => {
   }
 
   const catFilterId = activeCategoryFilterId();
+  const kw = listKeywordParam();
 
   if (reset) {
     page.value = 1;
@@ -319,6 +337,7 @@ const loadProducts = async (reset = false) => {
         categoryId: catFilterId,
         limit: pageSize,
         offset: 0,
+        keyword: kw,
       });
       hiddenProductIds.value = merged.hiddenProductIds;
       let filtered = (merged.products || []).map((p: any) => ({ ...p, _companyId: myId }));
@@ -348,6 +367,7 @@ const loadProducts = async (reset = false) => {
         categoryId: catFilterId,
         limit: pageSize,
         offset: (page.value - 1) * pageSize,
+        keyword: kw,
       });
       let list = (result.products || []).map((p: any) => ({ ...p, _companyId: defaultCompanyId.value }));
       if (currentTab.value === 'shelved') list = list.filter((p: any) => !p.is_shelved);
@@ -364,6 +384,7 @@ const loadProducts = async (reset = false) => {
         categoryId: catFilterId,
         limit: pageSize,
         offset: (page.value - 1) * pageSize,
+        keyword: kw,
       });
       hiddenProductIds.value = multi.hiddenProductIds;
       let list = multi.products || [];
@@ -380,6 +401,7 @@ const loadProducts = async (reset = false) => {
         categoryId: catFilterId,
         limit: pageSize,
         offset: (page.value - 1) * pageSize,
+        keyword: kw,
       };
       const result = await getProductList(where);
       let pageList = result.products || [];
@@ -412,11 +434,12 @@ const handleExportExcel = async () => {
     const defaultId = await getDefaultCompanyIdCached();
     const companyIds = defaultId && defaultId !== myId ? [myId, defaultId] : [myId];
     const limit = 200;
+    const exportKw = listKeywordParam();
     const all: any[] = [];
     for (const cid of companyIds) {
       let offset = 0;
       while (true) {
-        const res = await getProductList({ companyId: cid, limit, offset });
+        const res = await getProductList({ companyId: cid, limit, offset, keyword: exportKw });
         const list = (res.products || []).map((p: any) => ({ ...p, _companyId: cid }));
         all.push(...list);
         if (list.length < limit) break;

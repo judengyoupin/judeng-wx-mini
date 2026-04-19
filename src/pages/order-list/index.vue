@@ -146,7 +146,10 @@
                 <text v-else class="total-price total-price-hidden">--</text>
               </view>
             </view>
-            <view class="order-arrow">›</view>
+            <view class="order-footer-right">
+              <text class="order-delete" @click.stop="confirmDeleteOrder(order)">删除</text>
+              <text class="order-arrow">›</text>
+            </view>
           </view>
         </view>
 
@@ -172,7 +175,7 @@ import { ref, watch } from 'vue';
 import { whenAppReady } from '@/utils/appReady';
 import { onLoad, onShow, onPullDownRefresh, onReachBottom } from '@dcloudio/uni-app';
 import { userInfo, companyInfo } from '@/store/userStore';
-import { getMyOrderList } from '@/api/order/index';
+import { getMyOrderList, softDeleteMyOrder } from '@/api/order/index';
 import { getCompanyUserRoleCached } from '@/utils/auth';
 import { safeNavigateBack } from '@/utils/navigation';
 import PageNavBar from '@/components/PageNavBar.vue';
@@ -360,6 +363,26 @@ function goBack() {
 function goToOrderDetail(orderId: number) {
   uni.navigateTo({
     url: `/pages/order-detail/index?id=${orderId}`,
+  });
+}
+
+function confirmDeleteOrder(order: any) {
+  const uid = userInfo.value?.id;
+  if (uid == null || order?.id == null) return;
+  uni.showModal({
+    title: '删除订单',
+    content: '删除后仅在您的订单列表中隐藏，不影响商家处理',
+    confirmColor: '#ee6666',
+    success: async (res) => {
+      if (!res.confirm) return;
+      try {
+        await softDeleteMyOrder(Number(order.id), Number(uid));
+        uni.showToast({ title: '已删除', icon: 'success' });
+        orders.value = orders.value.filter((o: any) => o.id !== order.id);
+      } catch (e: any) {
+        uni.showToast({ title: e?.message || '删除失败', icon: 'none' });
+      }
+    },
   });
 }
 
@@ -672,6 +695,19 @@ onReachBottom(() => {
   align-items: center;
   padding-top: 16rpx;
   border-top: 1rpx solid #eee;
+}
+
+.order-footer-right {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  flex-shrink: 0;
+}
+
+.order-delete {
+  font-size: 26rpx;
+  color: #999;
+  padding: 8rpx 12rpx;
 }
 
 .order-totals {

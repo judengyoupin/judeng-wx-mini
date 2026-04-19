@@ -19,7 +19,7 @@ export async function getMyOrderList(params: {
     offset: params.offset || 0,
   };
 
-  const conditions: string[] = ['user_users: { _eq: $userId }'];
+  const conditions: string[] = ['user_users: { _eq: $userId }', 'is_deleted: { _eq: false }'];
   if (params.orderStatus) {
     conditions.push('order_status: { _eq: $orderStatus }');
     variables.orderStatus = params.orderStatus;
@@ -163,6 +163,7 @@ export async function getOrderDetailById(orderId: number) {
     query GetOrderDetailById($orderId: bigint!) {
       orders_by_pk(id: $orderId) {
         id
+        is_deleted
         order_status
         payment_status
         total_price
@@ -175,6 +176,7 @@ export async function getOrderDetailById(orderId: number) {
         receiver_address
         created_at
         company_companies
+        user_users
         user {
           id
           mobile
@@ -204,6 +206,34 @@ export async function getOrderDetailById(orderId: number) {
     variables: { orderId },
   });
   return result?.orders_by_pk ?? null;
+}
+
+/**
+ * 当前用户软删除自己的订单（is_deleted = true，列表中不再展示）
+ */
+export async function softDeleteMyOrder(orderId: number, userId: number) {
+  const mutation = `
+    mutation SoftDeleteMyOrder($orderId: bigint!, $userId: bigint!) {
+      update_orders(
+        where: {
+          id: { _eq: $orderId }
+          user_users: { _eq: $userId }
+          is_deleted: { _eq: false }
+        }
+        _set: { is_deleted: true }
+      ) {
+        affected_rows
+      }
+    }
+  `;
+  const result = await client.execute({
+    query: mutation,
+    variables: { orderId: Number(orderId), userId: Number(userId) },
+  });
+  const n = (result as { update_orders?: { affected_rows?: number } })?.update_orders?.affected_rows ?? 0;
+  if (n < 1) {
+    throw new Error('删除失败，订单不存在或无权操作');
+  }
 }
 
 /**
@@ -322,6 +352,7 @@ export async function createOrder(params: {
     order_status: 'pending',
     payment_status: 'pending',
     remark: params.remark || null,
+    is_deleted: false,
     order_items: {
       data: orderItemsData,
     },
