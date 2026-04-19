@@ -1950,6 +1950,10 @@ export type Companies = {
   /** An aggregate relationship */
   categories_aggregate: Categories_Aggregate;
   /** An array relationship */
+  company_leads: Array<Company_Leads>;
+  /** An aggregate relationship */
+  company_leads_aggregate: Company_Leads_Aggregate;
+  /** An array relationship */
   company_packages: Array<Company_Packages>;
   /** An aggregate relationship */
   company_packages_aggregate: Company_Packages_Aggregate;
@@ -2026,6 +2030,26 @@ export type CompaniesCategories_AggregateArgs = {
   offset?: InputMaybe<Scalars['Int']['input']>;
   order_by?: InputMaybe<Array<Categories_Order_By>>;
   where?: InputMaybe<Categories_Bool_Exp>;
+};
+
+
+/** 公司信息表 */
+export type CompaniesCompany_LeadsArgs = {
+  distinct_on?: InputMaybe<Array<Company_Leads_Select_Column>>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  order_by?: InputMaybe<Array<Company_Leads_Order_By>>;
+  where?: InputMaybe<Company_Leads_Bool_Exp>;
+};
+
+
+/** 公司信息表 */
+export type CompaniesCompany_Leads_AggregateArgs = {
+  distinct_on?: InputMaybe<Array<Company_Leads_Select_Column>>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  order_by?: InputMaybe<Array<Company_Leads_Order_By>>;
+  where?: InputMaybe<Company_Leads_Bool_Exp>;
 };
 
 
@@ -2215,6 +2239,8 @@ export type Companies_Bool_Exp = {
   banner_top?: InputMaybe<Json_Array_Comparison_Exp>;
   categories?: InputMaybe<Categories_Bool_Exp>;
   categories_aggregate?: InputMaybe<Categories_Aggregate_Bool_Exp>;
+  company_leads?: InputMaybe<Company_Leads_Bool_Exp>;
+  company_leads_aggregate?: InputMaybe<Company_Leads_Aggregate_Bool_Exp>;
   company_packages?: InputMaybe<Company_Packages_Bool_Exp>;
   company_packages_aggregate?: InputMaybe<Company_Packages_Aggregate_Bool_Exp>;
   company_products?: InputMaybe<Company_Products_Bool_Exp>;
@@ -2269,6 +2295,7 @@ export type Companies_Insert_Input = {
   /** 顶部轮播图（json数组）export interface BannerItem { /** 文件类型（如：image、video） *\/ file_type?: string; /** 文件 URL *\/ file_url: string; /** 跳转链接（小程序路径或外部链接） *\/ link?: string; /** 排序索引 *\/ sort?: number; /** 标题 *\/ title?: string; } */
   banner_top?: InputMaybe<Array<Scalars['json']['input']>>;
   categories?: InputMaybe<Categories_Arr_Rel_Insert_Input>;
+  company_leads?: InputMaybe<Company_Leads_Arr_Rel_Insert_Input>;
   company_packages?: InputMaybe<Company_Packages_Arr_Rel_Insert_Input>;
   company_products?: InputMaybe<Company_Products_Arr_Rel_Insert_Input>;
   company_users?: InputMaybe<Company_Users_Arr_Rel_Insert_Input>;
@@ -2407,6 +2434,7 @@ export type Companies_Order_By = {
   banner_bottom?: InputMaybe<Order_By>;
   banner_top?: InputMaybe<Order_By>;
   categories_aggregate?: InputMaybe<Categories_Aggregate_Order_By>;
+  company_leads_aggregate?: InputMaybe<Company_Leads_Aggregate_Order_By>;
   company_packages_aggregate?: InputMaybe<Company_Packages_Aggregate_Order_By>;
   company_products_aggregate?: InputMaybe<Company_Products_Aggregate_Order_By>;
   company_users_aggregate?: InputMaybe<Company_Users_Aggregate_Order_By>;
@@ -2662,6 +2690,1190 @@ export type Companies_Variance_Fields = {
   /** 公司配置的初始用户价格/全局系数，取决于mode_for_price */
   default_for_price_factor?: Maybe<Scalars['Float']['output']>;
   id?: Maybe<Scalars['Float']['output']>;
+};
+
+/** 公司线索跟进记录表 */
+export type Company_Lead_Tracks = {
+  __typename?: 'company_lead_tracks';
+  /** 示例：[   {     "file_type": "image",     "file_url": "https://...",     "name": "现场照片1.jpg",     "size": 102400,     "uploaded_at": "2026-04-17T12:00:00Z"   } ] */
+  attachments: Scalars['json']['output'];
+  /** An object relationship */
+  company_lead: Company_Leads;
+  /** 关联外键，哪个线索的跟进 */
+  company_lead_company_leads: Scalars['bigint']['output'];
+  /** An object relationship */
+  company_user: Company_Users;
+  /** 跟进内容（必填业务上建议非空） */
+  content: Scalars['String']['output'];
+  created_at: Scalars['timestamptz']['output'];
+  /** 谁写的这条跟进 */
+  created_by_company_users: Scalars['bigint']['output'];
+  id: Scalars['bigint']['output'];
+  updated_at: Scalars['timestamptz']['output'];
+};
+
+
+/** 公司线索跟进记录表 */
+export type Company_Lead_TracksAttachmentsArgs = {
+  path?: InputMaybe<Scalars['String']['input']>;
+};
+
+/** aggregated selection of "company_lead_tracks" */
+export type Company_Lead_Tracks_Aggregate = {
+  __typename?: 'company_lead_tracks_aggregate';
+  aggregate?: Maybe<Company_Lead_Tracks_Aggregate_Fields>;
+  nodes: Array<Company_Lead_Tracks>;
+};
+
+export type Company_Lead_Tracks_Aggregate_Bool_Exp = {
+  count?: InputMaybe<Company_Lead_Tracks_Aggregate_Bool_Exp_Count>;
+};
+
+export type Company_Lead_Tracks_Aggregate_Bool_Exp_Count = {
+  arguments?: InputMaybe<Array<Company_Lead_Tracks_Select_Column>>;
+  distinct?: InputMaybe<Scalars['Boolean']['input']>;
+  filter?: InputMaybe<Company_Lead_Tracks_Bool_Exp>;
+  predicate: Int_Comparison_Exp;
+};
+
+/** aggregate fields of "company_lead_tracks" */
+export type Company_Lead_Tracks_Aggregate_Fields = {
+  __typename?: 'company_lead_tracks_aggregate_fields';
+  avg?: Maybe<Company_Lead_Tracks_Avg_Fields>;
+  count: Scalars['Int']['output'];
+  max?: Maybe<Company_Lead_Tracks_Max_Fields>;
+  min?: Maybe<Company_Lead_Tracks_Min_Fields>;
+  stddev?: Maybe<Company_Lead_Tracks_Stddev_Fields>;
+  stddev_pop?: Maybe<Company_Lead_Tracks_Stddev_Pop_Fields>;
+  stddev_samp?: Maybe<Company_Lead_Tracks_Stddev_Samp_Fields>;
+  sum?: Maybe<Company_Lead_Tracks_Sum_Fields>;
+  var_pop?: Maybe<Company_Lead_Tracks_Var_Pop_Fields>;
+  var_samp?: Maybe<Company_Lead_Tracks_Var_Samp_Fields>;
+  variance?: Maybe<Company_Lead_Tracks_Variance_Fields>;
+};
+
+
+/** aggregate fields of "company_lead_tracks" */
+export type Company_Lead_Tracks_Aggregate_FieldsCountArgs = {
+  columns?: InputMaybe<Array<Company_Lead_Tracks_Select_Column>>;
+  distinct?: InputMaybe<Scalars['Boolean']['input']>;
+};
+
+/** order by aggregate values of table "company_lead_tracks" */
+export type Company_Lead_Tracks_Aggregate_Order_By = {
+  avg?: InputMaybe<Company_Lead_Tracks_Avg_Order_By>;
+  count?: InputMaybe<Order_By>;
+  max?: InputMaybe<Company_Lead_Tracks_Max_Order_By>;
+  min?: InputMaybe<Company_Lead_Tracks_Min_Order_By>;
+  stddev?: InputMaybe<Company_Lead_Tracks_Stddev_Order_By>;
+  stddev_pop?: InputMaybe<Company_Lead_Tracks_Stddev_Pop_Order_By>;
+  stddev_samp?: InputMaybe<Company_Lead_Tracks_Stddev_Samp_Order_By>;
+  sum?: InputMaybe<Company_Lead_Tracks_Sum_Order_By>;
+  var_pop?: InputMaybe<Company_Lead_Tracks_Var_Pop_Order_By>;
+  var_samp?: InputMaybe<Company_Lead_Tracks_Var_Samp_Order_By>;
+  variance?: InputMaybe<Company_Lead_Tracks_Variance_Order_By>;
+};
+
+/** input type for inserting array relation for remote table "company_lead_tracks" */
+export type Company_Lead_Tracks_Arr_Rel_Insert_Input = {
+  data: Array<Company_Lead_Tracks_Insert_Input>;
+  /** upsert condition */
+  on_conflict?: InputMaybe<Company_Lead_Tracks_On_Conflict>;
+};
+
+/** aggregate avg on columns */
+export type Company_Lead_Tracks_Avg_Fields = {
+  __typename?: 'company_lead_tracks_avg_fields';
+  /** 关联外键，哪个线索的跟进 */
+  company_lead_company_leads?: Maybe<Scalars['Float']['output']>;
+  /** 谁写的这条跟进 */
+  created_by_company_users?: Maybe<Scalars['Float']['output']>;
+  id?: Maybe<Scalars['Float']['output']>;
+};
+
+/** order by avg() on columns of table "company_lead_tracks" */
+export type Company_Lead_Tracks_Avg_Order_By = {
+  /** 关联外键，哪个线索的跟进 */
+  company_lead_company_leads?: InputMaybe<Order_By>;
+  /** 谁写的这条跟进 */
+  created_by_company_users?: InputMaybe<Order_By>;
+  id?: InputMaybe<Order_By>;
+};
+
+/** Boolean expression to filter rows from the table "company_lead_tracks". All fields are combined with a logical 'AND'. */
+export type Company_Lead_Tracks_Bool_Exp = {
+  _and?: InputMaybe<Array<Company_Lead_Tracks_Bool_Exp>>;
+  _not?: InputMaybe<Company_Lead_Tracks_Bool_Exp>;
+  _or?: InputMaybe<Array<Company_Lead_Tracks_Bool_Exp>>;
+  attachments?: InputMaybe<Json_Comparison_Exp>;
+  company_lead?: InputMaybe<Company_Leads_Bool_Exp>;
+  company_lead_company_leads?: InputMaybe<Bigint_Comparison_Exp>;
+  company_user?: InputMaybe<Company_Users_Bool_Exp>;
+  content?: InputMaybe<String_Comparison_Exp>;
+  created_at?: InputMaybe<Timestamptz_Comparison_Exp>;
+  created_by_company_users?: InputMaybe<Bigint_Comparison_Exp>;
+  id?: InputMaybe<Bigint_Comparison_Exp>;
+  updated_at?: InputMaybe<Timestamptz_Comparison_Exp>;
+};
+
+/** unique or primary key constraints on table "company_lead_tracks" */
+export enum Company_Lead_Tracks_Constraint {
+  /** unique or primary key constraint on columns "id" */
+  CompanyLeadTracksPkey = 'company_lead_tracks_pkey'
+}
+
+/** input type for incrementing numeric columns in table "company_lead_tracks" */
+export type Company_Lead_Tracks_Inc_Input = {
+  /** 关联外键，哪个线索的跟进 */
+  company_lead_company_leads?: InputMaybe<Scalars['bigint']['input']>;
+  /** 谁写的这条跟进 */
+  created_by_company_users?: InputMaybe<Scalars['bigint']['input']>;
+  id?: InputMaybe<Scalars['bigint']['input']>;
+};
+
+/** input type for inserting data into table "company_lead_tracks" */
+export type Company_Lead_Tracks_Insert_Input = {
+  /** 示例：[   {     "file_type": "image",     "file_url": "https://...",     "name": "现场照片1.jpg",     "size": 102400,     "uploaded_at": "2026-04-17T12:00:00Z"   } ] */
+  attachments?: InputMaybe<Scalars['json']['input']>;
+  company_lead?: InputMaybe<Company_Leads_Obj_Rel_Insert_Input>;
+  /** 关联外键，哪个线索的跟进 */
+  company_lead_company_leads?: InputMaybe<Scalars['bigint']['input']>;
+  company_user?: InputMaybe<Company_Users_Obj_Rel_Insert_Input>;
+  /** 跟进内容（必填业务上建议非空） */
+  content?: InputMaybe<Scalars['String']['input']>;
+  created_at?: InputMaybe<Scalars['timestamptz']['input']>;
+  /** 谁写的这条跟进 */
+  created_by_company_users?: InputMaybe<Scalars['bigint']['input']>;
+  id?: InputMaybe<Scalars['bigint']['input']>;
+  updated_at?: InputMaybe<Scalars['timestamptz']['input']>;
+};
+
+/** aggregate max on columns */
+export type Company_Lead_Tracks_Max_Fields = {
+  __typename?: 'company_lead_tracks_max_fields';
+  /** 关联外键，哪个线索的跟进 */
+  company_lead_company_leads?: Maybe<Scalars['bigint']['output']>;
+  /** 跟进内容（必填业务上建议非空） */
+  content?: Maybe<Scalars['String']['output']>;
+  created_at?: Maybe<Scalars['timestamptz']['output']>;
+  /** 谁写的这条跟进 */
+  created_by_company_users?: Maybe<Scalars['bigint']['output']>;
+  id?: Maybe<Scalars['bigint']['output']>;
+  updated_at?: Maybe<Scalars['timestamptz']['output']>;
+};
+
+/** order by max() on columns of table "company_lead_tracks" */
+export type Company_Lead_Tracks_Max_Order_By = {
+  /** 关联外键，哪个线索的跟进 */
+  company_lead_company_leads?: InputMaybe<Order_By>;
+  /** 跟进内容（必填业务上建议非空） */
+  content?: InputMaybe<Order_By>;
+  created_at?: InputMaybe<Order_By>;
+  /** 谁写的这条跟进 */
+  created_by_company_users?: InputMaybe<Order_By>;
+  id?: InputMaybe<Order_By>;
+  updated_at?: InputMaybe<Order_By>;
+};
+
+/** aggregate min on columns */
+export type Company_Lead_Tracks_Min_Fields = {
+  __typename?: 'company_lead_tracks_min_fields';
+  /** 关联外键，哪个线索的跟进 */
+  company_lead_company_leads?: Maybe<Scalars['bigint']['output']>;
+  /** 跟进内容（必填业务上建议非空） */
+  content?: Maybe<Scalars['String']['output']>;
+  created_at?: Maybe<Scalars['timestamptz']['output']>;
+  /** 谁写的这条跟进 */
+  created_by_company_users?: Maybe<Scalars['bigint']['output']>;
+  id?: Maybe<Scalars['bigint']['output']>;
+  updated_at?: Maybe<Scalars['timestamptz']['output']>;
+};
+
+/** order by min() on columns of table "company_lead_tracks" */
+export type Company_Lead_Tracks_Min_Order_By = {
+  /** 关联外键，哪个线索的跟进 */
+  company_lead_company_leads?: InputMaybe<Order_By>;
+  /** 跟进内容（必填业务上建议非空） */
+  content?: InputMaybe<Order_By>;
+  created_at?: InputMaybe<Order_By>;
+  /** 谁写的这条跟进 */
+  created_by_company_users?: InputMaybe<Order_By>;
+  id?: InputMaybe<Order_By>;
+  updated_at?: InputMaybe<Order_By>;
+};
+
+/** response of any mutation on the table "company_lead_tracks" */
+export type Company_Lead_Tracks_Mutation_Response = {
+  __typename?: 'company_lead_tracks_mutation_response';
+  /** number of rows affected by the mutation */
+  affected_rows: Scalars['Int']['output'];
+  /** data from the rows affected by the mutation */
+  returning: Array<Company_Lead_Tracks>;
+};
+
+/** on_conflict condition type for table "company_lead_tracks" */
+export type Company_Lead_Tracks_On_Conflict = {
+  constraint: Company_Lead_Tracks_Constraint;
+  update_columns?: Array<Company_Lead_Tracks_Update_Column>;
+  where?: InputMaybe<Company_Lead_Tracks_Bool_Exp>;
+};
+
+/** Ordering options when selecting data from "company_lead_tracks". */
+export type Company_Lead_Tracks_Order_By = {
+  attachments?: InputMaybe<Order_By>;
+  company_lead?: InputMaybe<Company_Leads_Order_By>;
+  company_lead_company_leads?: InputMaybe<Order_By>;
+  company_user?: InputMaybe<Company_Users_Order_By>;
+  content?: InputMaybe<Order_By>;
+  created_at?: InputMaybe<Order_By>;
+  created_by_company_users?: InputMaybe<Order_By>;
+  id?: InputMaybe<Order_By>;
+  updated_at?: InputMaybe<Order_By>;
+};
+
+/** primary key columns input for table: company_lead_tracks */
+export type Company_Lead_Tracks_Pk_Columns_Input = {
+  id: Scalars['bigint']['input'];
+};
+
+/** select columns of table "company_lead_tracks" */
+export enum Company_Lead_Tracks_Select_Column {
+  /** column name */
+  Attachments = 'attachments',
+  /** column name */
+  CompanyLeadCompanyLeads = 'company_lead_company_leads',
+  /** column name */
+  Content = 'content',
+  /** column name */
+  CreatedAt = 'created_at',
+  /** column name */
+  CreatedByCompanyUsers = 'created_by_company_users',
+  /** column name */
+  Id = 'id',
+  /** column name */
+  UpdatedAt = 'updated_at'
+}
+
+/** input type for updating data in table "company_lead_tracks" */
+export type Company_Lead_Tracks_Set_Input = {
+  /** 示例：[   {     "file_type": "image",     "file_url": "https://...",     "name": "现场照片1.jpg",     "size": 102400,     "uploaded_at": "2026-04-17T12:00:00Z"   } ] */
+  attachments?: InputMaybe<Scalars['json']['input']>;
+  /** 关联外键，哪个线索的跟进 */
+  company_lead_company_leads?: InputMaybe<Scalars['bigint']['input']>;
+  /** 跟进内容（必填业务上建议非空） */
+  content?: InputMaybe<Scalars['String']['input']>;
+  created_at?: InputMaybe<Scalars['timestamptz']['input']>;
+  /** 谁写的这条跟进 */
+  created_by_company_users?: InputMaybe<Scalars['bigint']['input']>;
+  id?: InputMaybe<Scalars['bigint']['input']>;
+  updated_at?: InputMaybe<Scalars['timestamptz']['input']>;
+};
+
+/** aggregate stddev on columns */
+export type Company_Lead_Tracks_Stddev_Fields = {
+  __typename?: 'company_lead_tracks_stddev_fields';
+  /** 关联外键，哪个线索的跟进 */
+  company_lead_company_leads?: Maybe<Scalars['Float']['output']>;
+  /** 谁写的这条跟进 */
+  created_by_company_users?: Maybe<Scalars['Float']['output']>;
+  id?: Maybe<Scalars['Float']['output']>;
+};
+
+/** order by stddev() on columns of table "company_lead_tracks" */
+export type Company_Lead_Tracks_Stddev_Order_By = {
+  /** 关联外键，哪个线索的跟进 */
+  company_lead_company_leads?: InputMaybe<Order_By>;
+  /** 谁写的这条跟进 */
+  created_by_company_users?: InputMaybe<Order_By>;
+  id?: InputMaybe<Order_By>;
+};
+
+/** aggregate stddev_pop on columns */
+export type Company_Lead_Tracks_Stddev_Pop_Fields = {
+  __typename?: 'company_lead_tracks_stddev_pop_fields';
+  /** 关联外键，哪个线索的跟进 */
+  company_lead_company_leads?: Maybe<Scalars['Float']['output']>;
+  /** 谁写的这条跟进 */
+  created_by_company_users?: Maybe<Scalars['Float']['output']>;
+  id?: Maybe<Scalars['Float']['output']>;
+};
+
+/** order by stddev_pop() on columns of table "company_lead_tracks" */
+export type Company_Lead_Tracks_Stddev_Pop_Order_By = {
+  /** 关联外键，哪个线索的跟进 */
+  company_lead_company_leads?: InputMaybe<Order_By>;
+  /** 谁写的这条跟进 */
+  created_by_company_users?: InputMaybe<Order_By>;
+  id?: InputMaybe<Order_By>;
+};
+
+/** aggregate stddev_samp on columns */
+export type Company_Lead_Tracks_Stddev_Samp_Fields = {
+  __typename?: 'company_lead_tracks_stddev_samp_fields';
+  /** 关联外键，哪个线索的跟进 */
+  company_lead_company_leads?: Maybe<Scalars['Float']['output']>;
+  /** 谁写的这条跟进 */
+  created_by_company_users?: Maybe<Scalars['Float']['output']>;
+  id?: Maybe<Scalars['Float']['output']>;
+};
+
+/** order by stddev_samp() on columns of table "company_lead_tracks" */
+export type Company_Lead_Tracks_Stddev_Samp_Order_By = {
+  /** 关联外键，哪个线索的跟进 */
+  company_lead_company_leads?: InputMaybe<Order_By>;
+  /** 谁写的这条跟进 */
+  created_by_company_users?: InputMaybe<Order_By>;
+  id?: InputMaybe<Order_By>;
+};
+
+/** Streaming cursor of the table "company_lead_tracks" */
+export type Company_Lead_Tracks_Stream_Cursor_Input = {
+  /** Stream column input with initial value */
+  initial_value: Company_Lead_Tracks_Stream_Cursor_Value_Input;
+  /** cursor ordering */
+  ordering?: InputMaybe<Cursor_Ordering>;
+};
+
+/** Initial value of the column from where the streaming should start */
+export type Company_Lead_Tracks_Stream_Cursor_Value_Input = {
+  /** 示例：[   {     "file_type": "image",     "file_url": "https://...",     "name": "现场照片1.jpg",     "size": 102400,     "uploaded_at": "2026-04-17T12:00:00Z"   } ] */
+  attachments?: InputMaybe<Scalars['json']['input']>;
+  /** 关联外键，哪个线索的跟进 */
+  company_lead_company_leads?: InputMaybe<Scalars['bigint']['input']>;
+  /** 跟进内容（必填业务上建议非空） */
+  content?: InputMaybe<Scalars['String']['input']>;
+  created_at?: InputMaybe<Scalars['timestamptz']['input']>;
+  /** 谁写的这条跟进 */
+  created_by_company_users?: InputMaybe<Scalars['bigint']['input']>;
+  id?: InputMaybe<Scalars['bigint']['input']>;
+  updated_at?: InputMaybe<Scalars['timestamptz']['input']>;
+};
+
+/** aggregate sum on columns */
+export type Company_Lead_Tracks_Sum_Fields = {
+  __typename?: 'company_lead_tracks_sum_fields';
+  /** 关联外键，哪个线索的跟进 */
+  company_lead_company_leads?: Maybe<Scalars['bigint']['output']>;
+  /** 谁写的这条跟进 */
+  created_by_company_users?: Maybe<Scalars['bigint']['output']>;
+  id?: Maybe<Scalars['bigint']['output']>;
+};
+
+/** order by sum() on columns of table "company_lead_tracks" */
+export type Company_Lead_Tracks_Sum_Order_By = {
+  /** 关联外键，哪个线索的跟进 */
+  company_lead_company_leads?: InputMaybe<Order_By>;
+  /** 谁写的这条跟进 */
+  created_by_company_users?: InputMaybe<Order_By>;
+  id?: InputMaybe<Order_By>;
+};
+
+/** update columns of table "company_lead_tracks" */
+export enum Company_Lead_Tracks_Update_Column {
+  /** column name */
+  Attachments = 'attachments',
+  /** column name */
+  CompanyLeadCompanyLeads = 'company_lead_company_leads',
+  /** column name */
+  Content = 'content',
+  /** column name */
+  CreatedAt = 'created_at',
+  /** column name */
+  CreatedByCompanyUsers = 'created_by_company_users',
+  /** column name */
+  Id = 'id',
+  /** column name */
+  UpdatedAt = 'updated_at'
+}
+
+export type Company_Lead_Tracks_Updates = {
+  /** increments the numeric columns with given value of the filtered values */
+  _inc?: InputMaybe<Company_Lead_Tracks_Inc_Input>;
+  /** sets the columns of the filtered rows to the given values */
+  _set?: InputMaybe<Company_Lead_Tracks_Set_Input>;
+  /** filter the rows which have to be updated */
+  where: Company_Lead_Tracks_Bool_Exp;
+};
+
+/** aggregate var_pop on columns */
+export type Company_Lead_Tracks_Var_Pop_Fields = {
+  __typename?: 'company_lead_tracks_var_pop_fields';
+  /** 关联外键，哪个线索的跟进 */
+  company_lead_company_leads?: Maybe<Scalars['Float']['output']>;
+  /** 谁写的这条跟进 */
+  created_by_company_users?: Maybe<Scalars['Float']['output']>;
+  id?: Maybe<Scalars['Float']['output']>;
+};
+
+/** order by var_pop() on columns of table "company_lead_tracks" */
+export type Company_Lead_Tracks_Var_Pop_Order_By = {
+  /** 关联外键，哪个线索的跟进 */
+  company_lead_company_leads?: InputMaybe<Order_By>;
+  /** 谁写的这条跟进 */
+  created_by_company_users?: InputMaybe<Order_By>;
+  id?: InputMaybe<Order_By>;
+};
+
+/** aggregate var_samp on columns */
+export type Company_Lead_Tracks_Var_Samp_Fields = {
+  __typename?: 'company_lead_tracks_var_samp_fields';
+  /** 关联外键，哪个线索的跟进 */
+  company_lead_company_leads?: Maybe<Scalars['Float']['output']>;
+  /** 谁写的这条跟进 */
+  created_by_company_users?: Maybe<Scalars['Float']['output']>;
+  id?: Maybe<Scalars['Float']['output']>;
+};
+
+/** order by var_samp() on columns of table "company_lead_tracks" */
+export type Company_Lead_Tracks_Var_Samp_Order_By = {
+  /** 关联外键，哪个线索的跟进 */
+  company_lead_company_leads?: InputMaybe<Order_By>;
+  /** 谁写的这条跟进 */
+  created_by_company_users?: InputMaybe<Order_By>;
+  id?: InputMaybe<Order_By>;
+};
+
+/** aggregate variance on columns */
+export type Company_Lead_Tracks_Variance_Fields = {
+  __typename?: 'company_lead_tracks_variance_fields';
+  /** 关联外键，哪个线索的跟进 */
+  company_lead_company_leads?: Maybe<Scalars['Float']['output']>;
+  /** 谁写的这条跟进 */
+  created_by_company_users?: Maybe<Scalars['Float']['output']>;
+  id?: Maybe<Scalars['Float']['output']>;
+};
+
+/** order by variance() on columns of table "company_lead_tracks" */
+export type Company_Lead_Tracks_Variance_Order_By = {
+  /** 关联外键，哪个线索的跟进 */
+  company_lead_company_leads?: InputMaybe<Order_By>;
+  /** 谁写的这条跟进 */
+  created_by_company_users?: InputMaybe<Order_By>;
+  id?: InputMaybe<Order_By>;
+};
+
+/** 公司线索记录表 */
+export type Company_Leads = {
+  __typename?: 'company_leads';
+  /** 外键，谁跟进 */
+  assigned_company_users?: Maybe<Scalars['bigint']['output']>;
+  /** An object relationship */
+  company: Companies;
+  /** An object relationship */
+  companyUserByConvertedCompanyUsers?: Maybe<Company_Users>;
+  /** An object relationship */
+  companyUserByCreatedByCompanyUsers?: Maybe<Company_Users>;
+  /** 关联外建，哪个公司的线索 */
+  company_companies: Scalars['bigint']['output'];
+  /** An array relationship */
+  company_lead_tracks: Array<Company_Lead_Tracks>;
+  /** An aggregate relationship */
+  company_lead_tracks_aggregate: Company_Lead_Tracks_Aggregate;
+  /** An object relationship */
+  company_user?: Maybe<Company_Users>;
+  /** 线索转客户的时间 */
+  converted_at?: Maybe<Scalars['timestamptz']['output']>;
+  /** 成功后指向新产生的公司客户记录；与 status = converted 一致 */
+  converted_company_users?: Maybe<Scalars['bigint']['output']>;
+  created_at: Scalars['timestamptz']['output'];
+  /** 谁录入 */
+  created_by_company_users?: Maybe<Scalars['bigint']['output']>;
+  id: Scalars['bigint']['output'];
+  /** 若线索手机号已注册平台用户 */
+  linked_user_users?: Maybe<Scalars['bigint']['output']>;
+  /** 线索身份-名字 */
+  name: Scalars['String']['output'];
+  /** 线索身份-电话 */
+  phone: Scalars['String']['output'];
+  /** new / assigned / following / won / lost / converted */
+  status: Scalars['String']['output'];
+  updated_at: Scalars['timestamptz']['output'];
+  /** An object relationship */
+  user?: Maybe<Users>;
+};
+
+
+/** 公司线索记录表 */
+export type Company_LeadsCompany_Lead_TracksArgs = {
+  distinct_on?: InputMaybe<Array<Company_Lead_Tracks_Select_Column>>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  order_by?: InputMaybe<Array<Company_Lead_Tracks_Order_By>>;
+  where?: InputMaybe<Company_Lead_Tracks_Bool_Exp>;
+};
+
+
+/** 公司线索记录表 */
+export type Company_LeadsCompany_Lead_Tracks_AggregateArgs = {
+  distinct_on?: InputMaybe<Array<Company_Lead_Tracks_Select_Column>>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  order_by?: InputMaybe<Array<Company_Lead_Tracks_Order_By>>;
+  where?: InputMaybe<Company_Lead_Tracks_Bool_Exp>;
+};
+
+/** aggregated selection of "company_leads" */
+export type Company_Leads_Aggregate = {
+  __typename?: 'company_leads_aggregate';
+  aggregate?: Maybe<Company_Leads_Aggregate_Fields>;
+  nodes: Array<Company_Leads>;
+};
+
+export type Company_Leads_Aggregate_Bool_Exp = {
+  count?: InputMaybe<Company_Leads_Aggregate_Bool_Exp_Count>;
+};
+
+export type Company_Leads_Aggregate_Bool_Exp_Count = {
+  arguments?: InputMaybe<Array<Company_Leads_Select_Column>>;
+  distinct?: InputMaybe<Scalars['Boolean']['input']>;
+  filter?: InputMaybe<Company_Leads_Bool_Exp>;
+  predicate: Int_Comparison_Exp;
+};
+
+/** aggregate fields of "company_leads" */
+export type Company_Leads_Aggregate_Fields = {
+  __typename?: 'company_leads_aggregate_fields';
+  avg?: Maybe<Company_Leads_Avg_Fields>;
+  count: Scalars['Int']['output'];
+  max?: Maybe<Company_Leads_Max_Fields>;
+  min?: Maybe<Company_Leads_Min_Fields>;
+  stddev?: Maybe<Company_Leads_Stddev_Fields>;
+  stddev_pop?: Maybe<Company_Leads_Stddev_Pop_Fields>;
+  stddev_samp?: Maybe<Company_Leads_Stddev_Samp_Fields>;
+  sum?: Maybe<Company_Leads_Sum_Fields>;
+  var_pop?: Maybe<Company_Leads_Var_Pop_Fields>;
+  var_samp?: Maybe<Company_Leads_Var_Samp_Fields>;
+  variance?: Maybe<Company_Leads_Variance_Fields>;
+};
+
+
+/** aggregate fields of "company_leads" */
+export type Company_Leads_Aggregate_FieldsCountArgs = {
+  columns?: InputMaybe<Array<Company_Leads_Select_Column>>;
+  distinct?: InputMaybe<Scalars['Boolean']['input']>;
+};
+
+/** order by aggregate values of table "company_leads" */
+export type Company_Leads_Aggregate_Order_By = {
+  avg?: InputMaybe<Company_Leads_Avg_Order_By>;
+  count?: InputMaybe<Order_By>;
+  max?: InputMaybe<Company_Leads_Max_Order_By>;
+  min?: InputMaybe<Company_Leads_Min_Order_By>;
+  stddev?: InputMaybe<Company_Leads_Stddev_Order_By>;
+  stddev_pop?: InputMaybe<Company_Leads_Stddev_Pop_Order_By>;
+  stddev_samp?: InputMaybe<Company_Leads_Stddev_Samp_Order_By>;
+  sum?: InputMaybe<Company_Leads_Sum_Order_By>;
+  var_pop?: InputMaybe<Company_Leads_Var_Pop_Order_By>;
+  var_samp?: InputMaybe<Company_Leads_Var_Samp_Order_By>;
+  variance?: InputMaybe<Company_Leads_Variance_Order_By>;
+};
+
+/** input type for inserting array relation for remote table "company_leads" */
+export type Company_Leads_Arr_Rel_Insert_Input = {
+  data: Array<Company_Leads_Insert_Input>;
+  /** upsert condition */
+  on_conflict?: InputMaybe<Company_Leads_On_Conflict>;
+};
+
+/** aggregate avg on columns */
+export type Company_Leads_Avg_Fields = {
+  __typename?: 'company_leads_avg_fields';
+  /** 外键，谁跟进 */
+  assigned_company_users?: Maybe<Scalars['Float']['output']>;
+  /** 关联外建，哪个公司的线索 */
+  company_companies?: Maybe<Scalars['Float']['output']>;
+  /** 成功后指向新产生的公司客户记录；与 status = converted 一致 */
+  converted_company_users?: Maybe<Scalars['Float']['output']>;
+  /** 谁录入 */
+  created_by_company_users?: Maybe<Scalars['Float']['output']>;
+  id?: Maybe<Scalars['Float']['output']>;
+  /** 若线索手机号已注册平台用户 */
+  linked_user_users?: Maybe<Scalars['Float']['output']>;
+};
+
+/** order by avg() on columns of table "company_leads" */
+export type Company_Leads_Avg_Order_By = {
+  /** 外键，谁跟进 */
+  assigned_company_users?: InputMaybe<Order_By>;
+  /** 关联外建，哪个公司的线索 */
+  company_companies?: InputMaybe<Order_By>;
+  /** 成功后指向新产生的公司客户记录；与 status = converted 一致 */
+  converted_company_users?: InputMaybe<Order_By>;
+  /** 谁录入 */
+  created_by_company_users?: InputMaybe<Order_By>;
+  id?: InputMaybe<Order_By>;
+  /** 若线索手机号已注册平台用户 */
+  linked_user_users?: InputMaybe<Order_By>;
+};
+
+/** Boolean expression to filter rows from the table "company_leads". All fields are combined with a logical 'AND'. */
+export type Company_Leads_Bool_Exp = {
+  _and?: InputMaybe<Array<Company_Leads_Bool_Exp>>;
+  _not?: InputMaybe<Company_Leads_Bool_Exp>;
+  _or?: InputMaybe<Array<Company_Leads_Bool_Exp>>;
+  assigned_company_users?: InputMaybe<Bigint_Comparison_Exp>;
+  company?: InputMaybe<Companies_Bool_Exp>;
+  companyUserByConvertedCompanyUsers?: InputMaybe<Company_Users_Bool_Exp>;
+  companyUserByCreatedByCompanyUsers?: InputMaybe<Company_Users_Bool_Exp>;
+  company_companies?: InputMaybe<Bigint_Comparison_Exp>;
+  company_lead_tracks?: InputMaybe<Company_Lead_Tracks_Bool_Exp>;
+  company_lead_tracks_aggregate?: InputMaybe<Company_Lead_Tracks_Aggregate_Bool_Exp>;
+  company_user?: InputMaybe<Company_Users_Bool_Exp>;
+  converted_at?: InputMaybe<Timestamptz_Comparison_Exp>;
+  converted_company_users?: InputMaybe<Bigint_Comparison_Exp>;
+  created_at?: InputMaybe<Timestamptz_Comparison_Exp>;
+  created_by_company_users?: InputMaybe<Bigint_Comparison_Exp>;
+  id?: InputMaybe<Bigint_Comparison_Exp>;
+  linked_user_users?: InputMaybe<Bigint_Comparison_Exp>;
+  name?: InputMaybe<String_Comparison_Exp>;
+  phone?: InputMaybe<String_Comparison_Exp>;
+  status?: InputMaybe<String_Comparison_Exp>;
+  updated_at?: InputMaybe<Timestamptz_Comparison_Exp>;
+  user?: InputMaybe<Users_Bool_Exp>;
+};
+
+/** unique or primary key constraints on table "company_leads" */
+export enum Company_Leads_Constraint {
+  /** unique or primary key constraint on columns "id" */
+  CompanyLeadsPkey = 'company_leads_pkey'
+}
+
+/** input type for incrementing numeric columns in table "company_leads" */
+export type Company_Leads_Inc_Input = {
+  /** 外键，谁跟进 */
+  assigned_company_users?: InputMaybe<Scalars['bigint']['input']>;
+  /** 关联外建，哪个公司的线索 */
+  company_companies?: InputMaybe<Scalars['bigint']['input']>;
+  /** 成功后指向新产生的公司客户记录；与 status = converted 一致 */
+  converted_company_users?: InputMaybe<Scalars['bigint']['input']>;
+  /** 谁录入 */
+  created_by_company_users?: InputMaybe<Scalars['bigint']['input']>;
+  id?: InputMaybe<Scalars['bigint']['input']>;
+  /** 若线索手机号已注册平台用户 */
+  linked_user_users?: InputMaybe<Scalars['bigint']['input']>;
+};
+
+/** input type for inserting data into table "company_leads" */
+export type Company_Leads_Insert_Input = {
+  /** 外键，谁跟进 */
+  assigned_company_users?: InputMaybe<Scalars['bigint']['input']>;
+  company?: InputMaybe<Companies_Obj_Rel_Insert_Input>;
+  companyUserByConvertedCompanyUsers?: InputMaybe<Company_Users_Obj_Rel_Insert_Input>;
+  companyUserByCreatedByCompanyUsers?: InputMaybe<Company_Users_Obj_Rel_Insert_Input>;
+  /** 关联外建，哪个公司的线索 */
+  company_companies?: InputMaybe<Scalars['bigint']['input']>;
+  company_lead_tracks?: InputMaybe<Company_Lead_Tracks_Arr_Rel_Insert_Input>;
+  company_user?: InputMaybe<Company_Users_Obj_Rel_Insert_Input>;
+  /** 线索转客户的时间 */
+  converted_at?: InputMaybe<Scalars['timestamptz']['input']>;
+  /** 成功后指向新产生的公司客户记录；与 status = converted 一致 */
+  converted_company_users?: InputMaybe<Scalars['bigint']['input']>;
+  created_at?: InputMaybe<Scalars['timestamptz']['input']>;
+  /** 谁录入 */
+  created_by_company_users?: InputMaybe<Scalars['bigint']['input']>;
+  id?: InputMaybe<Scalars['bigint']['input']>;
+  /** 若线索手机号已注册平台用户 */
+  linked_user_users?: InputMaybe<Scalars['bigint']['input']>;
+  /** 线索身份-名字 */
+  name?: InputMaybe<Scalars['String']['input']>;
+  /** 线索身份-电话 */
+  phone?: InputMaybe<Scalars['String']['input']>;
+  /** new / assigned / following / won / lost / converted */
+  status?: InputMaybe<Scalars['String']['input']>;
+  updated_at?: InputMaybe<Scalars['timestamptz']['input']>;
+  user?: InputMaybe<Users_Obj_Rel_Insert_Input>;
+};
+
+/** aggregate max on columns */
+export type Company_Leads_Max_Fields = {
+  __typename?: 'company_leads_max_fields';
+  /** 外键，谁跟进 */
+  assigned_company_users?: Maybe<Scalars['bigint']['output']>;
+  /** 关联外建，哪个公司的线索 */
+  company_companies?: Maybe<Scalars['bigint']['output']>;
+  /** 线索转客户的时间 */
+  converted_at?: Maybe<Scalars['timestamptz']['output']>;
+  /** 成功后指向新产生的公司客户记录；与 status = converted 一致 */
+  converted_company_users?: Maybe<Scalars['bigint']['output']>;
+  created_at?: Maybe<Scalars['timestamptz']['output']>;
+  /** 谁录入 */
+  created_by_company_users?: Maybe<Scalars['bigint']['output']>;
+  id?: Maybe<Scalars['bigint']['output']>;
+  /** 若线索手机号已注册平台用户 */
+  linked_user_users?: Maybe<Scalars['bigint']['output']>;
+  /** 线索身份-名字 */
+  name?: Maybe<Scalars['String']['output']>;
+  /** 线索身份-电话 */
+  phone?: Maybe<Scalars['String']['output']>;
+  /** new / assigned / following / won / lost / converted */
+  status?: Maybe<Scalars['String']['output']>;
+  updated_at?: Maybe<Scalars['timestamptz']['output']>;
+};
+
+/** order by max() on columns of table "company_leads" */
+export type Company_Leads_Max_Order_By = {
+  /** 外键，谁跟进 */
+  assigned_company_users?: InputMaybe<Order_By>;
+  /** 关联外建，哪个公司的线索 */
+  company_companies?: InputMaybe<Order_By>;
+  /** 线索转客户的时间 */
+  converted_at?: InputMaybe<Order_By>;
+  /** 成功后指向新产生的公司客户记录；与 status = converted 一致 */
+  converted_company_users?: InputMaybe<Order_By>;
+  created_at?: InputMaybe<Order_By>;
+  /** 谁录入 */
+  created_by_company_users?: InputMaybe<Order_By>;
+  id?: InputMaybe<Order_By>;
+  /** 若线索手机号已注册平台用户 */
+  linked_user_users?: InputMaybe<Order_By>;
+  /** 线索身份-名字 */
+  name?: InputMaybe<Order_By>;
+  /** 线索身份-电话 */
+  phone?: InputMaybe<Order_By>;
+  /** new / assigned / following / won / lost / converted */
+  status?: InputMaybe<Order_By>;
+  updated_at?: InputMaybe<Order_By>;
+};
+
+/** aggregate min on columns */
+export type Company_Leads_Min_Fields = {
+  __typename?: 'company_leads_min_fields';
+  /** 外键，谁跟进 */
+  assigned_company_users?: Maybe<Scalars['bigint']['output']>;
+  /** 关联外建，哪个公司的线索 */
+  company_companies?: Maybe<Scalars['bigint']['output']>;
+  /** 线索转客户的时间 */
+  converted_at?: Maybe<Scalars['timestamptz']['output']>;
+  /** 成功后指向新产生的公司客户记录；与 status = converted 一致 */
+  converted_company_users?: Maybe<Scalars['bigint']['output']>;
+  created_at?: Maybe<Scalars['timestamptz']['output']>;
+  /** 谁录入 */
+  created_by_company_users?: Maybe<Scalars['bigint']['output']>;
+  id?: Maybe<Scalars['bigint']['output']>;
+  /** 若线索手机号已注册平台用户 */
+  linked_user_users?: Maybe<Scalars['bigint']['output']>;
+  /** 线索身份-名字 */
+  name?: Maybe<Scalars['String']['output']>;
+  /** 线索身份-电话 */
+  phone?: Maybe<Scalars['String']['output']>;
+  /** new / assigned / following / won / lost / converted */
+  status?: Maybe<Scalars['String']['output']>;
+  updated_at?: Maybe<Scalars['timestamptz']['output']>;
+};
+
+/** order by min() on columns of table "company_leads" */
+export type Company_Leads_Min_Order_By = {
+  /** 外键，谁跟进 */
+  assigned_company_users?: InputMaybe<Order_By>;
+  /** 关联外建，哪个公司的线索 */
+  company_companies?: InputMaybe<Order_By>;
+  /** 线索转客户的时间 */
+  converted_at?: InputMaybe<Order_By>;
+  /** 成功后指向新产生的公司客户记录；与 status = converted 一致 */
+  converted_company_users?: InputMaybe<Order_By>;
+  created_at?: InputMaybe<Order_By>;
+  /** 谁录入 */
+  created_by_company_users?: InputMaybe<Order_By>;
+  id?: InputMaybe<Order_By>;
+  /** 若线索手机号已注册平台用户 */
+  linked_user_users?: InputMaybe<Order_By>;
+  /** 线索身份-名字 */
+  name?: InputMaybe<Order_By>;
+  /** 线索身份-电话 */
+  phone?: InputMaybe<Order_By>;
+  /** new / assigned / following / won / lost / converted */
+  status?: InputMaybe<Order_By>;
+  updated_at?: InputMaybe<Order_By>;
+};
+
+/** response of any mutation on the table "company_leads" */
+export type Company_Leads_Mutation_Response = {
+  __typename?: 'company_leads_mutation_response';
+  /** number of rows affected by the mutation */
+  affected_rows: Scalars['Int']['output'];
+  /** data from the rows affected by the mutation */
+  returning: Array<Company_Leads>;
+};
+
+/** input type for inserting object relation for remote table "company_leads" */
+export type Company_Leads_Obj_Rel_Insert_Input = {
+  data: Company_Leads_Insert_Input;
+  /** upsert condition */
+  on_conflict?: InputMaybe<Company_Leads_On_Conflict>;
+};
+
+/** on_conflict condition type for table "company_leads" */
+export type Company_Leads_On_Conflict = {
+  constraint: Company_Leads_Constraint;
+  update_columns?: Array<Company_Leads_Update_Column>;
+  where?: InputMaybe<Company_Leads_Bool_Exp>;
+};
+
+/** Ordering options when selecting data from "company_leads". */
+export type Company_Leads_Order_By = {
+  assigned_company_users?: InputMaybe<Order_By>;
+  company?: InputMaybe<Companies_Order_By>;
+  companyUserByConvertedCompanyUsers?: InputMaybe<Company_Users_Order_By>;
+  companyUserByCreatedByCompanyUsers?: InputMaybe<Company_Users_Order_By>;
+  company_companies?: InputMaybe<Order_By>;
+  company_lead_tracks_aggregate?: InputMaybe<Company_Lead_Tracks_Aggregate_Order_By>;
+  company_user?: InputMaybe<Company_Users_Order_By>;
+  converted_at?: InputMaybe<Order_By>;
+  converted_company_users?: InputMaybe<Order_By>;
+  created_at?: InputMaybe<Order_By>;
+  created_by_company_users?: InputMaybe<Order_By>;
+  id?: InputMaybe<Order_By>;
+  linked_user_users?: InputMaybe<Order_By>;
+  name?: InputMaybe<Order_By>;
+  phone?: InputMaybe<Order_By>;
+  status?: InputMaybe<Order_By>;
+  updated_at?: InputMaybe<Order_By>;
+  user?: InputMaybe<Users_Order_By>;
+};
+
+/** primary key columns input for table: company_leads */
+export type Company_Leads_Pk_Columns_Input = {
+  id: Scalars['bigint']['input'];
+};
+
+/** select columns of table "company_leads" */
+export enum Company_Leads_Select_Column {
+  /** column name */
+  AssignedCompanyUsers = 'assigned_company_users',
+  /** column name */
+  CompanyCompanies = 'company_companies',
+  /** column name */
+  ConvertedAt = 'converted_at',
+  /** column name */
+  ConvertedCompanyUsers = 'converted_company_users',
+  /** column name */
+  CreatedAt = 'created_at',
+  /** column name */
+  CreatedByCompanyUsers = 'created_by_company_users',
+  /** column name */
+  Id = 'id',
+  /** column name */
+  LinkedUserUsers = 'linked_user_users',
+  /** column name */
+  Name = 'name',
+  /** column name */
+  Phone = 'phone',
+  /** column name */
+  Status = 'status',
+  /** column name */
+  UpdatedAt = 'updated_at'
+}
+
+/** input type for updating data in table "company_leads" */
+export type Company_Leads_Set_Input = {
+  /** 外键，谁跟进 */
+  assigned_company_users?: InputMaybe<Scalars['bigint']['input']>;
+  /** 关联外建，哪个公司的线索 */
+  company_companies?: InputMaybe<Scalars['bigint']['input']>;
+  /** 线索转客户的时间 */
+  converted_at?: InputMaybe<Scalars['timestamptz']['input']>;
+  /** 成功后指向新产生的公司客户记录；与 status = converted 一致 */
+  converted_company_users?: InputMaybe<Scalars['bigint']['input']>;
+  created_at?: InputMaybe<Scalars['timestamptz']['input']>;
+  /** 谁录入 */
+  created_by_company_users?: InputMaybe<Scalars['bigint']['input']>;
+  id?: InputMaybe<Scalars['bigint']['input']>;
+  /** 若线索手机号已注册平台用户 */
+  linked_user_users?: InputMaybe<Scalars['bigint']['input']>;
+  /** 线索身份-名字 */
+  name?: InputMaybe<Scalars['String']['input']>;
+  /** 线索身份-电话 */
+  phone?: InputMaybe<Scalars['String']['input']>;
+  /** new / assigned / following / won / lost / converted */
+  status?: InputMaybe<Scalars['String']['input']>;
+  updated_at?: InputMaybe<Scalars['timestamptz']['input']>;
+};
+
+/** aggregate stddev on columns */
+export type Company_Leads_Stddev_Fields = {
+  __typename?: 'company_leads_stddev_fields';
+  /** 外键，谁跟进 */
+  assigned_company_users?: Maybe<Scalars['Float']['output']>;
+  /** 关联外建，哪个公司的线索 */
+  company_companies?: Maybe<Scalars['Float']['output']>;
+  /** 成功后指向新产生的公司客户记录；与 status = converted 一致 */
+  converted_company_users?: Maybe<Scalars['Float']['output']>;
+  /** 谁录入 */
+  created_by_company_users?: Maybe<Scalars['Float']['output']>;
+  id?: Maybe<Scalars['Float']['output']>;
+  /** 若线索手机号已注册平台用户 */
+  linked_user_users?: Maybe<Scalars['Float']['output']>;
+};
+
+/** order by stddev() on columns of table "company_leads" */
+export type Company_Leads_Stddev_Order_By = {
+  /** 外键，谁跟进 */
+  assigned_company_users?: InputMaybe<Order_By>;
+  /** 关联外建，哪个公司的线索 */
+  company_companies?: InputMaybe<Order_By>;
+  /** 成功后指向新产生的公司客户记录；与 status = converted 一致 */
+  converted_company_users?: InputMaybe<Order_By>;
+  /** 谁录入 */
+  created_by_company_users?: InputMaybe<Order_By>;
+  id?: InputMaybe<Order_By>;
+  /** 若线索手机号已注册平台用户 */
+  linked_user_users?: InputMaybe<Order_By>;
+};
+
+/** aggregate stddev_pop on columns */
+export type Company_Leads_Stddev_Pop_Fields = {
+  __typename?: 'company_leads_stddev_pop_fields';
+  /** 外键，谁跟进 */
+  assigned_company_users?: Maybe<Scalars['Float']['output']>;
+  /** 关联外建，哪个公司的线索 */
+  company_companies?: Maybe<Scalars['Float']['output']>;
+  /** 成功后指向新产生的公司客户记录；与 status = converted 一致 */
+  converted_company_users?: Maybe<Scalars['Float']['output']>;
+  /** 谁录入 */
+  created_by_company_users?: Maybe<Scalars['Float']['output']>;
+  id?: Maybe<Scalars['Float']['output']>;
+  /** 若线索手机号已注册平台用户 */
+  linked_user_users?: Maybe<Scalars['Float']['output']>;
+};
+
+/** order by stddev_pop() on columns of table "company_leads" */
+export type Company_Leads_Stddev_Pop_Order_By = {
+  /** 外键，谁跟进 */
+  assigned_company_users?: InputMaybe<Order_By>;
+  /** 关联外建，哪个公司的线索 */
+  company_companies?: InputMaybe<Order_By>;
+  /** 成功后指向新产生的公司客户记录；与 status = converted 一致 */
+  converted_company_users?: InputMaybe<Order_By>;
+  /** 谁录入 */
+  created_by_company_users?: InputMaybe<Order_By>;
+  id?: InputMaybe<Order_By>;
+  /** 若线索手机号已注册平台用户 */
+  linked_user_users?: InputMaybe<Order_By>;
+};
+
+/** aggregate stddev_samp on columns */
+export type Company_Leads_Stddev_Samp_Fields = {
+  __typename?: 'company_leads_stddev_samp_fields';
+  /** 外键，谁跟进 */
+  assigned_company_users?: Maybe<Scalars['Float']['output']>;
+  /** 关联外建，哪个公司的线索 */
+  company_companies?: Maybe<Scalars['Float']['output']>;
+  /** 成功后指向新产生的公司客户记录；与 status = converted 一致 */
+  converted_company_users?: Maybe<Scalars['Float']['output']>;
+  /** 谁录入 */
+  created_by_company_users?: Maybe<Scalars['Float']['output']>;
+  id?: Maybe<Scalars['Float']['output']>;
+  /** 若线索手机号已注册平台用户 */
+  linked_user_users?: Maybe<Scalars['Float']['output']>;
+};
+
+/** order by stddev_samp() on columns of table "company_leads" */
+export type Company_Leads_Stddev_Samp_Order_By = {
+  /** 外键，谁跟进 */
+  assigned_company_users?: InputMaybe<Order_By>;
+  /** 关联外建，哪个公司的线索 */
+  company_companies?: InputMaybe<Order_By>;
+  /** 成功后指向新产生的公司客户记录；与 status = converted 一致 */
+  converted_company_users?: InputMaybe<Order_By>;
+  /** 谁录入 */
+  created_by_company_users?: InputMaybe<Order_By>;
+  id?: InputMaybe<Order_By>;
+  /** 若线索手机号已注册平台用户 */
+  linked_user_users?: InputMaybe<Order_By>;
+};
+
+/** Streaming cursor of the table "company_leads" */
+export type Company_Leads_Stream_Cursor_Input = {
+  /** Stream column input with initial value */
+  initial_value: Company_Leads_Stream_Cursor_Value_Input;
+  /** cursor ordering */
+  ordering?: InputMaybe<Cursor_Ordering>;
+};
+
+/** Initial value of the column from where the streaming should start */
+export type Company_Leads_Stream_Cursor_Value_Input = {
+  /** 外键，谁跟进 */
+  assigned_company_users?: InputMaybe<Scalars['bigint']['input']>;
+  /** 关联外建，哪个公司的线索 */
+  company_companies?: InputMaybe<Scalars['bigint']['input']>;
+  /** 线索转客户的时间 */
+  converted_at?: InputMaybe<Scalars['timestamptz']['input']>;
+  /** 成功后指向新产生的公司客户记录；与 status = converted 一致 */
+  converted_company_users?: InputMaybe<Scalars['bigint']['input']>;
+  created_at?: InputMaybe<Scalars['timestamptz']['input']>;
+  /** 谁录入 */
+  created_by_company_users?: InputMaybe<Scalars['bigint']['input']>;
+  id?: InputMaybe<Scalars['bigint']['input']>;
+  /** 若线索手机号已注册平台用户 */
+  linked_user_users?: InputMaybe<Scalars['bigint']['input']>;
+  /** 线索身份-名字 */
+  name?: InputMaybe<Scalars['String']['input']>;
+  /** 线索身份-电话 */
+  phone?: InputMaybe<Scalars['String']['input']>;
+  /** new / assigned / following / won / lost / converted */
+  status?: InputMaybe<Scalars['String']['input']>;
+  updated_at?: InputMaybe<Scalars['timestamptz']['input']>;
+};
+
+/** aggregate sum on columns */
+export type Company_Leads_Sum_Fields = {
+  __typename?: 'company_leads_sum_fields';
+  /** 外键，谁跟进 */
+  assigned_company_users?: Maybe<Scalars['bigint']['output']>;
+  /** 关联外建，哪个公司的线索 */
+  company_companies?: Maybe<Scalars['bigint']['output']>;
+  /** 成功后指向新产生的公司客户记录；与 status = converted 一致 */
+  converted_company_users?: Maybe<Scalars['bigint']['output']>;
+  /** 谁录入 */
+  created_by_company_users?: Maybe<Scalars['bigint']['output']>;
+  id?: Maybe<Scalars['bigint']['output']>;
+  /** 若线索手机号已注册平台用户 */
+  linked_user_users?: Maybe<Scalars['bigint']['output']>;
+};
+
+/** order by sum() on columns of table "company_leads" */
+export type Company_Leads_Sum_Order_By = {
+  /** 外键，谁跟进 */
+  assigned_company_users?: InputMaybe<Order_By>;
+  /** 关联外建，哪个公司的线索 */
+  company_companies?: InputMaybe<Order_By>;
+  /** 成功后指向新产生的公司客户记录；与 status = converted 一致 */
+  converted_company_users?: InputMaybe<Order_By>;
+  /** 谁录入 */
+  created_by_company_users?: InputMaybe<Order_By>;
+  id?: InputMaybe<Order_By>;
+  /** 若线索手机号已注册平台用户 */
+  linked_user_users?: InputMaybe<Order_By>;
+};
+
+/** update columns of table "company_leads" */
+export enum Company_Leads_Update_Column {
+  /** column name */
+  AssignedCompanyUsers = 'assigned_company_users',
+  /** column name */
+  CompanyCompanies = 'company_companies',
+  /** column name */
+  ConvertedAt = 'converted_at',
+  /** column name */
+  ConvertedCompanyUsers = 'converted_company_users',
+  /** column name */
+  CreatedAt = 'created_at',
+  /** column name */
+  CreatedByCompanyUsers = 'created_by_company_users',
+  /** column name */
+  Id = 'id',
+  /** column name */
+  LinkedUserUsers = 'linked_user_users',
+  /** column name */
+  Name = 'name',
+  /** column name */
+  Phone = 'phone',
+  /** column name */
+  Status = 'status',
+  /** column name */
+  UpdatedAt = 'updated_at'
+}
+
+export type Company_Leads_Updates = {
+  /** increments the numeric columns with given value of the filtered values */
+  _inc?: InputMaybe<Company_Leads_Inc_Input>;
+  /** sets the columns of the filtered rows to the given values */
+  _set?: InputMaybe<Company_Leads_Set_Input>;
+  /** filter the rows which have to be updated */
+  where: Company_Leads_Bool_Exp;
+};
+
+/** aggregate var_pop on columns */
+export type Company_Leads_Var_Pop_Fields = {
+  __typename?: 'company_leads_var_pop_fields';
+  /** 外键，谁跟进 */
+  assigned_company_users?: Maybe<Scalars['Float']['output']>;
+  /** 关联外建，哪个公司的线索 */
+  company_companies?: Maybe<Scalars['Float']['output']>;
+  /** 成功后指向新产生的公司客户记录；与 status = converted 一致 */
+  converted_company_users?: Maybe<Scalars['Float']['output']>;
+  /** 谁录入 */
+  created_by_company_users?: Maybe<Scalars['Float']['output']>;
+  id?: Maybe<Scalars['Float']['output']>;
+  /** 若线索手机号已注册平台用户 */
+  linked_user_users?: Maybe<Scalars['Float']['output']>;
+};
+
+/** order by var_pop() on columns of table "company_leads" */
+export type Company_Leads_Var_Pop_Order_By = {
+  /** 外键，谁跟进 */
+  assigned_company_users?: InputMaybe<Order_By>;
+  /** 关联外建，哪个公司的线索 */
+  company_companies?: InputMaybe<Order_By>;
+  /** 成功后指向新产生的公司客户记录；与 status = converted 一致 */
+  converted_company_users?: InputMaybe<Order_By>;
+  /** 谁录入 */
+  created_by_company_users?: InputMaybe<Order_By>;
+  id?: InputMaybe<Order_By>;
+  /** 若线索手机号已注册平台用户 */
+  linked_user_users?: InputMaybe<Order_By>;
+};
+
+/** aggregate var_samp on columns */
+export type Company_Leads_Var_Samp_Fields = {
+  __typename?: 'company_leads_var_samp_fields';
+  /** 外键，谁跟进 */
+  assigned_company_users?: Maybe<Scalars['Float']['output']>;
+  /** 关联外建，哪个公司的线索 */
+  company_companies?: Maybe<Scalars['Float']['output']>;
+  /** 成功后指向新产生的公司客户记录；与 status = converted 一致 */
+  converted_company_users?: Maybe<Scalars['Float']['output']>;
+  /** 谁录入 */
+  created_by_company_users?: Maybe<Scalars['Float']['output']>;
+  id?: Maybe<Scalars['Float']['output']>;
+  /** 若线索手机号已注册平台用户 */
+  linked_user_users?: Maybe<Scalars['Float']['output']>;
+};
+
+/** order by var_samp() on columns of table "company_leads" */
+export type Company_Leads_Var_Samp_Order_By = {
+  /** 外键，谁跟进 */
+  assigned_company_users?: InputMaybe<Order_By>;
+  /** 关联外建，哪个公司的线索 */
+  company_companies?: InputMaybe<Order_By>;
+  /** 成功后指向新产生的公司客户记录；与 status = converted 一致 */
+  converted_company_users?: InputMaybe<Order_By>;
+  /** 谁录入 */
+  created_by_company_users?: InputMaybe<Order_By>;
+  id?: InputMaybe<Order_By>;
+  /** 若线索手机号已注册平台用户 */
+  linked_user_users?: InputMaybe<Order_By>;
+};
+
+/** aggregate variance on columns */
+export type Company_Leads_Variance_Fields = {
+  __typename?: 'company_leads_variance_fields';
+  /** 外键，谁跟进 */
+  assigned_company_users?: Maybe<Scalars['Float']['output']>;
+  /** 关联外建，哪个公司的线索 */
+  company_companies?: Maybe<Scalars['Float']['output']>;
+  /** 成功后指向新产生的公司客户记录；与 status = converted 一致 */
+  converted_company_users?: Maybe<Scalars['Float']['output']>;
+  /** 谁录入 */
+  created_by_company_users?: Maybe<Scalars['Float']['output']>;
+  id?: Maybe<Scalars['Float']['output']>;
+  /** 若线索手机号已注册平台用户 */
+  linked_user_users?: Maybe<Scalars['Float']['output']>;
+};
+
+/** order by variance() on columns of table "company_leads" */
+export type Company_Leads_Variance_Order_By = {
+  /** 外键，谁跟进 */
+  assigned_company_users?: InputMaybe<Order_By>;
+  /** 关联外建，哪个公司的线索 */
+  company_companies?: InputMaybe<Order_By>;
+  /** 成功后指向新产生的公司客户记录；与 status = converted 一致 */
+  converted_company_users?: InputMaybe<Order_By>;
+  /** 谁录入 */
+  created_by_company_users?: InputMaybe<Order_By>;
+  id?: InputMaybe<Order_By>;
+  /** 若线索手机号已注册平台用户 */
+  linked_user_users?: InputMaybe<Order_By>;
 };
 
 /** 公司的套餐关联表 */
@@ -3555,12 +4767,30 @@ export type Company_Users = {
   can_view_price: Scalars['Boolean']['output'];
   /** An object relationship */
   company: Companies;
+  /** An array relationship */
+  companyLeadsByConvertedCompanyUsers: Array<Company_Leads>;
+  /** An aggregate relationship */
+  companyLeadsByConvertedCompanyUsers_aggregate: Company_Leads_Aggregate;
+  /** An array relationship */
+  companyLeadsByCreatedByCompanyUsers: Array<Company_Leads>;
+  /** An aggregate relationship */
+  companyLeadsByCreatedByCompanyUsers_aggregate: Company_Leads_Aggregate;
   /** 公司id */
   company_companies: Scalars['bigint']['output'];
+  /** An array relationship */
+  company_lead_tracks: Array<Company_Lead_Tracks>;
+  /** An aggregate relationship */
+  company_lead_tracks_aggregate: Company_Lead_Tracks_Aggregate;
+  /** An array relationship */
+  company_leads: Array<Company_Leads>;
+  /** An aggregate relationship */
+  company_leads_aggregate: Company_Leads_Aggregate;
   created_at: Scalars['timestamptz']['output'];
   id: Scalars['bigint']['output'];
   /** 客户等级划分 1.A 2.B 3.C 4.D 5.E */
   level: Scalars['String']['output'];
+  /** 用户权限 1.admin_lead（管理线索） 2. track_lead（跟进线索） 可以有多个,多个用&连接，如：admin_lead&track_lead */
+  permissions?: Maybe<Scalars['String']['output']>;
   /** 该用户在公司下看到的价格系数（大于0数值），默认为1表示和产品价格一致 */
   price_factor: Scalars['numeric']['output'];
   /** 用户在公司下的角色： 1.admin（可以管理公司的分类、公司的产品及套餐、授权公司用户）、2.user（普通用户） */
@@ -3570,6 +4800,86 @@ export type Company_Users = {
   user: Users;
   /** 用户id */
   user_users: Scalars['bigint']['output'];
+};
+
+
+/** 公司用户 */
+export type Company_UsersCompanyLeadsByConvertedCompanyUsersArgs = {
+  distinct_on?: InputMaybe<Array<Company_Leads_Select_Column>>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  order_by?: InputMaybe<Array<Company_Leads_Order_By>>;
+  where?: InputMaybe<Company_Leads_Bool_Exp>;
+};
+
+
+/** 公司用户 */
+export type Company_UsersCompanyLeadsByConvertedCompanyUsers_AggregateArgs = {
+  distinct_on?: InputMaybe<Array<Company_Leads_Select_Column>>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  order_by?: InputMaybe<Array<Company_Leads_Order_By>>;
+  where?: InputMaybe<Company_Leads_Bool_Exp>;
+};
+
+
+/** 公司用户 */
+export type Company_UsersCompanyLeadsByCreatedByCompanyUsersArgs = {
+  distinct_on?: InputMaybe<Array<Company_Leads_Select_Column>>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  order_by?: InputMaybe<Array<Company_Leads_Order_By>>;
+  where?: InputMaybe<Company_Leads_Bool_Exp>;
+};
+
+
+/** 公司用户 */
+export type Company_UsersCompanyLeadsByCreatedByCompanyUsers_AggregateArgs = {
+  distinct_on?: InputMaybe<Array<Company_Leads_Select_Column>>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  order_by?: InputMaybe<Array<Company_Leads_Order_By>>;
+  where?: InputMaybe<Company_Leads_Bool_Exp>;
+};
+
+
+/** 公司用户 */
+export type Company_UsersCompany_Lead_TracksArgs = {
+  distinct_on?: InputMaybe<Array<Company_Lead_Tracks_Select_Column>>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  order_by?: InputMaybe<Array<Company_Lead_Tracks_Order_By>>;
+  where?: InputMaybe<Company_Lead_Tracks_Bool_Exp>;
+};
+
+
+/** 公司用户 */
+export type Company_UsersCompany_Lead_Tracks_AggregateArgs = {
+  distinct_on?: InputMaybe<Array<Company_Lead_Tracks_Select_Column>>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  order_by?: InputMaybe<Array<Company_Lead_Tracks_Order_By>>;
+  where?: InputMaybe<Company_Lead_Tracks_Bool_Exp>;
+};
+
+
+/** 公司用户 */
+export type Company_UsersCompany_LeadsArgs = {
+  distinct_on?: InputMaybe<Array<Company_Leads_Select_Column>>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  order_by?: InputMaybe<Array<Company_Leads_Order_By>>;
+  where?: InputMaybe<Company_Leads_Bool_Exp>;
+};
+
+
+/** 公司用户 */
+export type Company_UsersCompany_Leads_AggregateArgs = {
+  distinct_on?: InputMaybe<Array<Company_Leads_Select_Column>>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  order_by?: InputMaybe<Array<Company_Leads_Order_By>>;
+  where?: InputMaybe<Company_Leads_Bool_Exp>;
 };
 
 /** aggregated selection of "company_users" */
@@ -3681,10 +4991,19 @@ export type Company_Users_Bool_Exp = {
   _or?: InputMaybe<Array<Company_Users_Bool_Exp>>;
   can_view_price?: InputMaybe<Boolean_Comparison_Exp>;
   company?: InputMaybe<Companies_Bool_Exp>;
+  companyLeadsByConvertedCompanyUsers?: InputMaybe<Company_Leads_Bool_Exp>;
+  companyLeadsByConvertedCompanyUsers_aggregate?: InputMaybe<Company_Leads_Aggregate_Bool_Exp>;
+  companyLeadsByCreatedByCompanyUsers?: InputMaybe<Company_Leads_Bool_Exp>;
+  companyLeadsByCreatedByCompanyUsers_aggregate?: InputMaybe<Company_Leads_Aggregate_Bool_Exp>;
   company_companies?: InputMaybe<Bigint_Comparison_Exp>;
+  company_lead_tracks?: InputMaybe<Company_Lead_Tracks_Bool_Exp>;
+  company_lead_tracks_aggregate?: InputMaybe<Company_Lead_Tracks_Aggregate_Bool_Exp>;
+  company_leads?: InputMaybe<Company_Leads_Bool_Exp>;
+  company_leads_aggregate?: InputMaybe<Company_Leads_Aggregate_Bool_Exp>;
   created_at?: InputMaybe<Timestamptz_Comparison_Exp>;
   id?: InputMaybe<Bigint_Comparison_Exp>;
   level?: InputMaybe<String_Comparison_Exp>;
+  permissions?: InputMaybe<String_Comparison_Exp>;
   price_factor?: InputMaybe<Numeric_Comparison_Exp>;
   role?: InputMaybe<String_Comparison_Exp>;
   updated_at?: InputMaybe<Timestamptz_Comparison_Exp>;
@@ -3716,12 +5035,18 @@ export type Company_Users_Insert_Input = {
   /** 用户能否看到本公司的价格，默认是不能看到的，需要联系公司管理员进行授权后可见 */
   can_view_price?: InputMaybe<Scalars['Boolean']['input']>;
   company?: InputMaybe<Companies_Obj_Rel_Insert_Input>;
+  companyLeadsByConvertedCompanyUsers?: InputMaybe<Company_Leads_Arr_Rel_Insert_Input>;
+  companyLeadsByCreatedByCompanyUsers?: InputMaybe<Company_Leads_Arr_Rel_Insert_Input>;
   /** 公司id */
   company_companies?: InputMaybe<Scalars['bigint']['input']>;
+  company_lead_tracks?: InputMaybe<Company_Lead_Tracks_Arr_Rel_Insert_Input>;
+  company_leads?: InputMaybe<Company_Leads_Arr_Rel_Insert_Input>;
   created_at?: InputMaybe<Scalars['timestamptz']['input']>;
   id?: InputMaybe<Scalars['bigint']['input']>;
   /** 客户等级划分 1.A 2.B 3.C 4.D 5.E */
   level?: InputMaybe<Scalars['String']['input']>;
+  /** 用户权限 1.admin_lead（管理线索） 2. track_lead（跟进线索） 可以有多个,多个用&连接，如：admin_lead&track_lead */
+  permissions?: InputMaybe<Scalars['String']['input']>;
   /** 该用户在公司下看到的价格系数（大于0数值），默认为1表示和产品价格一致 */
   price_factor?: InputMaybe<Scalars['numeric']['input']>;
   /** 用户在公司下的角色： 1.admin（可以管理公司的分类、公司的产品及套餐、授权公司用户）、2.user（普通用户） */
@@ -3741,6 +5066,8 @@ export type Company_Users_Max_Fields = {
   id?: Maybe<Scalars['bigint']['output']>;
   /** 客户等级划分 1.A 2.B 3.C 4.D 5.E */
   level?: Maybe<Scalars['String']['output']>;
+  /** 用户权限 1.admin_lead（管理线索） 2. track_lead（跟进线索） 可以有多个,多个用&连接，如：admin_lead&track_lead */
+  permissions?: Maybe<Scalars['String']['output']>;
   /** 该用户在公司下看到的价格系数（大于0数值），默认为1表示和产品价格一致 */
   price_factor?: Maybe<Scalars['numeric']['output']>;
   /** 用户在公司下的角色： 1.admin（可以管理公司的分类、公司的产品及套餐、授权公司用户）、2.user（普通用户） */
@@ -3758,6 +5085,8 @@ export type Company_Users_Max_Order_By = {
   id?: InputMaybe<Order_By>;
   /** 客户等级划分 1.A 2.B 3.C 4.D 5.E */
   level?: InputMaybe<Order_By>;
+  /** 用户权限 1.admin_lead（管理线索） 2. track_lead（跟进线索） 可以有多个,多个用&连接，如：admin_lead&track_lead */
+  permissions?: InputMaybe<Order_By>;
   /** 该用户在公司下看到的价格系数（大于0数值），默认为1表示和产品价格一致 */
   price_factor?: InputMaybe<Order_By>;
   /** 用户在公司下的角色： 1.admin（可以管理公司的分类、公司的产品及套餐、授权公司用户）、2.user（普通用户） */
@@ -3776,6 +5105,8 @@ export type Company_Users_Min_Fields = {
   id?: Maybe<Scalars['bigint']['output']>;
   /** 客户等级划分 1.A 2.B 3.C 4.D 5.E */
   level?: Maybe<Scalars['String']['output']>;
+  /** 用户权限 1.admin_lead（管理线索） 2. track_lead（跟进线索） 可以有多个,多个用&连接，如：admin_lead&track_lead */
+  permissions?: Maybe<Scalars['String']['output']>;
   /** 该用户在公司下看到的价格系数（大于0数值），默认为1表示和产品价格一致 */
   price_factor?: Maybe<Scalars['numeric']['output']>;
   /** 用户在公司下的角色： 1.admin（可以管理公司的分类、公司的产品及套餐、授权公司用户）、2.user（普通用户） */
@@ -3793,6 +5124,8 @@ export type Company_Users_Min_Order_By = {
   id?: InputMaybe<Order_By>;
   /** 客户等级划分 1.A 2.B 3.C 4.D 5.E */
   level?: InputMaybe<Order_By>;
+  /** 用户权限 1.admin_lead（管理线索） 2. track_lead（跟进线索） 可以有多个,多个用&连接，如：admin_lead&track_lead */
+  permissions?: InputMaybe<Order_By>;
   /** 该用户在公司下看到的价格系数（大于0数值），默认为1表示和产品价格一致 */
   price_factor?: InputMaybe<Order_By>;
   /** 用户在公司下的角色： 1.admin（可以管理公司的分类、公司的产品及套餐、授权公司用户）、2.user（普通用户） */
@@ -3811,6 +5144,13 @@ export type Company_Users_Mutation_Response = {
   returning: Array<Company_Users>;
 };
 
+/** input type for inserting object relation for remote table "company_users" */
+export type Company_Users_Obj_Rel_Insert_Input = {
+  data: Company_Users_Insert_Input;
+  /** upsert condition */
+  on_conflict?: InputMaybe<Company_Users_On_Conflict>;
+};
+
 /** on_conflict condition type for table "company_users" */
 export type Company_Users_On_Conflict = {
   constraint: Company_Users_Constraint;
@@ -3822,10 +5162,15 @@ export type Company_Users_On_Conflict = {
 export type Company_Users_Order_By = {
   can_view_price?: InputMaybe<Order_By>;
   company?: InputMaybe<Companies_Order_By>;
+  companyLeadsByConvertedCompanyUsers_aggregate?: InputMaybe<Company_Leads_Aggregate_Order_By>;
+  companyLeadsByCreatedByCompanyUsers_aggregate?: InputMaybe<Company_Leads_Aggregate_Order_By>;
   company_companies?: InputMaybe<Order_By>;
+  company_lead_tracks_aggregate?: InputMaybe<Company_Lead_Tracks_Aggregate_Order_By>;
+  company_leads_aggregate?: InputMaybe<Company_Leads_Aggregate_Order_By>;
   created_at?: InputMaybe<Order_By>;
   id?: InputMaybe<Order_By>;
   level?: InputMaybe<Order_By>;
+  permissions?: InputMaybe<Order_By>;
   price_factor?: InputMaybe<Order_By>;
   role?: InputMaybe<Order_By>;
   updated_at?: InputMaybe<Order_By>;
@@ -3850,6 +5195,8 @@ export enum Company_Users_Select_Column {
   Id = 'id',
   /** column name */
   Level = 'level',
+  /** column name */
+  Permissions = 'permissions',
   /** column name */
   PriceFactor = 'price_factor',
   /** column name */
@@ -3882,6 +5229,8 @@ export type Company_Users_Set_Input = {
   id?: InputMaybe<Scalars['bigint']['input']>;
   /** 客户等级划分 1.A 2.B 3.C 4.D 5.E */
   level?: InputMaybe<Scalars['String']['input']>;
+  /** 用户权限 1.admin_lead（管理线索） 2. track_lead（跟进线索） 可以有多个,多个用&连接，如：admin_lead&track_lead */
+  permissions?: InputMaybe<Scalars['String']['input']>;
   /** 该用户在公司下看到的价格系数（大于0数值），默认为1表示和产品价格一致 */
   price_factor?: InputMaybe<Scalars['numeric']['input']>;
   /** 用户在公司下的角色： 1.admin（可以管理公司的分类、公司的产品及套餐、授权公司用户）、2.user（普通用户） */
@@ -3978,6 +5327,8 @@ export type Company_Users_Stream_Cursor_Value_Input = {
   id?: InputMaybe<Scalars['bigint']['input']>;
   /** 客户等级划分 1.A 2.B 3.C 4.D 5.E */
   level?: InputMaybe<Scalars['String']['input']>;
+  /** 用户权限 1.admin_lead（管理线索） 2. track_lead（跟进线索） 可以有多个,多个用&连接，如：admin_lead&track_lead */
+  permissions?: InputMaybe<Scalars['String']['input']>;
   /** 该用户在公司下看到的价格系数（大于0数值），默认为1表示和产品价格一致 */
   price_factor?: InputMaybe<Scalars['numeric']['input']>;
   /** 用户在公司下的角色： 1.admin（可以管理公司的分类、公司的产品及套餐、授权公司用户）、2.user（普通用户） */
@@ -4022,6 +5373,8 @@ export enum Company_Users_Update_Column {
   Id = 'id',
   /** column name */
   Level = 'level',
+  /** column name */
+  Permissions = 'permissions',
   /** column name */
   PriceFactor = 'price_factor',
   /** column name */
@@ -4448,6 +5801,14 @@ export type Mutation_Root = {
   delete_companies?: Maybe<Companies_Mutation_Response>;
   /** delete single row from the table: "companies" */
   delete_companies_by_pk?: Maybe<Companies>;
+  /** delete data from the table: "company_lead_tracks" */
+  delete_company_lead_tracks?: Maybe<Company_Lead_Tracks_Mutation_Response>;
+  /** delete single row from the table: "company_lead_tracks" */
+  delete_company_lead_tracks_by_pk?: Maybe<Company_Lead_Tracks>;
+  /** delete data from the table: "company_leads" */
+  delete_company_leads?: Maybe<Company_Leads_Mutation_Response>;
+  /** delete single row from the table: "company_leads" */
+  delete_company_leads_by_pk?: Maybe<Company_Leads>;
   /** delete data from the table: "company_packages" */
   delete_company_packages?: Maybe<Company_Packages_Mutation_Response>;
   /** delete single row from the table: "company_packages" */
@@ -4508,6 +5869,14 @@ export type Mutation_Root = {
   insert_companies?: Maybe<Companies_Mutation_Response>;
   /** insert a single row into the table: "companies" */
   insert_companies_one?: Maybe<Companies>;
+  /** insert data into the table: "company_lead_tracks" */
+  insert_company_lead_tracks?: Maybe<Company_Lead_Tracks_Mutation_Response>;
+  /** insert a single row into the table: "company_lead_tracks" */
+  insert_company_lead_tracks_one?: Maybe<Company_Lead_Tracks>;
+  /** insert data into the table: "company_leads" */
+  insert_company_leads?: Maybe<Company_Leads_Mutation_Response>;
+  /** insert a single row into the table: "company_leads" */
+  insert_company_leads_one?: Maybe<Company_Leads>;
   /** insert data into the table: "company_packages" */
   insert_company_packages?: Maybe<Company_Packages_Mutation_Response>;
   /** insert a single row into the table: "company_packages" */
@@ -4576,6 +5945,18 @@ export type Mutation_Root = {
   update_companies_by_pk?: Maybe<Companies>;
   /** update multiples rows of table: "companies" */
   update_companies_many?: Maybe<Array<Maybe<Companies_Mutation_Response>>>;
+  /** update data of the table: "company_lead_tracks" */
+  update_company_lead_tracks?: Maybe<Company_Lead_Tracks_Mutation_Response>;
+  /** update single row of the table: "company_lead_tracks" */
+  update_company_lead_tracks_by_pk?: Maybe<Company_Lead_Tracks>;
+  /** update multiples rows of table: "company_lead_tracks" */
+  update_company_lead_tracks_many?: Maybe<Array<Maybe<Company_Lead_Tracks_Mutation_Response>>>;
+  /** update data of the table: "company_leads" */
+  update_company_leads?: Maybe<Company_Leads_Mutation_Response>;
+  /** update single row of the table: "company_leads" */
+  update_company_leads_by_pk?: Maybe<Company_Leads>;
+  /** update multiples rows of table: "company_leads" */
+  update_company_leads_many?: Maybe<Array<Maybe<Company_Leads_Mutation_Response>>>;
   /** update data of the table: "company_packages" */
   update_company_packages?: Maybe<Company_Packages_Mutation_Response>;
   /** update single row of the table: "company_packages" */
@@ -4689,6 +6070,30 @@ export type Mutation_RootDelete_CompaniesArgs = {
 
 /** mutation root */
 export type Mutation_RootDelete_Companies_By_PkArgs = {
+  id: Scalars['bigint']['input'];
+};
+
+
+/** mutation root */
+export type Mutation_RootDelete_Company_Lead_TracksArgs = {
+  where: Company_Lead_Tracks_Bool_Exp;
+};
+
+
+/** mutation root */
+export type Mutation_RootDelete_Company_Lead_Tracks_By_PkArgs = {
+  id: Scalars['bigint']['input'];
+};
+
+
+/** mutation root */
+export type Mutation_RootDelete_Company_LeadsArgs = {
+  where: Company_Leads_Bool_Exp;
+};
+
+
+/** mutation root */
+export type Mutation_RootDelete_Company_Leads_By_PkArgs = {
   id: Scalars['bigint']['input'];
 };
 
@@ -4878,6 +6283,34 @@ export type Mutation_RootInsert_CompaniesArgs = {
 export type Mutation_RootInsert_Companies_OneArgs = {
   object: Companies_Insert_Input;
   on_conflict?: InputMaybe<Companies_On_Conflict>;
+};
+
+
+/** mutation root */
+export type Mutation_RootInsert_Company_Lead_TracksArgs = {
+  objects: Array<Company_Lead_Tracks_Insert_Input>;
+  on_conflict?: InputMaybe<Company_Lead_Tracks_On_Conflict>;
+};
+
+
+/** mutation root */
+export type Mutation_RootInsert_Company_Lead_Tracks_OneArgs = {
+  object: Company_Lead_Tracks_Insert_Input;
+  on_conflict?: InputMaybe<Company_Lead_Tracks_On_Conflict>;
+};
+
+
+/** mutation root */
+export type Mutation_RootInsert_Company_LeadsArgs = {
+  objects: Array<Company_Leads_Insert_Input>;
+  on_conflict?: InputMaybe<Company_Leads_On_Conflict>;
+};
+
+
+/** mutation root */
+export type Mutation_RootInsert_Company_Leads_OneArgs = {
+  object: Company_Leads_Insert_Input;
+  on_conflict?: InputMaybe<Company_Leads_On_Conflict>;
 };
 
 
@@ -5120,6 +6553,50 @@ export type Mutation_RootUpdate_Companies_By_PkArgs = {
 /** mutation root */
 export type Mutation_RootUpdate_Companies_ManyArgs = {
   updates: Array<Companies_Updates>;
+};
+
+
+/** mutation root */
+export type Mutation_RootUpdate_Company_Lead_TracksArgs = {
+  _inc?: InputMaybe<Company_Lead_Tracks_Inc_Input>;
+  _set?: InputMaybe<Company_Lead_Tracks_Set_Input>;
+  where: Company_Lead_Tracks_Bool_Exp;
+};
+
+
+/** mutation root */
+export type Mutation_RootUpdate_Company_Lead_Tracks_By_PkArgs = {
+  _inc?: InputMaybe<Company_Lead_Tracks_Inc_Input>;
+  _set?: InputMaybe<Company_Lead_Tracks_Set_Input>;
+  pk_columns: Company_Lead_Tracks_Pk_Columns_Input;
+};
+
+
+/** mutation root */
+export type Mutation_RootUpdate_Company_Lead_Tracks_ManyArgs = {
+  updates: Array<Company_Lead_Tracks_Updates>;
+};
+
+
+/** mutation root */
+export type Mutation_RootUpdate_Company_LeadsArgs = {
+  _inc?: InputMaybe<Company_Leads_Inc_Input>;
+  _set?: InputMaybe<Company_Leads_Set_Input>;
+  where: Company_Leads_Bool_Exp;
+};
+
+
+/** mutation root */
+export type Mutation_RootUpdate_Company_Leads_By_PkArgs = {
+  _inc?: InputMaybe<Company_Leads_Inc_Input>;
+  _set?: InputMaybe<Company_Leads_Set_Input>;
+  pk_columns: Company_Leads_Pk_Columns_Input;
+};
+
+
+/** mutation root */
+export type Mutation_RootUpdate_Company_Leads_ManyArgs = {
+  updates: Array<Company_Leads_Updates>;
 };
 
 
@@ -9619,6 +11096,18 @@ export type Query_Root = {
   /** fetch data from the table: "companies" using primary key columns */
   companies_by_pk?: Maybe<Companies>;
   /** An array relationship */
+  company_lead_tracks: Array<Company_Lead_Tracks>;
+  /** An aggregate relationship */
+  company_lead_tracks_aggregate: Company_Lead_Tracks_Aggregate;
+  /** fetch data from the table: "company_lead_tracks" using primary key columns */
+  company_lead_tracks_by_pk?: Maybe<Company_Lead_Tracks>;
+  /** An array relationship */
+  company_leads: Array<Company_Leads>;
+  /** An aggregate relationship */
+  company_leads_aggregate: Company_Leads_Aggregate;
+  /** fetch data from the table: "company_leads" using primary key columns */
+  company_leads_by_pk?: Maybe<Company_Leads>;
+  /** An array relationship */
   company_packages: Array<Company_Packages>;
   /** An aggregate relationship */
   company_packages_aggregate: Company_Packages_Aggregate;
@@ -9775,6 +11264,52 @@ export type Query_RootCompanies_AggregateArgs = {
 
 
 export type Query_RootCompanies_By_PkArgs = {
+  id: Scalars['bigint']['input'];
+};
+
+
+export type Query_RootCompany_Lead_TracksArgs = {
+  distinct_on?: InputMaybe<Array<Company_Lead_Tracks_Select_Column>>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  order_by?: InputMaybe<Array<Company_Lead_Tracks_Order_By>>;
+  where?: InputMaybe<Company_Lead_Tracks_Bool_Exp>;
+};
+
+
+export type Query_RootCompany_Lead_Tracks_AggregateArgs = {
+  distinct_on?: InputMaybe<Array<Company_Lead_Tracks_Select_Column>>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  order_by?: InputMaybe<Array<Company_Lead_Tracks_Order_By>>;
+  where?: InputMaybe<Company_Lead_Tracks_Bool_Exp>;
+};
+
+
+export type Query_RootCompany_Lead_Tracks_By_PkArgs = {
+  id: Scalars['bigint']['input'];
+};
+
+
+export type Query_RootCompany_LeadsArgs = {
+  distinct_on?: InputMaybe<Array<Company_Leads_Select_Column>>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  order_by?: InputMaybe<Array<Company_Leads_Order_By>>;
+  where?: InputMaybe<Company_Leads_Bool_Exp>;
+};
+
+
+export type Query_RootCompany_Leads_AggregateArgs = {
+  distinct_on?: InputMaybe<Array<Company_Leads_Select_Column>>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  order_by?: InputMaybe<Array<Company_Leads_Order_By>>;
+  where?: InputMaybe<Company_Leads_Bool_Exp>;
+};
+
+
+export type Query_RootCompany_Leads_By_PkArgs = {
   id: Scalars['bigint']['input'];
 };
 
@@ -10066,6 +11601,22 @@ export type Subscription_Root = {
   /** fetch data from the table in a streaming manner: "companies" */
   companies_stream: Array<Companies>;
   /** An array relationship */
+  company_lead_tracks: Array<Company_Lead_Tracks>;
+  /** An aggregate relationship */
+  company_lead_tracks_aggregate: Company_Lead_Tracks_Aggregate;
+  /** fetch data from the table: "company_lead_tracks" using primary key columns */
+  company_lead_tracks_by_pk?: Maybe<Company_Lead_Tracks>;
+  /** fetch data from the table in a streaming manner: "company_lead_tracks" */
+  company_lead_tracks_stream: Array<Company_Lead_Tracks>;
+  /** An array relationship */
+  company_leads: Array<Company_Leads>;
+  /** An aggregate relationship */
+  company_leads_aggregate: Company_Leads_Aggregate;
+  /** fetch data from the table: "company_leads" using primary key columns */
+  company_leads_by_pk?: Maybe<Company_Leads>;
+  /** fetch data from the table in a streaming manner: "company_leads" */
+  company_leads_stream: Array<Company_Leads>;
+  /** An array relationship */
   company_packages: Array<Company_Packages>;
   /** An aggregate relationship */
   company_packages_aggregate: Company_Packages_Aggregate;
@@ -10273,6 +11824,66 @@ export type Subscription_RootCompanies_StreamArgs = {
   batch_size: Scalars['Int']['input'];
   cursor: Array<InputMaybe<Companies_Stream_Cursor_Input>>;
   where?: InputMaybe<Companies_Bool_Exp>;
+};
+
+
+export type Subscription_RootCompany_Lead_TracksArgs = {
+  distinct_on?: InputMaybe<Array<Company_Lead_Tracks_Select_Column>>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  order_by?: InputMaybe<Array<Company_Lead_Tracks_Order_By>>;
+  where?: InputMaybe<Company_Lead_Tracks_Bool_Exp>;
+};
+
+
+export type Subscription_RootCompany_Lead_Tracks_AggregateArgs = {
+  distinct_on?: InputMaybe<Array<Company_Lead_Tracks_Select_Column>>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  order_by?: InputMaybe<Array<Company_Lead_Tracks_Order_By>>;
+  where?: InputMaybe<Company_Lead_Tracks_Bool_Exp>;
+};
+
+
+export type Subscription_RootCompany_Lead_Tracks_By_PkArgs = {
+  id: Scalars['bigint']['input'];
+};
+
+
+export type Subscription_RootCompany_Lead_Tracks_StreamArgs = {
+  batch_size: Scalars['Int']['input'];
+  cursor: Array<InputMaybe<Company_Lead_Tracks_Stream_Cursor_Input>>;
+  where?: InputMaybe<Company_Lead_Tracks_Bool_Exp>;
+};
+
+
+export type Subscription_RootCompany_LeadsArgs = {
+  distinct_on?: InputMaybe<Array<Company_Leads_Select_Column>>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  order_by?: InputMaybe<Array<Company_Leads_Order_By>>;
+  where?: InputMaybe<Company_Leads_Bool_Exp>;
+};
+
+
+export type Subscription_RootCompany_Leads_AggregateArgs = {
+  distinct_on?: InputMaybe<Array<Company_Leads_Select_Column>>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  order_by?: InputMaybe<Array<Company_Leads_Order_By>>;
+  where?: InputMaybe<Company_Leads_Bool_Exp>;
+};
+
+
+export type Subscription_RootCompany_Leads_By_PkArgs = {
+  id: Scalars['bigint']['input'];
+};
+
+
+export type Subscription_RootCompany_Leads_StreamArgs = {
+  batch_size: Scalars['Int']['input'];
+  cursor: Array<InputMaybe<Company_Leads_Stream_Cursor_Input>>;
+  where?: InputMaybe<Company_Leads_Bool_Exp>;
 };
 
 
@@ -10634,6 +12245,10 @@ export type Users = {
   /** An aggregate relationship */
   carts_aggregate: Carts_Aggregate;
   /** An array relationship */
+  company_leads: Array<Company_Leads>;
+  /** An aggregate relationship */
+  company_leads_aggregate: Company_Leads_Aggregate;
+  /** An array relationship */
   company_users: Array<Company_Users>;
   /** An aggregate relationship */
   company_users_aggregate: Company_Users_Aggregate;
@@ -10694,6 +12309,26 @@ export type UsersCarts_AggregateArgs = {
   offset?: InputMaybe<Scalars['Int']['input']>;
   order_by?: InputMaybe<Array<Carts_Order_By>>;
   where?: InputMaybe<Carts_Bool_Exp>;
+};
+
+
+/** 用户表 */
+export type UsersCompany_LeadsArgs = {
+  distinct_on?: InputMaybe<Array<Company_Leads_Select_Column>>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  order_by?: InputMaybe<Array<Company_Leads_Order_By>>;
+  where?: InputMaybe<Company_Leads_Bool_Exp>;
+};
+
+
+/** 用户表 */
+export type UsersCompany_Leads_AggregateArgs = {
+  distinct_on?: InputMaybe<Array<Company_Leads_Select_Column>>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  order_by?: InputMaybe<Array<Company_Leads_Order_By>>;
+  where?: InputMaybe<Company_Leads_Bool_Exp>;
 };
 
 
@@ -10783,6 +12418,8 @@ export type Users_Bool_Exp = {
   bio?: InputMaybe<String_Comparison_Exp>;
   carts?: InputMaybe<Carts_Bool_Exp>;
   carts_aggregate?: InputMaybe<Carts_Aggregate_Bool_Exp>;
+  company_leads?: InputMaybe<Company_Leads_Bool_Exp>;
+  company_leads_aggregate?: InputMaybe<Company_Leads_Aggregate_Bool_Exp>;
   company_users?: InputMaybe<Company_Users_Bool_Exp>;
   company_users_aggregate?: InputMaybe<Company_Users_Aggregate_Bool_Exp>;
   created_at?: InputMaybe<Timestamptz_Comparison_Exp>;
@@ -10820,6 +12457,7 @@ export type Users_Insert_Input = {
   /** 简介 */
   bio?: InputMaybe<Scalars['String']['input']>;
   carts?: InputMaybe<Carts_Arr_Rel_Insert_Input>;
+  company_leads?: InputMaybe<Company_Leads_Arr_Rel_Insert_Input>;
   company_users?: InputMaybe<Company_Users_Arr_Rel_Insert_Input>;
   created_at?: InputMaybe<Scalars['timestamptz']['input']>;
   id?: InputMaybe<Scalars['bigint']['input']>;
@@ -10910,6 +12548,7 @@ export type Users_Order_By = {
   avatar_url?: InputMaybe<Order_By>;
   bio?: InputMaybe<Order_By>;
   carts_aggregate?: InputMaybe<Carts_Aggregate_Order_By>;
+  company_leads_aggregate?: InputMaybe<Company_Leads_Aggregate_Order_By>;
   company_users_aggregate?: InputMaybe<Company_Users_Aggregate_Order_By>;
   created_at?: InputMaybe<Order_By>;
   id?: InputMaybe<Order_By>;

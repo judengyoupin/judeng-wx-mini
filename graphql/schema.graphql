@@ -2473,6 +2473,42 @@ type companies {
   ): categories_aggregate!
 
   """An array relationship"""
+  company_leads(
+    """distinct select on columns"""
+    distinct_on: [company_leads_select_column!]
+
+    """limit the number of rows returned"""
+    limit: Int
+
+    """skip the first n rows. Use only with order_by"""
+    offset: Int
+
+    """sort the rows by one or more columns"""
+    order_by: [company_leads_order_by!]
+
+    """filter the rows returned"""
+    where: company_leads_bool_exp
+  ): [company_leads!]!
+
+  """An aggregate relationship"""
+  company_leads_aggregate(
+    """distinct select on columns"""
+    distinct_on: [company_leads_select_column!]
+
+    """limit the number of rows returned"""
+    limit: Int
+
+    """skip the first n rows. Use only with order_by"""
+    offset: Int
+
+    """sort the rows by one or more columns"""
+    order_by: [company_leads_order_by!]
+
+    """filter the rows returned"""
+    where: company_leads_bool_exp
+  ): company_leads_aggregate!
+
+  """An array relationship"""
   company_packages(
     """distinct select on columns"""
     distinct_on: [company_packages_select_column!]
@@ -2810,6 +2846,8 @@ input companies_bool_exp {
   banner_top: json_array_comparison_exp
   categories: categories_bool_exp
   categories_aggregate: categories_aggregate_bool_exp
+  company_leads: company_leads_bool_exp
+  company_leads_aggregate: company_leads_aggregate_bool_exp
   company_packages: company_packages_bool_exp
   company_packages_aggregate: company_packages_aggregate_bool_exp
   company_products: company_products_bool_exp
@@ -2880,6 +2918,7 @@ input companies_insert_input {
   """
   banner_top: [json!]
   categories: categories_arr_rel_insert_input
+  company_leads: company_leads_arr_rel_insert_input
   company_packages: company_packages_arr_rel_insert_input
   company_products: company_products_arr_rel_insert_input
   company_users: company_users_arr_rel_insert_input
@@ -3070,6 +3109,7 @@ input companies_order_by {
   banner_bottom: order_by
   banner_top: order_by
   categories_aggregate: categories_aggregate_order_by
+  company_leads_aggregate: company_leads_aggregate_order_by
   company_packages_aggregate: company_packages_aggregate_order_by
   company_products_aggregate: company_products_aggregate_order_by
   company_users_aggregate: company_users_aggregate_order_by
@@ -3399,6 +3439,1488 @@ type companies_variance_fields {
   """公司配置的初始用户价格/全局系数，取决于mode_for_price"""
   default_for_price_factor: Float
   id: Float
+}
+
+"""公司线索跟进记录表"""
+type company_lead_tracks {
+  """
+  示例：[   {     "file_type": "image",     "file_url": "https://...",     "name": "现场照片1.jpg",     "size": 102400,     "uploaded_at": "2026-04-17T12:00:00Z"   } ]
+  """
+  attachments(
+    """JSON select path"""
+    path: String
+  ): json!
+
+  """An object relationship"""
+  company_lead: company_leads!
+
+  """关联外键，哪个线索的跟进"""
+  company_lead_company_leads: bigint!
+
+  """An object relationship"""
+  company_user: company_users!
+
+  """跟进内容（必填业务上建议非空）"""
+  content: String!
+  created_at: timestamptz!
+
+  """谁写的这条跟进"""
+  created_by_company_users: bigint!
+  id: bigint!
+  updated_at: timestamptz!
+}
+
+"""
+aggregated selection of "company_lead_tracks"
+"""
+type company_lead_tracks_aggregate {
+  aggregate: company_lead_tracks_aggregate_fields
+  nodes: [company_lead_tracks!]!
+}
+
+input company_lead_tracks_aggregate_bool_exp {
+  count: company_lead_tracks_aggregate_bool_exp_count
+}
+
+input company_lead_tracks_aggregate_bool_exp_count {
+  arguments: [company_lead_tracks_select_column!]
+  distinct: Boolean
+  filter: company_lead_tracks_bool_exp
+  predicate: Int_comparison_exp!
+}
+
+"""
+aggregate fields of "company_lead_tracks"
+"""
+type company_lead_tracks_aggregate_fields {
+  avg: company_lead_tracks_avg_fields
+  count(columns: [company_lead_tracks_select_column!], distinct: Boolean): Int!
+  max: company_lead_tracks_max_fields
+  min: company_lead_tracks_min_fields
+  stddev: company_lead_tracks_stddev_fields
+  stddev_pop: company_lead_tracks_stddev_pop_fields
+  stddev_samp: company_lead_tracks_stddev_samp_fields
+  sum: company_lead_tracks_sum_fields
+  var_pop: company_lead_tracks_var_pop_fields
+  var_samp: company_lead_tracks_var_samp_fields
+  variance: company_lead_tracks_variance_fields
+}
+
+"""
+order by aggregate values of table "company_lead_tracks"
+"""
+input company_lead_tracks_aggregate_order_by {
+  avg: company_lead_tracks_avg_order_by
+  count: order_by
+  max: company_lead_tracks_max_order_by
+  min: company_lead_tracks_min_order_by
+  stddev: company_lead_tracks_stddev_order_by
+  stddev_pop: company_lead_tracks_stddev_pop_order_by
+  stddev_samp: company_lead_tracks_stddev_samp_order_by
+  sum: company_lead_tracks_sum_order_by
+  var_pop: company_lead_tracks_var_pop_order_by
+  var_samp: company_lead_tracks_var_samp_order_by
+  variance: company_lead_tracks_variance_order_by
+}
+
+"""
+input type for inserting array relation for remote table "company_lead_tracks"
+"""
+input company_lead_tracks_arr_rel_insert_input {
+  data: [company_lead_tracks_insert_input!]!
+
+  """upsert condition"""
+  on_conflict: company_lead_tracks_on_conflict
+}
+
+"""aggregate avg on columns"""
+type company_lead_tracks_avg_fields {
+  """关联外键，哪个线索的跟进"""
+  company_lead_company_leads: Float
+
+  """谁写的这条跟进"""
+  created_by_company_users: Float
+  id: Float
+}
+
+"""
+order by avg() on columns of table "company_lead_tracks"
+"""
+input company_lead_tracks_avg_order_by {
+  """关联外键，哪个线索的跟进"""
+  company_lead_company_leads: order_by
+
+  """谁写的这条跟进"""
+  created_by_company_users: order_by
+  id: order_by
+}
+
+"""
+Boolean expression to filter rows from the table "company_lead_tracks". All fields are combined with a logical 'AND'.
+"""
+input company_lead_tracks_bool_exp {
+  _and: [company_lead_tracks_bool_exp!]
+  _not: company_lead_tracks_bool_exp
+  _or: [company_lead_tracks_bool_exp!]
+  attachments: json_comparison_exp
+  company_lead: company_leads_bool_exp
+  company_lead_company_leads: bigint_comparison_exp
+  company_user: company_users_bool_exp
+  content: String_comparison_exp
+  created_at: timestamptz_comparison_exp
+  created_by_company_users: bigint_comparison_exp
+  id: bigint_comparison_exp
+  updated_at: timestamptz_comparison_exp
+}
+
+"""
+unique or primary key constraints on table "company_lead_tracks"
+"""
+enum company_lead_tracks_constraint {
+  """
+  unique or primary key constraint on columns "id"
+  """
+  company_lead_tracks_pkey
+}
+
+"""
+input type for incrementing numeric columns in table "company_lead_tracks"
+"""
+input company_lead_tracks_inc_input {
+  """关联外键，哪个线索的跟进"""
+  company_lead_company_leads: bigint
+
+  """谁写的这条跟进"""
+  created_by_company_users: bigint
+  id: bigint
+}
+
+"""
+input type for inserting data into table "company_lead_tracks"
+"""
+input company_lead_tracks_insert_input {
+  """
+  示例：[   {     "file_type": "image",     "file_url": "https://...",     "name": "现场照片1.jpg",     "size": 102400,     "uploaded_at": "2026-04-17T12:00:00Z"   } ]
+  """
+  attachments: json
+  company_lead: company_leads_obj_rel_insert_input
+
+  """关联外键，哪个线索的跟进"""
+  company_lead_company_leads: bigint
+  company_user: company_users_obj_rel_insert_input
+
+  """跟进内容（必填业务上建议非空）"""
+  content: String
+  created_at: timestamptz
+
+  """谁写的这条跟进"""
+  created_by_company_users: bigint
+  id: bigint
+  updated_at: timestamptz
+}
+
+"""aggregate max on columns"""
+type company_lead_tracks_max_fields {
+  """关联外键，哪个线索的跟进"""
+  company_lead_company_leads: bigint
+
+  """跟进内容（必填业务上建议非空）"""
+  content: String
+  created_at: timestamptz
+
+  """谁写的这条跟进"""
+  created_by_company_users: bigint
+  id: bigint
+  updated_at: timestamptz
+}
+
+"""
+order by max() on columns of table "company_lead_tracks"
+"""
+input company_lead_tracks_max_order_by {
+  """关联外键，哪个线索的跟进"""
+  company_lead_company_leads: order_by
+
+  """跟进内容（必填业务上建议非空）"""
+  content: order_by
+  created_at: order_by
+
+  """谁写的这条跟进"""
+  created_by_company_users: order_by
+  id: order_by
+  updated_at: order_by
+}
+
+"""aggregate min on columns"""
+type company_lead_tracks_min_fields {
+  """关联外键，哪个线索的跟进"""
+  company_lead_company_leads: bigint
+
+  """跟进内容（必填业务上建议非空）"""
+  content: String
+  created_at: timestamptz
+
+  """谁写的这条跟进"""
+  created_by_company_users: bigint
+  id: bigint
+  updated_at: timestamptz
+}
+
+"""
+order by min() on columns of table "company_lead_tracks"
+"""
+input company_lead_tracks_min_order_by {
+  """关联外键，哪个线索的跟进"""
+  company_lead_company_leads: order_by
+
+  """跟进内容（必填业务上建议非空）"""
+  content: order_by
+  created_at: order_by
+
+  """谁写的这条跟进"""
+  created_by_company_users: order_by
+  id: order_by
+  updated_at: order_by
+}
+
+"""
+response of any mutation on the table "company_lead_tracks"
+"""
+type company_lead_tracks_mutation_response {
+  """number of rows affected by the mutation"""
+  affected_rows: Int!
+
+  """data from the rows affected by the mutation"""
+  returning: [company_lead_tracks!]!
+}
+
+"""
+on_conflict condition type for table "company_lead_tracks"
+"""
+input company_lead_tracks_on_conflict {
+  constraint: company_lead_tracks_constraint!
+  update_columns: [company_lead_tracks_update_column!]! = []
+  where: company_lead_tracks_bool_exp
+}
+
+"""Ordering options when selecting data from "company_lead_tracks"."""
+input company_lead_tracks_order_by {
+  attachments: order_by
+  company_lead: company_leads_order_by
+  company_lead_company_leads: order_by
+  company_user: company_users_order_by
+  content: order_by
+  created_at: order_by
+  created_by_company_users: order_by
+  id: order_by
+  updated_at: order_by
+}
+
+"""primary key columns input for table: company_lead_tracks"""
+input company_lead_tracks_pk_columns_input {
+  id: bigint!
+}
+
+"""
+select columns of table "company_lead_tracks"
+"""
+enum company_lead_tracks_select_column {
+  """column name"""
+  attachments
+
+  """column name"""
+  company_lead_company_leads
+
+  """column name"""
+  content
+
+  """column name"""
+  created_at
+
+  """column name"""
+  created_by_company_users
+
+  """column name"""
+  id
+
+  """column name"""
+  updated_at
+}
+
+"""
+input type for updating data in table "company_lead_tracks"
+"""
+input company_lead_tracks_set_input {
+  """
+  示例：[   {     "file_type": "image",     "file_url": "https://...",     "name": "现场照片1.jpg",     "size": 102400,     "uploaded_at": "2026-04-17T12:00:00Z"   } ]
+  """
+  attachments: json
+
+  """关联外键，哪个线索的跟进"""
+  company_lead_company_leads: bigint
+
+  """跟进内容（必填业务上建议非空）"""
+  content: String
+  created_at: timestamptz
+
+  """谁写的这条跟进"""
+  created_by_company_users: bigint
+  id: bigint
+  updated_at: timestamptz
+}
+
+"""aggregate stddev on columns"""
+type company_lead_tracks_stddev_fields {
+  """关联外键，哪个线索的跟进"""
+  company_lead_company_leads: Float
+
+  """谁写的这条跟进"""
+  created_by_company_users: Float
+  id: Float
+}
+
+"""
+order by stddev() on columns of table "company_lead_tracks"
+"""
+input company_lead_tracks_stddev_order_by {
+  """关联外键，哪个线索的跟进"""
+  company_lead_company_leads: order_by
+
+  """谁写的这条跟进"""
+  created_by_company_users: order_by
+  id: order_by
+}
+
+"""aggregate stddev_pop on columns"""
+type company_lead_tracks_stddev_pop_fields {
+  """关联外键，哪个线索的跟进"""
+  company_lead_company_leads: Float
+
+  """谁写的这条跟进"""
+  created_by_company_users: Float
+  id: Float
+}
+
+"""
+order by stddev_pop() on columns of table "company_lead_tracks"
+"""
+input company_lead_tracks_stddev_pop_order_by {
+  """关联外键，哪个线索的跟进"""
+  company_lead_company_leads: order_by
+
+  """谁写的这条跟进"""
+  created_by_company_users: order_by
+  id: order_by
+}
+
+"""aggregate stddev_samp on columns"""
+type company_lead_tracks_stddev_samp_fields {
+  """关联外键，哪个线索的跟进"""
+  company_lead_company_leads: Float
+
+  """谁写的这条跟进"""
+  created_by_company_users: Float
+  id: Float
+}
+
+"""
+order by stddev_samp() on columns of table "company_lead_tracks"
+"""
+input company_lead_tracks_stddev_samp_order_by {
+  """关联外键，哪个线索的跟进"""
+  company_lead_company_leads: order_by
+
+  """谁写的这条跟进"""
+  created_by_company_users: order_by
+  id: order_by
+}
+
+"""
+Streaming cursor of the table "company_lead_tracks"
+"""
+input company_lead_tracks_stream_cursor_input {
+  """Stream column input with initial value"""
+  initial_value: company_lead_tracks_stream_cursor_value_input!
+
+  """cursor ordering"""
+  ordering: cursor_ordering
+}
+
+"""Initial value of the column from where the streaming should start"""
+input company_lead_tracks_stream_cursor_value_input {
+  """
+  示例：[   {     "file_type": "image",     "file_url": "https://...",     "name": "现场照片1.jpg",     "size": 102400,     "uploaded_at": "2026-04-17T12:00:00Z"   } ]
+  """
+  attachments: json
+
+  """关联外键，哪个线索的跟进"""
+  company_lead_company_leads: bigint
+
+  """跟进内容（必填业务上建议非空）"""
+  content: String
+  created_at: timestamptz
+
+  """谁写的这条跟进"""
+  created_by_company_users: bigint
+  id: bigint
+  updated_at: timestamptz
+}
+
+"""aggregate sum on columns"""
+type company_lead_tracks_sum_fields {
+  """关联外键，哪个线索的跟进"""
+  company_lead_company_leads: bigint
+
+  """谁写的这条跟进"""
+  created_by_company_users: bigint
+  id: bigint
+}
+
+"""
+order by sum() on columns of table "company_lead_tracks"
+"""
+input company_lead_tracks_sum_order_by {
+  """关联外键，哪个线索的跟进"""
+  company_lead_company_leads: order_by
+
+  """谁写的这条跟进"""
+  created_by_company_users: order_by
+  id: order_by
+}
+
+"""
+update columns of table "company_lead_tracks"
+"""
+enum company_lead_tracks_update_column {
+  """column name"""
+  attachments
+
+  """column name"""
+  company_lead_company_leads
+
+  """column name"""
+  content
+
+  """column name"""
+  created_at
+
+  """column name"""
+  created_by_company_users
+
+  """column name"""
+  id
+
+  """column name"""
+  updated_at
+}
+
+input company_lead_tracks_updates {
+  """increments the numeric columns with given value of the filtered values"""
+  _inc: company_lead_tracks_inc_input
+
+  """sets the columns of the filtered rows to the given values"""
+  _set: company_lead_tracks_set_input
+
+  """filter the rows which have to be updated"""
+  where: company_lead_tracks_bool_exp!
+}
+
+"""aggregate var_pop on columns"""
+type company_lead_tracks_var_pop_fields {
+  """关联外键，哪个线索的跟进"""
+  company_lead_company_leads: Float
+
+  """谁写的这条跟进"""
+  created_by_company_users: Float
+  id: Float
+}
+
+"""
+order by var_pop() on columns of table "company_lead_tracks"
+"""
+input company_lead_tracks_var_pop_order_by {
+  """关联外键，哪个线索的跟进"""
+  company_lead_company_leads: order_by
+
+  """谁写的这条跟进"""
+  created_by_company_users: order_by
+  id: order_by
+}
+
+"""aggregate var_samp on columns"""
+type company_lead_tracks_var_samp_fields {
+  """关联外键，哪个线索的跟进"""
+  company_lead_company_leads: Float
+
+  """谁写的这条跟进"""
+  created_by_company_users: Float
+  id: Float
+}
+
+"""
+order by var_samp() on columns of table "company_lead_tracks"
+"""
+input company_lead_tracks_var_samp_order_by {
+  """关联外键，哪个线索的跟进"""
+  company_lead_company_leads: order_by
+
+  """谁写的这条跟进"""
+  created_by_company_users: order_by
+  id: order_by
+}
+
+"""aggregate variance on columns"""
+type company_lead_tracks_variance_fields {
+  """关联外键，哪个线索的跟进"""
+  company_lead_company_leads: Float
+
+  """谁写的这条跟进"""
+  created_by_company_users: Float
+  id: Float
+}
+
+"""
+order by variance() on columns of table "company_lead_tracks"
+"""
+input company_lead_tracks_variance_order_by {
+  """关联外键，哪个线索的跟进"""
+  company_lead_company_leads: order_by
+
+  """谁写的这条跟进"""
+  created_by_company_users: order_by
+  id: order_by
+}
+
+"""公司线索记录表"""
+type company_leads {
+  """外键，谁跟进"""
+  assigned_company_users: bigint
+
+  """An object relationship"""
+  company: companies!
+
+  """An object relationship"""
+  companyUserByConvertedCompanyUsers: company_users
+
+  """An object relationship"""
+  companyUserByCreatedByCompanyUsers: company_users
+
+  """关联外建，哪个公司的线索"""
+  company_companies: bigint!
+
+  """An array relationship"""
+  company_lead_tracks(
+    """distinct select on columns"""
+    distinct_on: [company_lead_tracks_select_column!]
+
+    """limit the number of rows returned"""
+    limit: Int
+
+    """skip the first n rows. Use only with order_by"""
+    offset: Int
+
+    """sort the rows by one or more columns"""
+    order_by: [company_lead_tracks_order_by!]
+
+    """filter the rows returned"""
+    where: company_lead_tracks_bool_exp
+  ): [company_lead_tracks!]!
+
+  """An aggregate relationship"""
+  company_lead_tracks_aggregate(
+    """distinct select on columns"""
+    distinct_on: [company_lead_tracks_select_column!]
+
+    """limit the number of rows returned"""
+    limit: Int
+
+    """skip the first n rows. Use only with order_by"""
+    offset: Int
+
+    """sort the rows by one or more columns"""
+    order_by: [company_lead_tracks_order_by!]
+
+    """filter the rows returned"""
+    where: company_lead_tracks_bool_exp
+  ): company_lead_tracks_aggregate!
+
+  """An object relationship"""
+  company_user: company_users
+
+  """线索转客户的时间"""
+  converted_at: timestamptz
+
+  """成功后指向新产生的公司客户记录；与 status = converted 一致"""
+  converted_company_users: bigint
+  created_at: timestamptz!
+
+  """谁录入"""
+  created_by_company_users: bigint
+  id: bigint!
+
+  """若线索手机号已注册平台用户"""
+  linked_user_users: bigint
+
+  """线索身份-名字"""
+  name: String!
+
+  """线索身份-电话"""
+  phone: String!
+
+  """new / assigned / following / won / lost / converted"""
+  status: String!
+  updated_at: timestamptz!
+
+  """An object relationship"""
+  user: users
+}
+
+"""
+aggregated selection of "company_leads"
+"""
+type company_leads_aggregate {
+  aggregate: company_leads_aggregate_fields
+  nodes: [company_leads!]!
+}
+
+input company_leads_aggregate_bool_exp {
+  count: company_leads_aggregate_bool_exp_count
+}
+
+input company_leads_aggregate_bool_exp_count {
+  arguments: [company_leads_select_column!]
+  distinct: Boolean
+  filter: company_leads_bool_exp
+  predicate: Int_comparison_exp!
+}
+
+"""
+aggregate fields of "company_leads"
+"""
+type company_leads_aggregate_fields {
+  avg: company_leads_avg_fields
+  count(columns: [company_leads_select_column!], distinct: Boolean): Int!
+  max: company_leads_max_fields
+  min: company_leads_min_fields
+  stddev: company_leads_stddev_fields
+  stddev_pop: company_leads_stddev_pop_fields
+  stddev_samp: company_leads_stddev_samp_fields
+  sum: company_leads_sum_fields
+  var_pop: company_leads_var_pop_fields
+  var_samp: company_leads_var_samp_fields
+  variance: company_leads_variance_fields
+}
+
+"""
+order by aggregate values of table "company_leads"
+"""
+input company_leads_aggregate_order_by {
+  avg: company_leads_avg_order_by
+  count: order_by
+  max: company_leads_max_order_by
+  min: company_leads_min_order_by
+  stddev: company_leads_stddev_order_by
+  stddev_pop: company_leads_stddev_pop_order_by
+  stddev_samp: company_leads_stddev_samp_order_by
+  sum: company_leads_sum_order_by
+  var_pop: company_leads_var_pop_order_by
+  var_samp: company_leads_var_samp_order_by
+  variance: company_leads_variance_order_by
+}
+
+"""
+input type for inserting array relation for remote table "company_leads"
+"""
+input company_leads_arr_rel_insert_input {
+  data: [company_leads_insert_input!]!
+
+  """upsert condition"""
+  on_conflict: company_leads_on_conflict
+}
+
+"""aggregate avg on columns"""
+type company_leads_avg_fields {
+  """外键，谁跟进"""
+  assigned_company_users: Float
+
+  """关联外建，哪个公司的线索"""
+  company_companies: Float
+
+  """成功后指向新产生的公司客户记录；与 status = converted 一致"""
+  converted_company_users: Float
+
+  """谁录入"""
+  created_by_company_users: Float
+  id: Float
+
+  """若线索手机号已注册平台用户"""
+  linked_user_users: Float
+}
+
+"""
+order by avg() on columns of table "company_leads"
+"""
+input company_leads_avg_order_by {
+  """外键，谁跟进"""
+  assigned_company_users: order_by
+
+  """关联外建，哪个公司的线索"""
+  company_companies: order_by
+
+  """成功后指向新产生的公司客户记录；与 status = converted 一致"""
+  converted_company_users: order_by
+
+  """谁录入"""
+  created_by_company_users: order_by
+  id: order_by
+
+  """若线索手机号已注册平台用户"""
+  linked_user_users: order_by
+}
+
+"""
+Boolean expression to filter rows from the table "company_leads". All fields are combined with a logical 'AND'.
+"""
+input company_leads_bool_exp {
+  _and: [company_leads_bool_exp!]
+  _not: company_leads_bool_exp
+  _or: [company_leads_bool_exp!]
+  assigned_company_users: bigint_comparison_exp
+  company: companies_bool_exp
+  companyUserByConvertedCompanyUsers: company_users_bool_exp
+  companyUserByCreatedByCompanyUsers: company_users_bool_exp
+  company_companies: bigint_comparison_exp
+  company_lead_tracks: company_lead_tracks_bool_exp
+  company_lead_tracks_aggregate: company_lead_tracks_aggregate_bool_exp
+  company_user: company_users_bool_exp
+  converted_at: timestamptz_comparison_exp
+  converted_company_users: bigint_comparison_exp
+  created_at: timestamptz_comparison_exp
+  created_by_company_users: bigint_comparison_exp
+  id: bigint_comparison_exp
+  linked_user_users: bigint_comparison_exp
+  name: String_comparison_exp
+  phone: String_comparison_exp
+  status: String_comparison_exp
+  updated_at: timestamptz_comparison_exp
+  user: users_bool_exp
+}
+
+"""
+unique or primary key constraints on table "company_leads"
+"""
+enum company_leads_constraint {
+  """
+  unique or primary key constraint on columns "id"
+  """
+  company_leads_pkey
+}
+
+"""
+input type for incrementing numeric columns in table "company_leads"
+"""
+input company_leads_inc_input {
+  """外键，谁跟进"""
+  assigned_company_users: bigint
+
+  """关联外建，哪个公司的线索"""
+  company_companies: bigint
+
+  """成功后指向新产生的公司客户记录；与 status = converted 一致"""
+  converted_company_users: bigint
+
+  """谁录入"""
+  created_by_company_users: bigint
+  id: bigint
+
+  """若线索手机号已注册平台用户"""
+  linked_user_users: bigint
+}
+
+"""
+input type for inserting data into table "company_leads"
+"""
+input company_leads_insert_input {
+  """外键，谁跟进"""
+  assigned_company_users: bigint
+  company: companies_obj_rel_insert_input
+  companyUserByConvertedCompanyUsers: company_users_obj_rel_insert_input
+  companyUserByCreatedByCompanyUsers: company_users_obj_rel_insert_input
+
+  """关联外建，哪个公司的线索"""
+  company_companies: bigint
+  company_lead_tracks: company_lead_tracks_arr_rel_insert_input
+  company_user: company_users_obj_rel_insert_input
+
+  """线索转客户的时间"""
+  converted_at: timestamptz
+
+  """成功后指向新产生的公司客户记录；与 status = converted 一致"""
+  converted_company_users: bigint
+  created_at: timestamptz
+
+  """谁录入"""
+  created_by_company_users: bigint
+  id: bigint
+
+  """若线索手机号已注册平台用户"""
+  linked_user_users: bigint
+
+  """线索身份-名字"""
+  name: String
+
+  """线索身份-电话"""
+  phone: String
+
+  """new / assigned / following / won / lost / converted"""
+  status: String
+  updated_at: timestamptz
+  user: users_obj_rel_insert_input
+}
+
+"""aggregate max on columns"""
+type company_leads_max_fields {
+  """外键，谁跟进"""
+  assigned_company_users: bigint
+
+  """关联外建，哪个公司的线索"""
+  company_companies: bigint
+
+  """线索转客户的时间"""
+  converted_at: timestamptz
+
+  """成功后指向新产生的公司客户记录；与 status = converted 一致"""
+  converted_company_users: bigint
+  created_at: timestamptz
+
+  """谁录入"""
+  created_by_company_users: bigint
+  id: bigint
+
+  """若线索手机号已注册平台用户"""
+  linked_user_users: bigint
+
+  """线索身份-名字"""
+  name: String
+
+  """线索身份-电话"""
+  phone: String
+
+  """new / assigned / following / won / lost / converted"""
+  status: String
+  updated_at: timestamptz
+}
+
+"""
+order by max() on columns of table "company_leads"
+"""
+input company_leads_max_order_by {
+  """外键，谁跟进"""
+  assigned_company_users: order_by
+
+  """关联外建，哪个公司的线索"""
+  company_companies: order_by
+
+  """线索转客户的时间"""
+  converted_at: order_by
+
+  """成功后指向新产生的公司客户记录；与 status = converted 一致"""
+  converted_company_users: order_by
+  created_at: order_by
+
+  """谁录入"""
+  created_by_company_users: order_by
+  id: order_by
+
+  """若线索手机号已注册平台用户"""
+  linked_user_users: order_by
+
+  """线索身份-名字"""
+  name: order_by
+
+  """线索身份-电话"""
+  phone: order_by
+
+  """new / assigned / following / won / lost / converted"""
+  status: order_by
+  updated_at: order_by
+}
+
+"""aggregate min on columns"""
+type company_leads_min_fields {
+  """外键，谁跟进"""
+  assigned_company_users: bigint
+
+  """关联外建，哪个公司的线索"""
+  company_companies: bigint
+
+  """线索转客户的时间"""
+  converted_at: timestamptz
+
+  """成功后指向新产生的公司客户记录；与 status = converted 一致"""
+  converted_company_users: bigint
+  created_at: timestamptz
+
+  """谁录入"""
+  created_by_company_users: bigint
+  id: bigint
+
+  """若线索手机号已注册平台用户"""
+  linked_user_users: bigint
+
+  """线索身份-名字"""
+  name: String
+
+  """线索身份-电话"""
+  phone: String
+
+  """new / assigned / following / won / lost / converted"""
+  status: String
+  updated_at: timestamptz
+}
+
+"""
+order by min() on columns of table "company_leads"
+"""
+input company_leads_min_order_by {
+  """外键，谁跟进"""
+  assigned_company_users: order_by
+
+  """关联外建，哪个公司的线索"""
+  company_companies: order_by
+
+  """线索转客户的时间"""
+  converted_at: order_by
+
+  """成功后指向新产生的公司客户记录；与 status = converted 一致"""
+  converted_company_users: order_by
+  created_at: order_by
+
+  """谁录入"""
+  created_by_company_users: order_by
+  id: order_by
+
+  """若线索手机号已注册平台用户"""
+  linked_user_users: order_by
+
+  """线索身份-名字"""
+  name: order_by
+
+  """线索身份-电话"""
+  phone: order_by
+
+  """new / assigned / following / won / lost / converted"""
+  status: order_by
+  updated_at: order_by
+}
+
+"""
+response of any mutation on the table "company_leads"
+"""
+type company_leads_mutation_response {
+  """number of rows affected by the mutation"""
+  affected_rows: Int!
+
+  """data from the rows affected by the mutation"""
+  returning: [company_leads!]!
+}
+
+"""
+input type for inserting object relation for remote table "company_leads"
+"""
+input company_leads_obj_rel_insert_input {
+  data: company_leads_insert_input!
+
+  """upsert condition"""
+  on_conflict: company_leads_on_conflict
+}
+
+"""
+on_conflict condition type for table "company_leads"
+"""
+input company_leads_on_conflict {
+  constraint: company_leads_constraint!
+  update_columns: [company_leads_update_column!]! = []
+  where: company_leads_bool_exp
+}
+
+"""Ordering options when selecting data from "company_leads"."""
+input company_leads_order_by {
+  assigned_company_users: order_by
+  company: companies_order_by
+  companyUserByConvertedCompanyUsers: company_users_order_by
+  companyUserByCreatedByCompanyUsers: company_users_order_by
+  company_companies: order_by
+  company_lead_tracks_aggregate: company_lead_tracks_aggregate_order_by
+  company_user: company_users_order_by
+  converted_at: order_by
+  converted_company_users: order_by
+  created_at: order_by
+  created_by_company_users: order_by
+  id: order_by
+  linked_user_users: order_by
+  name: order_by
+  phone: order_by
+  status: order_by
+  updated_at: order_by
+  user: users_order_by
+}
+
+"""primary key columns input for table: company_leads"""
+input company_leads_pk_columns_input {
+  id: bigint!
+}
+
+"""
+select columns of table "company_leads"
+"""
+enum company_leads_select_column {
+  """column name"""
+  assigned_company_users
+
+  """column name"""
+  company_companies
+
+  """column name"""
+  converted_at
+
+  """column name"""
+  converted_company_users
+
+  """column name"""
+  created_at
+
+  """column name"""
+  created_by_company_users
+
+  """column name"""
+  id
+
+  """column name"""
+  linked_user_users
+
+  """column name"""
+  name
+
+  """column name"""
+  phone
+
+  """column name"""
+  status
+
+  """column name"""
+  updated_at
+}
+
+"""
+input type for updating data in table "company_leads"
+"""
+input company_leads_set_input {
+  """外键，谁跟进"""
+  assigned_company_users: bigint
+
+  """关联外建，哪个公司的线索"""
+  company_companies: bigint
+
+  """线索转客户的时间"""
+  converted_at: timestamptz
+
+  """成功后指向新产生的公司客户记录；与 status = converted 一致"""
+  converted_company_users: bigint
+  created_at: timestamptz
+
+  """谁录入"""
+  created_by_company_users: bigint
+  id: bigint
+
+  """若线索手机号已注册平台用户"""
+  linked_user_users: bigint
+
+  """线索身份-名字"""
+  name: String
+
+  """线索身份-电话"""
+  phone: String
+
+  """new / assigned / following / won / lost / converted"""
+  status: String
+  updated_at: timestamptz
+}
+
+"""aggregate stddev on columns"""
+type company_leads_stddev_fields {
+  """外键，谁跟进"""
+  assigned_company_users: Float
+
+  """关联外建，哪个公司的线索"""
+  company_companies: Float
+
+  """成功后指向新产生的公司客户记录；与 status = converted 一致"""
+  converted_company_users: Float
+
+  """谁录入"""
+  created_by_company_users: Float
+  id: Float
+
+  """若线索手机号已注册平台用户"""
+  linked_user_users: Float
+}
+
+"""
+order by stddev() on columns of table "company_leads"
+"""
+input company_leads_stddev_order_by {
+  """外键，谁跟进"""
+  assigned_company_users: order_by
+
+  """关联外建，哪个公司的线索"""
+  company_companies: order_by
+
+  """成功后指向新产生的公司客户记录；与 status = converted 一致"""
+  converted_company_users: order_by
+
+  """谁录入"""
+  created_by_company_users: order_by
+  id: order_by
+
+  """若线索手机号已注册平台用户"""
+  linked_user_users: order_by
+}
+
+"""aggregate stddev_pop on columns"""
+type company_leads_stddev_pop_fields {
+  """外键，谁跟进"""
+  assigned_company_users: Float
+
+  """关联外建，哪个公司的线索"""
+  company_companies: Float
+
+  """成功后指向新产生的公司客户记录；与 status = converted 一致"""
+  converted_company_users: Float
+
+  """谁录入"""
+  created_by_company_users: Float
+  id: Float
+
+  """若线索手机号已注册平台用户"""
+  linked_user_users: Float
+}
+
+"""
+order by stddev_pop() on columns of table "company_leads"
+"""
+input company_leads_stddev_pop_order_by {
+  """外键，谁跟进"""
+  assigned_company_users: order_by
+
+  """关联外建，哪个公司的线索"""
+  company_companies: order_by
+
+  """成功后指向新产生的公司客户记录；与 status = converted 一致"""
+  converted_company_users: order_by
+
+  """谁录入"""
+  created_by_company_users: order_by
+  id: order_by
+
+  """若线索手机号已注册平台用户"""
+  linked_user_users: order_by
+}
+
+"""aggregate stddev_samp on columns"""
+type company_leads_stddev_samp_fields {
+  """外键，谁跟进"""
+  assigned_company_users: Float
+
+  """关联外建，哪个公司的线索"""
+  company_companies: Float
+
+  """成功后指向新产生的公司客户记录；与 status = converted 一致"""
+  converted_company_users: Float
+
+  """谁录入"""
+  created_by_company_users: Float
+  id: Float
+
+  """若线索手机号已注册平台用户"""
+  linked_user_users: Float
+}
+
+"""
+order by stddev_samp() on columns of table "company_leads"
+"""
+input company_leads_stddev_samp_order_by {
+  """外键，谁跟进"""
+  assigned_company_users: order_by
+
+  """关联外建，哪个公司的线索"""
+  company_companies: order_by
+
+  """成功后指向新产生的公司客户记录；与 status = converted 一致"""
+  converted_company_users: order_by
+
+  """谁录入"""
+  created_by_company_users: order_by
+  id: order_by
+
+  """若线索手机号已注册平台用户"""
+  linked_user_users: order_by
+}
+
+"""
+Streaming cursor of the table "company_leads"
+"""
+input company_leads_stream_cursor_input {
+  """Stream column input with initial value"""
+  initial_value: company_leads_stream_cursor_value_input!
+
+  """cursor ordering"""
+  ordering: cursor_ordering
+}
+
+"""Initial value of the column from where the streaming should start"""
+input company_leads_stream_cursor_value_input {
+  """外键，谁跟进"""
+  assigned_company_users: bigint
+
+  """关联外建，哪个公司的线索"""
+  company_companies: bigint
+
+  """线索转客户的时间"""
+  converted_at: timestamptz
+
+  """成功后指向新产生的公司客户记录；与 status = converted 一致"""
+  converted_company_users: bigint
+  created_at: timestamptz
+
+  """谁录入"""
+  created_by_company_users: bigint
+  id: bigint
+
+  """若线索手机号已注册平台用户"""
+  linked_user_users: bigint
+
+  """线索身份-名字"""
+  name: String
+
+  """线索身份-电话"""
+  phone: String
+
+  """new / assigned / following / won / lost / converted"""
+  status: String
+  updated_at: timestamptz
+}
+
+"""aggregate sum on columns"""
+type company_leads_sum_fields {
+  """外键，谁跟进"""
+  assigned_company_users: bigint
+
+  """关联外建，哪个公司的线索"""
+  company_companies: bigint
+
+  """成功后指向新产生的公司客户记录；与 status = converted 一致"""
+  converted_company_users: bigint
+
+  """谁录入"""
+  created_by_company_users: bigint
+  id: bigint
+
+  """若线索手机号已注册平台用户"""
+  linked_user_users: bigint
+}
+
+"""
+order by sum() on columns of table "company_leads"
+"""
+input company_leads_sum_order_by {
+  """外键，谁跟进"""
+  assigned_company_users: order_by
+
+  """关联外建，哪个公司的线索"""
+  company_companies: order_by
+
+  """成功后指向新产生的公司客户记录；与 status = converted 一致"""
+  converted_company_users: order_by
+
+  """谁录入"""
+  created_by_company_users: order_by
+  id: order_by
+
+  """若线索手机号已注册平台用户"""
+  linked_user_users: order_by
+}
+
+"""
+update columns of table "company_leads"
+"""
+enum company_leads_update_column {
+  """column name"""
+  assigned_company_users
+
+  """column name"""
+  company_companies
+
+  """column name"""
+  converted_at
+
+  """column name"""
+  converted_company_users
+
+  """column name"""
+  created_at
+
+  """column name"""
+  created_by_company_users
+
+  """column name"""
+  id
+
+  """column name"""
+  linked_user_users
+
+  """column name"""
+  name
+
+  """column name"""
+  phone
+
+  """column name"""
+  status
+
+  """column name"""
+  updated_at
+}
+
+input company_leads_updates {
+  """increments the numeric columns with given value of the filtered values"""
+  _inc: company_leads_inc_input
+
+  """sets the columns of the filtered rows to the given values"""
+  _set: company_leads_set_input
+
+  """filter the rows which have to be updated"""
+  where: company_leads_bool_exp!
+}
+
+"""aggregate var_pop on columns"""
+type company_leads_var_pop_fields {
+  """外键，谁跟进"""
+  assigned_company_users: Float
+
+  """关联外建，哪个公司的线索"""
+  company_companies: Float
+
+  """成功后指向新产生的公司客户记录；与 status = converted 一致"""
+  converted_company_users: Float
+
+  """谁录入"""
+  created_by_company_users: Float
+  id: Float
+
+  """若线索手机号已注册平台用户"""
+  linked_user_users: Float
+}
+
+"""
+order by var_pop() on columns of table "company_leads"
+"""
+input company_leads_var_pop_order_by {
+  """外键，谁跟进"""
+  assigned_company_users: order_by
+
+  """关联外建，哪个公司的线索"""
+  company_companies: order_by
+
+  """成功后指向新产生的公司客户记录；与 status = converted 一致"""
+  converted_company_users: order_by
+
+  """谁录入"""
+  created_by_company_users: order_by
+  id: order_by
+
+  """若线索手机号已注册平台用户"""
+  linked_user_users: order_by
+}
+
+"""aggregate var_samp on columns"""
+type company_leads_var_samp_fields {
+  """外键，谁跟进"""
+  assigned_company_users: Float
+
+  """关联外建，哪个公司的线索"""
+  company_companies: Float
+
+  """成功后指向新产生的公司客户记录；与 status = converted 一致"""
+  converted_company_users: Float
+
+  """谁录入"""
+  created_by_company_users: Float
+  id: Float
+
+  """若线索手机号已注册平台用户"""
+  linked_user_users: Float
+}
+
+"""
+order by var_samp() on columns of table "company_leads"
+"""
+input company_leads_var_samp_order_by {
+  """外键，谁跟进"""
+  assigned_company_users: order_by
+
+  """关联外建，哪个公司的线索"""
+  company_companies: order_by
+
+  """成功后指向新产生的公司客户记录；与 status = converted 一致"""
+  converted_company_users: order_by
+
+  """谁录入"""
+  created_by_company_users: order_by
+  id: order_by
+
+  """若线索手机号已注册平台用户"""
+  linked_user_users: order_by
+}
+
+"""aggregate variance on columns"""
+type company_leads_variance_fields {
+  """外键，谁跟进"""
+  assigned_company_users: Float
+
+  """关联外建，哪个公司的线索"""
+  company_companies: Float
+
+  """成功后指向新产生的公司客户记录；与 status = converted 一致"""
+  converted_company_users: Float
+
+  """谁录入"""
+  created_by_company_users: Float
+  id: Float
+
+  """若线索手机号已注册平台用户"""
+  linked_user_users: Float
+}
+
+"""
+order by variance() on columns of table "company_leads"
+"""
+input company_leads_variance_order_by {
+  """外键，谁跟进"""
+  assigned_company_users: order_by
+
+  """关联外建，哪个公司的线索"""
+  company_companies: order_by
+
+  """成功后指向新产生的公司客户记录；与 status = converted 一致"""
+  converted_company_users: order_by
+
+  """谁录入"""
+  created_by_company_users: order_by
+  id: order_by
+
+  """若线索手机号已注册平台用户"""
+  linked_user_users: order_by
 }
 
 """公司的套餐关联表"""
@@ -4459,13 +5981,162 @@ type company_users {
   """An object relationship"""
   company: companies!
 
+  """An array relationship"""
+  companyLeadsByConvertedCompanyUsers(
+    """distinct select on columns"""
+    distinct_on: [company_leads_select_column!]
+
+    """limit the number of rows returned"""
+    limit: Int
+
+    """skip the first n rows. Use only with order_by"""
+    offset: Int
+
+    """sort the rows by one or more columns"""
+    order_by: [company_leads_order_by!]
+
+    """filter the rows returned"""
+    where: company_leads_bool_exp
+  ): [company_leads!]!
+
+  """An aggregate relationship"""
+  companyLeadsByConvertedCompanyUsers_aggregate(
+    """distinct select on columns"""
+    distinct_on: [company_leads_select_column!]
+
+    """limit the number of rows returned"""
+    limit: Int
+
+    """skip the first n rows. Use only with order_by"""
+    offset: Int
+
+    """sort the rows by one or more columns"""
+    order_by: [company_leads_order_by!]
+
+    """filter the rows returned"""
+    where: company_leads_bool_exp
+  ): company_leads_aggregate!
+
+  """An array relationship"""
+  companyLeadsByCreatedByCompanyUsers(
+    """distinct select on columns"""
+    distinct_on: [company_leads_select_column!]
+
+    """limit the number of rows returned"""
+    limit: Int
+
+    """skip the first n rows. Use only with order_by"""
+    offset: Int
+
+    """sort the rows by one or more columns"""
+    order_by: [company_leads_order_by!]
+
+    """filter the rows returned"""
+    where: company_leads_bool_exp
+  ): [company_leads!]!
+
+  """An aggregate relationship"""
+  companyLeadsByCreatedByCompanyUsers_aggregate(
+    """distinct select on columns"""
+    distinct_on: [company_leads_select_column!]
+
+    """limit the number of rows returned"""
+    limit: Int
+
+    """skip the first n rows. Use only with order_by"""
+    offset: Int
+
+    """sort the rows by one or more columns"""
+    order_by: [company_leads_order_by!]
+
+    """filter the rows returned"""
+    where: company_leads_bool_exp
+  ): company_leads_aggregate!
+
   """公司id"""
   company_companies: bigint!
+
+  """An array relationship"""
+  company_lead_tracks(
+    """distinct select on columns"""
+    distinct_on: [company_lead_tracks_select_column!]
+
+    """limit the number of rows returned"""
+    limit: Int
+
+    """skip the first n rows. Use only with order_by"""
+    offset: Int
+
+    """sort the rows by one or more columns"""
+    order_by: [company_lead_tracks_order_by!]
+
+    """filter the rows returned"""
+    where: company_lead_tracks_bool_exp
+  ): [company_lead_tracks!]!
+
+  """An aggregate relationship"""
+  company_lead_tracks_aggregate(
+    """distinct select on columns"""
+    distinct_on: [company_lead_tracks_select_column!]
+
+    """limit the number of rows returned"""
+    limit: Int
+
+    """skip the first n rows. Use only with order_by"""
+    offset: Int
+
+    """sort the rows by one or more columns"""
+    order_by: [company_lead_tracks_order_by!]
+
+    """filter the rows returned"""
+    where: company_lead_tracks_bool_exp
+  ): company_lead_tracks_aggregate!
+
+  """An array relationship"""
+  company_leads(
+    """distinct select on columns"""
+    distinct_on: [company_leads_select_column!]
+
+    """limit the number of rows returned"""
+    limit: Int
+
+    """skip the first n rows. Use only with order_by"""
+    offset: Int
+
+    """sort the rows by one or more columns"""
+    order_by: [company_leads_order_by!]
+
+    """filter the rows returned"""
+    where: company_leads_bool_exp
+  ): [company_leads!]!
+
+  """An aggregate relationship"""
+  company_leads_aggregate(
+    """distinct select on columns"""
+    distinct_on: [company_leads_select_column!]
+
+    """limit the number of rows returned"""
+    limit: Int
+
+    """skip the first n rows. Use only with order_by"""
+    offset: Int
+
+    """sort the rows by one or more columns"""
+    order_by: [company_leads_order_by!]
+
+    """filter the rows returned"""
+    where: company_leads_bool_exp
+  ): company_leads_aggregate!
   created_at: timestamptz!
   id: bigint!
 
   """客户等级划分 1.A 2.B 3.C 4.D 5.E"""
   level: String!
+
+  """
+  用户权限 1.admin_lead（管理线索） 2. track_lead（跟进线索） 可以有多个,多个用&连接，如：admin_lead&track_lead
+  """
+  permissions: String
 
   """该用户在公司下看到的价格系数（大于0数值），默认为1表示和产品价格一致"""
   price_factor: numeric!
@@ -4597,10 +6268,19 @@ input company_users_bool_exp {
   _or: [company_users_bool_exp!]
   can_view_price: Boolean_comparison_exp
   company: companies_bool_exp
+  companyLeadsByConvertedCompanyUsers: company_leads_bool_exp
+  companyLeadsByConvertedCompanyUsers_aggregate: company_leads_aggregate_bool_exp
+  companyLeadsByCreatedByCompanyUsers: company_leads_bool_exp
+  companyLeadsByCreatedByCompanyUsers_aggregate: company_leads_aggregate_bool_exp
   company_companies: bigint_comparison_exp
+  company_lead_tracks: company_lead_tracks_bool_exp
+  company_lead_tracks_aggregate: company_lead_tracks_aggregate_bool_exp
+  company_leads: company_leads_bool_exp
+  company_leads_aggregate: company_leads_aggregate_bool_exp
   created_at: timestamptz_comparison_exp
   id: bigint_comparison_exp
   level: String_comparison_exp
+  permissions: String_comparison_exp
   price_factor: numeric_comparison_exp
   role: String_comparison_exp
   updated_at: timestamptz_comparison_exp
@@ -4645,14 +6325,23 @@ input company_users_insert_input {
   """用户能否看到本公司的价格，默认是不能看到的，需要联系公司管理员进行授权后可见"""
   can_view_price: Boolean
   company: companies_obj_rel_insert_input
+  companyLeadsByConvertedCompanyUsers: company_leads_arr_rel_insert_input
+  companyLeadsByCreatedByCompanyUsers: company_leads_arr_rel_insert_input
 
   """公司id"""
   company_companies: bigint
+  company_lead_tracks: company_lead_tracks_arr_rel_insert_input
+  company_leads: company_leads_arr_rel_insert_input
   created_at: timestamptz
   id: bigint
 
   """客户等级划分 1.A 2.B 3.C 4.D 5.E"""
   level: String
+
+  """
+  用户权限 1.admin_lead（管理线索） 2. track_lead（跟进线索） 可以有多个,多个用&连接，如：admin_lead&track_lead
+  """
+  permissions: String
 
   """该用户在公司下看到的价格系数（大于0数值），默认为1表示和产品价格一致"""
   price_factor: numeric
@@ -4675,6 +6364,11 @@ type company_users_max_fields {
 
   """客户等级划分 1.A 2.B 3.C 4.D 5.E"""
   level: String
+
+  """
+  用户权限 1.admin_lead（管理线索） 2. track_lead（跟进线索） 可以有多个,多个用&连接，如：admin_lead&track_lead
+  """
+  permissions: String
 
   """该用户在公司下看到的价格系数（大于0数值），默认为1表示和产品价格一致"""
   price_factor: numeric
@@ -4699,6 +6393,11 @@ input company_users_max_order_by {
   """客户等级划分 1.A 2.B 3.C 4.D 5.E"""
   level: order_by
 
+  """
+  用户权限 1.admin_lead（管理线索） 2. track_lead（跟进线索） 可以有多个,多个用&连接，如：admin_lead&track_lead
+  """
+  permissions: order_by
+
   """该用户在公司下看到的价格系数（大于0数值），默认为1表示和产品价格一致"""
   price_factor: order_by
 
@@ -4719,6 +6418,11 @@ type company_users_min_fields {
 
   """客户等级划分 1.A 2.B 3.C 4.D 5.E"""
   level: String
+
+  """
+  用户权限 1.admin_lead（管理线索） 2. track_lead（跟进线索） 可以有多个,多个用&连接，如：admin_lead&track_lead
+  """
+  permissions: String
 
   """该用户在公司下看到的价格系数（大于0数值），默认为1表示和产品价格一致"""
   price_factor: numeric
@@ -4743,6 +6447,11 @@ input company_users_min_order_by {
   """客户等级划分 1.A 2.B 3.C 4.D 5.E"""
   level: order_by
 
+  """
+  用户权限 1.admin_lead（管理线索） 2. track_lead（跟进线索） 可以有多个,多个用&连接，如：admin_lead&track_lead
+  """
+  permissions: order_by
+
   """该用户在公司下看到的价格系数（大于0数值），默认为1表示和产品价格一致"""
   price_factor: order_by
 
@@ -4766,6 +6475,16 @@ type company_users_mutation_response {
 }
 
 """
+input type for inserting object relation for remote table "company_users"
+"""
+input company_users_obj_rel_insert_input {
+  data: company_users_insert_input!
+
+  """upsert condition"""
+  on_conflict: company_users_on_conflict
+}
+
+"""
 on_conflict condition type for table "company_users"
 """
 input company_users_on_conflict {
@@ -4778,10 +6497,15 @@ input company_users_on_conflict {
 input company_users_order_by {
   can_view_price: order_by
   company: companies_order_by
+  companyLeadsByConvertedCompanyUsers_aggregate: company_leads_aggregate_order_by
+  companyLeadsByCreatedByCompanyUsers_aggregate: company_leads_aggregate_order_by
   company_companies: order_by
+  company_lead_tracks_aggregate: company_lead_tracks_aggregate_order_by
+  company_leads_aggregate: company_leads_aggregate_order_by
   created_at: order_by
   id: order_by
   level: order_by
+  permissions: order_by
   price_factor: order_by
   role: order_by
   updated_at: order_by
@@ -4812,6 +6536,9 @@ enum company_users_select_column {
 
   """column name"""
   level
+
+  """column name"""
+  permissions
 
   """column name"""
   price_factor
@@ -4856,6 +6583,11 @@ input company_users_set_input {
 
   """客户等级划分 1.A 2.B 3.C 4.D 5.E"""
   level: String
+
+  """
+  用户权限 1.admin_lead（管理线索） 2. track_lead（跟进线索） 可以有多个,多个用&连接，如：admin_lead&track_lead
+  """
+  permissions: String
 
   """该用户在公司下看到的价格系数（大于0数值），默认为1表示和产品价格一致"""
   price_factor: numeric
@@ -4976,6 +6708,11 @@ input company_users_stream_cursor_value_input {
   """客户等级划分 1.A 2.B 3.C 4.D 5.E"""
   level: String
 
+  """
+  用户权限 1.admin_lead（管理线索） 2. track_lead（跟进线索） 可以有多个,多个用&连接，如：admin_lead&track_lead
+  """
+  permissions: String
+
   """该用户在公司下看到的价格系数（大于0数值），默认为1表示和产品价格一致"""
   price_factor: numeric
 
@@ -5033,6 +6770,9 @@ enum company_users_update_column {
 
   """column name"""
   level
+
+  """column name"""
+  permissions
 
   """column name"""
   price_factor
@@ -5573,6 +7313,32 @@ type mutation_root {
   delete_companies_by_pk(id: bigint!): companies
 
   """
+  delete data from the table: "company_lead_tracks"
+  """
+  delete_company_lead_tracks(
+    """filter the rows which have to be deleted"""
+    where: company_lead_tracks_bool_exp!
+  ): company_lead_tracks_mutation_response
+
+  """
+  delete single row from the table: "company_lead_tracks"
+  """
+  delete_company_lead_tracks_by_pk(id: bigint!): company_lead_tracks
+
+  """
+  delete data from the table: "company_leads"
+  """
+  delete_company_leads(
+    """filter the rows which have to be deleted"""
+    where: company_leads_bool_exp!
+  ): company_leads_mutation_response
+
+  """
+  delete single row from the table: "company_leads"
+  """
+  delete_company_leads_by_pk(id: bigint!): company_leads
+
+  """
   delete data from the table: "company_packages"
   """
   delete_company_packages(
@@ -5802,6 +7568,50 @@ type mutation_root {
     """upsert condition"""
     on_conflict: companies_on_conflict
   ): companies
+
+  """
+  insert data into the table: "company_lead_tracks"
+  """
+  insert_company_lead_tracks(
+    """the rows to be inserted"""
+    objects: [company_lead_tracks_insert_input!]!
+
+    """upsert condition"""
+    on_conflict: company_lead_tracks_on_conflict
+  ): company_lead_tracks_mutation_response
+
+  """
+  insert a single row into the table: "company_lead_tracks"
+  """
+  insert_company_lead_tracks_one(
+    """the row to be inserted"""
+    object: company_lead_tracks_insert_input!
+
+    """upsert condition"""
+    on_conflict: company_lead_tracks_on_conflict
+  ): company_lead_tracks
+
+  """
+  insert data into the table: "company_leads"
+  """
+  insert_company_leads(
+    """the rows to be inserted"""
+    objects: [company_leads_insert_input!]!
+
+    """upsert condition"""
+    on_conflict: company_leads_on_conflict
+  ): company_leads_mutation_response
+
+  """
+  insert a single row into the table: "company_leads"
+  """
+  insert_company_leads_one(
+    """the row to be inserted"""
+    object: company_leads_insert_input!
+
+    """upsert condition"""
+    on_conflict: company_leads_on_conflict
+  ): company_leads
 
   """
   insert data into the table: "company_packages"
@@ -6180,6 +7990,74 @@ type mutation_root {
     """updates to execute, in order"""
     updates: [companies_updates!]!
   ): [companies_mutation_response]
+
+  """
+  update data of the table: "company_lead_tracks"
+  """
+  update_company_lead_tracks(
+    """increments the numeric columns with given value of the filtered values"""
+    _inc: company_lead_tracks_inc_input
+
+    """sets the columns of the filtered rows to the given values"""
+    _set: company_lead_tracks_set_input
+
+    """filter the rows which have to be updated"""
+    where: company_lead_tracks_bool_exp!
+  ): company_lead_tracks_mutation_response
+
+  """
+  update single row of the table: "company_lead_tracks"
+  """
+  update_company_lead_tracks_by_pk(
+    """increments the numeric columns with given value of the filtered values"""
+    _inc: company_lead_tracks_inc_input
+
+    """sets the columns of the filtered rows to the given values"""
+    _set: company_lead_tracks_set_input
+    pk_columns: company_lead_tracks_pk_columns_input!
+  ): company_lead_tracks
+
+  """
+  update multiples rows of table: "company_lead_tracks"
+  """
+  update_company_lead_tracks_many(
+    """updates to execute, in order"""
+    updates: [company_lead_tracks_updates!]!
+  ): [company_lead_tracks_mutation_response]
+
+  """
+  update data of the table: "company_leads"
+  """
+  update_company_leads(
+    """increments the numeric columns with given value of the filtered values"""
+    _inc: company_leads_inc_input
+
+    """sets the columns of the filtered rows to the given values"""
+    _set: company_leads_set_input
+
+    """filter the rows which have to be updated"""
+    where: company_leads_bool_exp!
+  ): company_leads_mutation_response
+
+  """
+  update single row of the table: "company_leads"
+  """
+  update_company_leads_by_pk(
+    """increments the numeric columns with given value of the filtered values"""
+    _inc: company_leads_inc_input
+
+    """sets the columns of the filtered rows to the given values"""
+    _set: company_leads_set_input
+    pk_columns: company_leads_pk_columns_input!
+  ): company_leads
+
+  """
+  update multiples rows of table: "company_leads"
+  """
+  update_company_leads_many(
+    """updates to execute, in order"""
+    updates: [company_leads_updates!]!
+  ): [company_leads_mutation_response]
 
   """
   update data of the table: "company_packages"
@@ -12190,6 +14068,86 @@ type query_root {
   companies_by_pk(id: bigint!): companies
 
   """An array relationship"""
+  company_lead_tracks(
+    """distinct select on columns"""
+    distinct_on: [company_lead_tracks_select_column!]
+
+    """limit the number of rows returned"""
+    limit: Int
+
+    """skip the first n rows. Use only with order_by"""
+    offset: Int
+
+    """sort the rows by one or more columns"""
+    order_by: [company_lead_tracks_order_by!]
+
+    """filter the rows returned"""
+    where: company_lead_tracks_bool_exp
+  ): [company_lead_tracks!]!
+
+  """An aggregate relationship"""
+  company_lead_tracks_aggregate(
+    """distinct select on columns"""
+    distinct_on: [company_lead_tracks_select_column!]
+
+    """limit the number of rows returned"""
+    limit: Int
+
+    """skip the first n rows. Use only with order_by"""
+    offset: Int
+
+    """sort the rows by one or more columns"""
+    order_by: [company_lead_tracks_order_by!]
+
+    """filter the rows returned"""
+    where: company_lead_tracks_bool_exp
+  ): company_lead_tracks_aggregate!
+
+  """
+  fetch data from the table: "company_lead_tracks" using primary key columns
+  """
+  company_lead_tracks_by_pk(id: bigint!): company_lead_tracks
+
+  """An array relationship"""
+  company_leads(
+    """distinct select on columns"""
+    distinct_on: [company_leads_select_column!]
+
+    """limit the number of rows returned"""
+    limit: Int
+
+    """skip the first n rows. Use only with order_by"""
+    offset: Int
+
+    """sort the rows by one or more columns"""
+    order_by: [company_leads_order_by!]
+
+    """filter the rows returned"""
+    where: company_leads_bool_exp
+  ): [company_leads!]!
+
+  """An aggregate relationship"""
+  company_leads_aggregate(
+    """distinct select on columns"""
+    distinct_on: [company_leads_select_column!]
+
+    """limit the number of rows returned"""
+    limit: Int
+
+    """skip the first n rows. Use only with order_by"""
+    offset: Int
+
+    """sort the rows by one or more columns"""
+    order_by: [company_leads_order_by!]
+
+    """filter the rows returned"""
+    where: company_leads_bool_exp
+  ): company_leads_aggregate!
+
+  """fetch data from the table: "company_leads" using primary key columns"""
+  company_leads_by_pk(id: bigint!): company_leads
+
+  """An array relationship"""
   company_packages(
     """distinct select on columns"""
     distinct_on: [company_packages_select_column!]
@@ -12849,6 +14807,114 @@ type subscription_root {
     """filter the rows returned"""
     where: companies_bool_exp
   ): [companies!]!
+
+  """An array relationship"""
+  company_lead_tracks(
+    """distinct select on columns"""
+    distinct_on: [company_lead_tracks_select_column!]
+
+    """limit the number of rows returned"""
+    limit: Int
+
+    """skip the first n rows. Use only with order_by"""
+    offset: Int
+
+    """sort the rows by one or more columns"""
+    order_by: [company_lead_tracks_order_by!]
+
+    """filter the rows returned"""
+    where: company_lead_tracks_bool_exp
+  ): [company_lead_tracks!]!
+
+  """An aggregate relationship"""
+  company_lead_tracks_aggregate(
+    """distinct select on columns"""
+    distinct_on: [company_lead_tracks_select_column!]
+
+    """limit the number of rows returned"""
+    limit: Int
+
+    """skip the first n rows. Use only with order_by"""
+    offset: Int
+
+    """sort the rows by one or more columns"""
+    order_by: [company_lead_tracks_order_by!]
+
+    """filter the rows returned"""
+    where: company_lead_tracks_bool_exp
+  ): company_lead_tracks_aggregate!
+
+  """
+  fetch data from the table: "company_lead_tracks" using primary key columns
+  """
+  company_lead_tracks_by_pk(id: bigint!): company_lead_tracks
+
+  """
+  fetch data from the table in a streaming manner: "company_lead_tracks"
+  """
+  company_lead_tracks_stream(
+    """maximum number of rows returned in a single batch"""
+    batch_size: Int!
+
+    """cursor to stream the results returned by the query"""
+    cursor: [company_lead_tracks_stream_cursor_input]!
+
+    """filter the rows returned"""
+    where: company_lead_tracks_bool_exp
+  ): [company_lead_tracks!]!
+
+  """An array relationship"""
+  company_leads(
+    """distinct select on columns"""
+    distinct_on: [company_leads_select_column!]
+
+    """limit the number of rows returned"""
+    limit: Int
+
+    """skip the first n rows. Use only with order_by"""
+    offset: Int
+
+    """sort the rows by one or more columns"""
+    order_by: [company_leads_order_by!]
+
+    """filter the rows returned"""
+    where: company_leads_bool_exp
+  ): [company_leads!]!
+
+  """An aggregate relationship"""
+  company_leads_aggregate(
+    """distinct select on columns"""
+    distinct_on: [company_leads_select_column!]
+
+    """limit the number of rows returned"""
+    limit: Int
+
+    """skip the first n rows. Use only with order_by"""
+    offset: Int
+
+    """sort the rows by one or more columns"""
+    order_by: [company_leads_order_by!]
+
+    """filter the rows returned"""
+    where: company_leads_bool_exp
+  ): company_leads_aggregate!
+
+  """fetch data from the table: "company_leads" using primary key columns"""
+  company_leads_by_pk(id: bigint!): company_leads
+
+  """
+  fetch data from the table in a streaming manner: "company_leads"
+  """
+  company_leads_stream(
+    """maximum number of rows returned in a single batch"""
+    batch_size: Int!
+
+    """cursor to stream the results returned by the query"""
+    cursor: [company_leads_stream_cursor_input]!
+
+    """filter the rows returned"""
+    where: company_leads_bool_exp
+  ): [company_leads!]!
 
   """An array relationship"""
   company_packages(
@@ -13546,6 +15612,42 @@ type users {
   ): carts_aggregate!
 
   """An array relationship"""
+  company_leads(
+    """distinct select on columns"""
+    distinct_on: [company_leads_select_column!]
+
+    """limit the number of rows returned"""
+    limit: Int
+
+    """skip the first n rows. Use only with order_by"""
+    offset: Int
+
+    """sort the rows by one or more columns"""
+    order_by: [company_leads_order_by!]
+
+    """filter the rows returned"""
+    where: company_leads_bool_exp
+  ): [company_leads!]!
+
+  """An aggregate relationship"""
+  company_leads_aggregate(
+    """distinct select on columns"""
+    distinct_on: [company_leads_select_column!]
+
+    """limit the number of rows returned"""
+    limit: Int
+
+    """skip the first n rows. Use only with order_by"""
+    offset: Int
+
+    """sort the rows by one or more columns"""
+    order_by: [company_leads_order_by!]
+
+    """filter the rows returned"""
+    where: company_leads_bool_exp
+  ): company_leads_aggregate!
+
+  """An array relationship"""
   company_users(
     """distinct select on columns"""
     distinct_on: [company_users_select_column!]
@@ -13679,6 +15781,8 @@ input users_bool_exp {
   bio: String_comparison_exp
   carts: carts_bool_exp
   carts_aggregate: carts_aggregate_bool_exp
+  company_leads: company_leads_bool_exp
+  company_leads_aggregate: company_leads_aggregate_bool_exp
   company_users: company_users_bool_exp
   company_users_aggregate: company_users_aggregate_bool_exp
   created_at: timestamptz_comparison_exp
@@ -13732,6 +15836,7 @@ input users_insert_input {
   """简介"""
   bio: String
   carts: carts_arr_rel_insert_input
+  company_leads: company_leads_arr_rel_insert_input
   company_users: company_users_arr_rel_insert_input
   created_at: timestamptz
   id: bigint
@@ -13844,6 +15949,7 @@ input users_order_by {
   avatar_url: order_by
   bio: order_by
   carts_aggregate: carts_aggregate_order_by
+  company_leads_aggregate: company_leads_aggregate_order_by
   company_users_aggregate: company_users_aggregate_order_by
   created_at: order_by
   id: order_by
