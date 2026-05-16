@@ -38,6 +38,8 @@ export async function getPackageList(params: {
 
   const whereConditions: string[] = [
     packageCompanyFilter,
+    // 与其它项一致：仅 key 片段，外层由 map 包一层 `{ ... }`
+    'is_shelved: { _eq: false }',
     `package_product_skus: {
               product_sku: {
                 is_deleted: { _eq: false }
@@ -183,12 +185,14 @@ export async function getPackageDetail(packageId: number) {
         name
         cover_image_url
         description
+        is_shelved
         created_at
         updated_at
         package_product_skus(
           where: {
             product_sku: {
               is_deleted: { _eq: false }
+              is_shelved: { _eq: false }
             }
           }
           order_by: [{ sort_order: asc }, { id: asc }]
@@ -218,5 +222,8 @@ export async function getPackageDetail(packageId: number) {
     variables: { packageId },
   });
 
-  return result?.packages_by_pk;
+  const row = result?.packages_by_pk;
+  /** 套餐 is_shelved 表示是否下架 */
+  if (!row || row.is_shelved === true) return undefined;
+  return row;
 }

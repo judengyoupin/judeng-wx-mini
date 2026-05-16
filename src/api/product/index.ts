@@ -44,7 +44,10 @@ export async function getProductDetail(productId: number) {
     variables: { productId },
   });
 
-  return result?.products_by_pk;
+  const row = result?.products_by_pk;
+  /** schema：is_shelved 为「是否下架」，true 时不应在小程序展示 */
+  if (!row || row.is_shelved === true) return undefined;
+  return row;
 }
 
 /**

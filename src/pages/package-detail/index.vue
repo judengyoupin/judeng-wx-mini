@@ -3,24 +3,25 @@
     <!-- 统一导航栏（含状态栏高度） -->
     <PageNavBar :title="navTitle" :show-back="true" @back="goBack" />
 
-    <!-- 加载状态 -->
-    <view v-if="loading" class="loading-container">
-      <view class="loading-spinner"></view>
-      <text>加载中...</text>
-    </view>
+    <view class="package-detail-body">
+      <!-- 加载状态 -->
+      <view v-if="loading" class="loading-container">
+        <view class="loading-spinner"></view>
+        <text>加载中...</text>
+      </view>
 
-    <view v-else-if="missingPackageId" class="load-fail-container">
-      <text class="load-fail-text">无法识别套餐链接，请重新扫码或从首页进入</text>
-      <button class="load-fail-btn" @click="goHome">去首页</button>
-    </view>
+      <view v-else-if="missingPackageId" class="load-fail-container">
+        <text class="load-fail-text">无法识别套餐链接，请重新扫码或从首页进入</text>
+        <button class="load-fail-btn" @click="goHome">去首页</button>
+      </view>
 
-    <view v-else-if="packageLoadFailed" class="load-fail-container">
-      <text class="load-fail-text">套餐不存在、已下架或暂无权限查看</text>
-      <button class="load-fail-btn" @click="goHome">去首页</button>
-    </view>
+      <view v-else-if="packageLoadFailed" class="load-fail-container">
+        <text class="load-fail-text">套餐不存在、已下架或暂无权限查看</text>
+        <button class="load-fail-btn" @click="goHome">去首页</button>
+      </view>
 
-    <!-- 套餐详情 -->
-    <scroll-view v-else-if="packageDetail" scroll-y class="scroll-content">
+      <!-- 套餐详情：单一滚动容器，外层 flex 占位避免页面级与 scroll-view 双滚动 -->
+      <scroll-view v-else-if="packageDetail" scroll-y class="scroll-content">
       <!-- 套餐封面：与商品详情一致，宽度铺满、高度随比例；点击预览大图 -->
       <view class="cover-section">
         <image
@@ -77,6 +78,7 @@
       <!-- 底部占位 -->
       <view class="footer-placeholder"></view>
     </scroll-view>
+    </view>
 
     <!-- 底部操作栏（与产品详情页一致：首页、购物车、加入购物车） -->
     <DetailFooterBar
@@ -370,9 +372,21 @@ onShareTimeline(() => {
 
 <style scoped>
 .package-detail-page {
-  min-height: 100vh;
+  height: 100vh;
+  min-height: 0;
+  overflow: hidden;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
   background: #f5f5f5;
-  padding-bottom: calc(100rpx + env(safe-area-inset-bottom) + 20rpx);
+}
+
+/* 导航占位之下、底栏之上的区域：只占剩余高度，避免整页内容与 scroll-view 叠出双滚动 */
+.package-detail-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 /* 内容区高度：扣除底部栏与安全区 */
@@ -382,11 +396,16 @@ onShareTimeline(() => {
 }
 
 .scroll-content {
-  height: calc(100vh - 100rpx - env(safe-area-inset-bottom));
+  flex: 1;
+  height: 0;
   min-height: 0;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .loading-container {
+  flex: 1;
+  min-height: 0;
   padding: 200rpx 0;
   text-align: center;
   color: #999999;
@@ -394,6 +413,8 @@ onShareTimeline(() => {
 }
 
 .load-fail-container {
+  flex: 1;
+  min-height: 0;
   padding: 120rpx 48rpx 200rpx;
   text-align: center;
   color: #666666;

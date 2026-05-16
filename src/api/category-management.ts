@@ -96,7 +96,14 @@ async function fetchAndMergeAggregatesSingleCompany(
         ) {
           aggregate { count }
         }
-        packages_aggregate(where: { company_companies: { _eq: $companyId } }) {
+        packages_aggregate(
+          where: {
+            _and: [
+              { company_companies: { _eq: $companyId } }
+              { is_shelved: { _eq: false } }
+            ]
+          }
+        ) {
           aggregate { count }
         }
       }
@@ -141,7 +148,14 @@ async function fetchAndMergeAggregatesMultiCompany(
         ) {
           aggregate { count }
         }
-        packages_aggregate(where: { company_companies: { _in: $companyIds } }) {
+        packages_aggregate(
+          where: {
+            _and: [
+              { company_companies: { _in: $companyIds } }
+              { is_shelved: { _eq: false } }
+            ]
+          }
+        ) {
           aggregate { count }
         }
       }

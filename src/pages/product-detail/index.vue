@@ -35,14 +35,14 @@
 
       <!-- 商品基本信息 -->
       <view class="product-info-section">
+        <view v-if="productTags.length > 0" class="product-tags-above-row">
+          <text v-for="(tag, i) in productTags" :key="i" class="product-tag-inline">{{ tag }}</text>
+        </view>
         <view class="product-name-row">
           <text class="product-name-label">产品名称：</text>
           <view class="product-name-trail">
             <view class="product-name-wrap">
               <text class="product-name">{{ productDetail.name }}</text>
-            </view>
-            <view v-if="productTags.length > 0" class="product-tags-inline">
-              <text v-for="(tag, i) in productTags" :key="i" class="product-tag-inline">{{ tag }}</text>
             </view>
           </view>
         </view>
@@ -544,7 +544,10 @@ onShareTimeline(() => {
 <style scoped>
 /* 参考图：主色深青绿、主文黑、次文深灰、背景白 */
 .product-detail-page {
-  min-height: 100vh;
+  height: 100vh;
+  min-height: 0;
+  overflow: hidden;
+  box-sizing: border-box;
   background: #f5f5f5;
   padding-bottom: 120rpx;
 }
@@ -726,6 +729,16 @@ onShareTimeline(() => {
   margin-bottom: 20rpx;
 }
 
+.product-tags-above-row {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8rpx;
+  margin-bottom: 16rpx;
+  width: 100%;
+}
+
 .product-name-row {
   display: flex;
   flex-direction: row;
@@ -747,8 +760,8 @@ onShareTimeline(() => {
   display: flex;
   flex-direction: row;
   flex-wrap: wrap;
-  align-items: center;
-  gap: 12rpx;
+  align-items: flex-start;
+  gap: 0;
   flex: 1;
   min-width: 0;
 }
@@ -765,14 +778,6 @@ onShareTimeline(() => {
   color: #000000;
   word-break: break-word;
   white-space: normal;
-}
-
-.product-tags-inline {
-  display: flex;
-  flex-direction: row;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8rpx;
 }
 
 /* 与 .section-title（商品介绍）同色 #0d9488 */

@@ -3,7 +3,7 @@
     <PageNavBar :title="pageTitle" :show-back="true" @back="goBack" />
 
     <!-- 固定在导航下方：搜索 + 分类说明（仅下方列表滚动） -->
-    <view id="search-header-anchor" class="search-header-fixed">
+    <view class="search-header-fixed">
       <view class="search-bar">
         <view class="search-input-box">
           <image class="search-icon-img" src="/static/index/srch.png" mode="aspectFit" />
@@ -27,21 +27,21 @@
       </view>
     </view>
 
-    <view
-      v-if="loading && (searchType === 'product' ? products.length === 0 : packages.length === 0)"
-      class="skeleton-area"
-      :style="listAreaStyle"
-    >
-      <!-- 商品/套餐列表均为 3 列宫格 + 上图下文，与 .product-grid / .package-list 一致 -->
-      <SkeletonScreen type="list-grid-3" :count="6" custom-class="search-skel" />
-    </view>
+    <!-- flex:1 占满导航+搜索栏下方剩余高度，避免 JS 按 windowHeight 测高在模拟器与真机不一致产生底部空白 -->
+    <view class="search-list-region">
+      <view
+        v-if="loading && (searchType === 'product' ? products.length === 0 : packages.length === 0)"
+        class="skeleton-area"
+      >
+        <!-- 商品/套餐列表均为 3 列宫格 + 上图下文，与 .product-grid / .package-list 一致 -->
+        <SkeletonScreen type="list-grid-3" :count="6" custom-class="search-skel" />
+      </view>
 
-    <scroll-view
-      v-else
-      scroll-y
-      class="list-scroll"
-      :style="listAreaStyle"
-      :lower-threshold="100"
+      <scroll-view
+        v-else
+        scroll-y
+        class="list-scroll"
+        :lower-threshold="100"
       :enable-back-to-top="true"
       refresher-enabled
       :refresher-triggered="refresherTriggered"
@@ -136,11 +136,12 @@
         </view>
       </view>
     </scroll-view>
+    </view>
   </view>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, nextTick } from 'vue';
+import { ref, computed } from 'vue';
 import { whenAppReady } from '@/utils/appReady';
 import { onLoad, onReady, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app';
 import { getProductList } from '@/api/product/index';
@@ -163,32 +164,7 @@ const hasMore = ref(true);
 const page = ref(1);
 const pageSize = 12;
 
-const listScrollHeightPx = ref(480);
 const refresherTriggered = ref(false);
-
-const listAreaStyle = computed(() => ({
-  height: `${listScrollHeightPx.value}px`,
-}));
-
-function updateListScrollHeight() {
-  nextTick(() => {
-    const query = uni.createSelectorQuery();
-    query.select('#search-header-anchor').boundingClientRect();
-    query.exec((res: any) => {
-      const rect = res?.[0];
-      const sys = uni.getSystemInfoSync();
-      const winH = sys.windowHeight ?? sys.screenHeight ?? 667;
-      const insetBottom = sys.safeAreaInsets?.bottom ?? 0;
-      if (rect && typeof rect.bottom === 'number') {
-        listScrollHeightPx.value = Math.max(200, Math.floor(winH - rect.bottom - insetBottom));
-      } else {
-        const sh = sys.statusBarHeight ?? 20;
-        const headerGuess = uni.upx2px(categoryName.value ? 280 : 200);
-        listScrollHeightPx.value = Math.max(200, Math.floor(winH - sh - 44 - headerGuess - insetBottom));
-      }
-    });
-  });
-}
 
 const pageTitle = computed(() => {
   if (searchType.value === 'package') return '搜索套餐';
@@ -311,27 +287,12 @@ onLoad(async (options?) => {
   if (options?.categoryName) {
     categoryName.value = decodeURIComponent(options.categoryName);
   }
-  updateListScrollHeight();
   loadData(true);
 });
 
 onReady(() => {
   inputFocused.value = true;
-  nextTick(() => {
-    updateListScrollHeight();
-    setTimeout(() => updateListScrollHeight(), 100);
-  });
 });
-
-watch(
-  () => categoryName.value,
-  () => {
-    nextTick(() => {
-      updateListScrollHeight();
-      setTimeout(() => updateListScrollHeight(), 100);
-    });
-  }
-);
 
 function getSharePath() {
   const cid = companyInfo.value?.id ?? uni.getStorageSync('companyId') ?? '';
@@ -385,6 +346,14 @@ onShareTimeline(() => {
 .search-header-fixed {
   flex-shrink: 0;
   background: #f5f5f5;
+}
+
+.search-list-region {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
 }
 
 .search-bar {
@@ -444,6 +413,9 @@ onShareTimeline(() => {
 }
 
 .skeleton-area {
+  flex: 1;
+  height: 0;
+  min-height: 0;
   width: 100%;
   box-sizing: border-box;
   padding: 16rpx;
@@ -460,6 +432,9 @@ onShareTimeline(() => {
 }
 
 .list-scroll {
+  flex: 1;
+  height: 0;
+  min-height: 0;
   width: 100%;
   box-sizing: border-box;
   background: #f5f5f5;

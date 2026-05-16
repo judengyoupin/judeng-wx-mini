@@ -137,6 +137,9 @@ const searchKeyword = ref('');
 
 const refresherTriggered = ref(false);
 
+/** 与同公司上一次完成列表挂载一致时，onShow 不再全量重置列表，避免从详情返回滚动条回到顶部 */
+const lastHydratedCompanyIdForList = ref<number | null>(null);
+
 /** 确认后进入全域套餐搜索页，不带当前分类条件（与横向分类筛选无关） */
 const onSearchConfirm = () => {
   const kw = (searchKeyword.value || '').trim();
@@ -283,10 +286,17 @@ const goToPackageDetail = (packageId: number) => {
 
 onShow(async () => {
   await whenAppReady();
-  if (!companyInfo.value?.id) return;
-  loadCategories(true).then(() => {
-    loadPackages(true, true);
-  });
+  const cid = companyInfo.value?.id;
+  if (!cid) return;
+
+  // tabBar 页实例常驻：从详情 navigateBack 会再次触发 onShow，若不区分则每次都 loadPackages(true) 会顶替列表并让 scroll-view 回到顶部。
+  if (lastHydratedCompanyIdForList.value === cid) {
+    return;
+  }
+  lastHydratedCompanyIdForList.value = cid;
+
+  await loadCategories(true);
+  await loadPackages(true, true);
 });
 
 onShareAppMessage(() => {
